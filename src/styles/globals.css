@@ -1,0 +1,83 @@
+@import url('https://fonts.googleapis.com/css2?family=Syne:wght@400;500;700&family=IBM+Plex+Mono:wght@400;500&display=swap');
+
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+:root {
+  --bg-primary: #0a0d12;
+  --bg-surface: #111520;
+  --bg-surface2: #181e2e;
+  --accent-purple: #7c6ef5;
+  --accent-purple-dim: rgba(124, 110, 245, 0.12);
+  --accent-green: #39e07b;
+  --accent-green-neon: rgba(57, 224, 123, 0.15);
+  --text-primary: rgba(255, 255, 255, 0.88);
+  --text-secondary: rgba(255, 255, 255, 0.45);
+  --text-muted: rgba(255, 255, 255, 0.25);
+  --epl-color: #3a7d44;
+  --champions-color: #1a3a6b;
+  --laliga-color: #8b1a1a;
+  --seriea-color: #0055a4;
+}
+
+* {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+}
+
+html,
+body {
+  background-color: var(--bg-primary);
+  color: var(--text-primary);
+  font-family: 'IBM Plex Mono', monospace;
+  min-height: 100dvh;
+  -webkit-font-smoothing: antialiased;
+}
+
+#root {
+  min-height: 100dvh;
+  display: flex;
+  flex-direction: column;
+}
+
+/* Scrollbar */
+::-webkit-scrollbar {
+  width: 4px;
+  height: 4px;
+}
+::-webkit-scrollbar-track {
+  background: var(--bg-surface);
+}
+::-webkit-scrollbar-thumb {
+  background: var(--bg-surface2);
+  border-radius: 2px;
+}
+
+/* Utility classes */
+.font-syne {
+  font-family: 'Syne', sans-serif;
+}
+.font-mono {
+  font-family: 'IBM Plex Mono', monospace;
+}
+
+/* Energy bar animation */
+@keyframes pulse-border {
+  0%, 100% { box-shadow: 0 0 0 0 rgba(57, 224, 123, 0.4); }
+  50% { box-shadow: 0 0 0 6px rgba(57, 224, 123, 0); }
+}
+
+.energy-pulse {
+  animation: pulse-border 1.5s ease-in-out infinite;
+}
+
+/* Card border glow */
+.glow-purple {
+  box-shadow: 0 0 20px rgba(124, 110, 245, 0.15);
+}
+
+.glow-green {
+  box-shadow: 0 0 20px rgba(57, 224, 123, 0.2);
+}

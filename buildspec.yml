@@ -1,0 +1,17 @@
+version: 0.2
+env:
+  variables:
+    FRONTEND_BUCKET: "prizepicks-frontend-prod-696715200075"
+    CLOUDFRONT_DIST_ID: "E24T537VAJX8RN"
+phases:
+  install:
+    runtime-versions:
+      nodejs: 20
+  pre_build:
+    commands:
+      - npm ci
+  build:
+    commands:
+      - npm run build
+      - aws s3 sync dist/ s3://$FRONTEND_BUCKET --delete
+      - aws cloudfront create-invalidation --distribution-id $CLOUDFRONT_DIST_ID --paths "/*"
