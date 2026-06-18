@@ -18,13 +18,18 @@ function RequireAuth({ children }) {
 }
 
 function RequireAdmin({ children }) {
-  const { user, logout } = useAuthStore()
+  const { user } = useAuthStore()
   if (!user) return <Navigate to="/login" replace />
-  if (user.role !== 'admin') {
-    logout()
-    return <Navigate to="/login" replace />
-  }
+  if (user.role !== 'admin') return <Navigate to="/" replace />
   return children
+}
+
+// Redirects admin users away from the regular home screen
+function HomeRoute() {
+  const user = useAuthStore((s) => s.user)
+  if (!user) return <Navigate to="/login" replace />
+  if (user.role === 'admin') return <Navigate to="/admin" replace />
+  return <LeaguesPage />
 }
 
 export default function App() {
@@ -33,7 +38,7 @@ export default function App() {
       <Route path="/login" element={<LoginPage />} />
       <Route path="/register" element={<RegisterPage />} />
 
-      <Route path="/" element={<RequireAuth><LeaguesPage /></RequireAuth>} />
+      <Route path="/" element={<HomeRoute />} />
       <Route path="/leagues/:id" element={<RequireAuth><LeagueDetailPage /></RequireAuth>} />
       <Route path="/picks/:gameweekId" element={<RequireAuth><PickSelectionPage /></RequireAuth>} />
       <Route path="/matchup/:id" element={<RequireAuth><MatchupPage /></RequireAuth>} />
