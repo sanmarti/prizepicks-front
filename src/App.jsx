@@ -9,27 +9,11 @@ import CreateLeaguePage from './pages/CreateLeaguePage'
 import PickSelectionPage from './pages/PickSelectionPage'
 import MatchupPage from './pages/MatchupPage'
 import EnergyShopPage from './pages/EnergyShopPage'
-import AdminPage from './pages/AdminPage'
 
 function RequireAuth({ children }) {
   const token = useAuthStore((s) => s.token)
   if (!token) return <Navigate to="/login" replace />
   return children
-}
-
-function RequireAdmin({ children }) {
-  const { user } = useAuthStore()
-  if (!user) return <Navigate to="/login" replace />
-  if (user.role !== 'admin') return <Navigate to="/" replace />
-  return children
-}
-
-// Redirects admin users away from the regular home screen
-function HomeRoute() {
-  const user = useAuthStore((s) => s.user)
-  if (!user) return <Navigate to="/login" replace />
-  if (user.role === 'admin') return <Navigate to="/admin" replace />
-  return <LeaguesPage />
 }
 
 export default function App() {
@@ -38,13 +22,12 @@ export default function App() {
       <Route path="/login" element={<LoginPage />} />
       <Route path="/register" element={<RegisterPage />} />
 
-      <Route path="/" element={<HomeRoute />} />
+      <Route path="/" element={<RequireAuth><LeaguesPage /></RequireAuth>} />
       <Route path="/leagues/:id" element={<RequireAuth><LeagueDetailPage /></RequireAuth>} />
       <Route path="/picks/:gameweekId" element={<RequireAuth><PickSelectionPage /></RequireAuth>} />
       <Route path="/matchup/:id" element={<RequireAuth><MatchupPage /></RequireAuth>} />
       <Route path="/create-league" element={<RequireAuth><CreateLeaguePage /></RequireAuth>} />
       <Route path="/energy" element={<RequireAuth><EnergyShopPage /></RequireAuth>} />
-      <Route path="/admin" element={<RequireAdmin><AdminPage /></RequireAdmin>} />
 
       <Route path="*" element={<Navigate to="/" replace />} />
     </Routes>

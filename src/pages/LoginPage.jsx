@@ -43,7 +43,7 @@ export default function LoginPage() {
     try {
       const { data } = await apiLogin({ email, password })
       authLogin(data)
-      navigate(data.role === 'admin' ? '/admin' : '/')
+      navigate('/')
     } catch (err) {
       setError(err.response?.data?.error ?? err.response?.data?.message ?? 'Invalid credentials')
     } finally {

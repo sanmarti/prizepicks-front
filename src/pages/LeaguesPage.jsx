@@ -80,9 +80,6 @@ export default function LeaguesPage() {
               </p>
             </div>
             <div style={{ display: 'flex', flexDirection: 'column', gap: 6, alignItems: 'flex-end' }}>
-              {user?.role === 'admin' && (
-                <BtnSm purple onClick={() => navigate('/admin')}>⚙ Admin</BtnSm>
-              )}
               <BtnSm onClick={() => { useAuthStore.getState().logout() }}>↩ Logout</BtnSm>
             </div>
           </div>
