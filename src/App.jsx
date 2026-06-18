@@ -9,10 +9,18 @@ import CreateLeaguePage from './pages/CreateLeaguePage'
 import PickSelectionPage from './pages/PickSelectionPage'
 import MatchupPage from './pages/MatchupPage'
 import EnergyShopPage from './pages/EnergyShopPage'
+import AdminPage from './pages/AdminPage'
 
 function RequireAuth({ children }) {
   const token = useAuthStore((s) => s.token)
   if (!token) return <Navigate to="/login" replace />
+  return children
+}
+
+function RequireAdmin({ children }) {
+  const user = useAuthStore((s) => s.user)
+  if (!user) return <Navigate to="/login" replace />
+  if (user.role !== 'admin') return <Navigate to="/" replace />
   return children
 }
 
@@ -28,6 +36,7 @@ export default function App() {
       <Route path="/matchup/:id" element={<RequireAuth><MatchupPage /></RequireAuth>} />
       <Route path="/create-league" element={<RequireAuth><CreateLeaguePage /></RequireAuth>} />
       <Route path="/energy" element={<RequireAuth><EnergyShopPage /></RequireAuth>} />
+      <Route path="/admin" element={<RequireAdmin><AdminPage /></RequireAdmin>} />
 
       <Route path="*" element={<Navigate to="/" replace />} />
     </Routes>

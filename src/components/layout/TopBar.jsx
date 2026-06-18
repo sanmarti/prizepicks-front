@@ -35,6 +35,19 @@ export default function TopBar({ title, subtitle, showBack = false, right }) {
       </div>
       <div className="flex items-center gap-2 flex-shrink-0">
         {right && <div>{right}</div>}
+        {user?.role === 'admin' && (
+          <button
+            onClick={() => navigate('/admin')}
+            title="Admin Panel"
+            className="text-[11px] font-mono px-2 py-1 rounded transition-colors"
+            style={{
+              color: 'var(--accent-purple)',
+              border: '1px solid var(--accent-purple)',
+            }}
+          >
+            ⚙ admin
+          </button>
+        )}
         {user && (
           <button
             onClick={logout}
