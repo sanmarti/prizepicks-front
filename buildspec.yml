@@ -3,6 +3,8 @@ env:
   variables:
     FRONTEND_BUCKET: "prizepicks-frontend-prod-696715200075"
     CLOUDFRONT_DIST_ID: "E24T537VAJX8RN"
+    VITE_API_URL: "https://uglbx8p4l4.execute-api.eu-west-3.amazonaws.com/prod"
+    VITE_PUBLIC_API_URL: "https://5gdrajqcvb.execute-api.eu-west-3.amazonaws.com/prod"
 phases:
   install:
     runtime-versions:
