@@ -18,9 +18,12 @@ function RequireAuth({ children }) {
 }
 
 function RequireAdmin({ children }) {
-  const user = useAuthStore((s) => s.user)
+  const { user, logout } = useAuthStore()
   if (!user) return <Navigate to="/login" replace />
-  if (user.role !== 'admin') return <Navigate to="/" replace />
+  if (user.role !== 'admin') {
+    logout()
+    return <Navigate to="/login" replace />
+  }
   return children
 }
 
