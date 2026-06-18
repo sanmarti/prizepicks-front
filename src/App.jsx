@@ -9,6 +9,7 @@ import CreateLeaguePage from './pages/CreateLeaguePage'
 import PickSelectionPage from './pages/PickSelectionPage'
 import MatchupPage from './pages/MatchupPage'
 import EnergyShopPage from './pages/EnergyShopPage'
+import ProfilePage from './pages/ProfilePage'
 import AdminPage from './pages/AdminPage'
 
 function RequireAuth({ children }) {
@@ -43,6 +44,7 @@ export default function App() {
       <Route path="/matchup/:id" element={<RequireAuth><MatchupPage /></RequireAuth>} />
       <Route path="/create-league" element={<RequireAuth><CreateLeaguePage /></RequireAuth>} />
       <Route path="/energy" element={<RequireAuth><EnergyShopPage /></RequireAuth>} />
+      <Route path="/profile" element={<RequireAuth><ProfilePage /></RequireAuth>} />
       <Route path="/admin" element={<RequireAdmin><AdminPage /></RequireAdmin>} />
 
       <Route path="*" element={<Navigate to="/" replace />} />
