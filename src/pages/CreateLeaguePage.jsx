@@ -1,13 +1,13 @@
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { createLeague } from '../api/leagues'
+import { getCompetitions } from '../api/competitions'
 import { useAuthStore } from '../store/authStore'
 import Avatar from '../components/ui/Avatar'
 import Toast from '../components/ui/Toast'
 import Spinner from '../components/ui/Spinner'
 
 const LOGOS = ['⚽', '👑', '⚡', '🏆']
-const COMPETITIONS = ['EPL', 'CHAMPIONS', 'LALIGA', 'SERIEA', 'WORLD CUP']
 const SEASONS = ['2024/25', '2025/26', 'World Cup 2026']
 const TEAM_LIMITS = [2, 4, 8, 12, 16, 20]
 const MISSED_WEEK_OPTIONS = [
@@ -46,9 +46,24 @@ function StepLabel({ step }) {
   )
 }
 
+const STATUS_STYLE = {
+  IN_PROGRESS: { dot: '#22c55e', label: 'Live',     bg: 'rgba(34,197,94,0.1)',   border: 'rgba(34,197,94,0.25)',   text: '#22c55e' },
+  FUTURE:      { dot: '#60a5fa', label: 'Upcoming', bg: 'rgba(96,165,250,0.08)', border: 'rgba(96,165,250,0.2)',   text: '#60a5fa' },
+  COMPLETED:   { dot: '#6b7280', label: 'Ended',    bg: 'rgba(107,114,128,0.08)', border: 'rgba(107,114,128,0.2)', text: '#6b7280' },
+}
+
 // ── Step 1 ────────────────────────────────────────────────────────────────────
 function Step1({ data, onChange, onNext }) {
   const user = useAuthStore((s) => s.user)
+  const [competitions, setCompetitions] = useState([])
+  const [loadingComps, setLoadingComps] = useState(true)
+
+  useEffect(() => {
+    getCompetitions()
+      .then(res => setCompetitions(res.data ?? []))
+      .catch(() => setCompetitions([]))
+      .finally(() => setLoadingComps(false))
+  }, [])
   return (
     <div>
       {/* Creator card */}
@@ -95,22 +110,62 @@ function Step1({ data, onChange, onNext }) {
 
       {/* Competition */}
       <label className="text-[10px] font-mono tracking-widest block mb-2" style={{ color: 'var(--text-muted)' }}>COMPETITION</label>
-      <div className="flex gap-2 overflow-x-auto pb-1 mb-4">
-        {COMPETITIONS.map((c) => (
-          <button
-            key={c}
-            onClick={() => onChange('competition', c)}
-            className="flex-shrink-0 px-3 py-1.5 rounded-full text-xs font-mono transition-all"
-            style={
-              data.competition === c
-                ? { background: 'var(--accent-purple)', color: '#fff' }
-                : { background: 'var(--bg-surface2)', color: 'var(--text-secondary)' }
-            }
-          >
-            {c}
-          </button>
-        ))}
-      </div>
+      {loadingComps ? (
+        <div className="flex items-center gap-2 py-2 mb-4" style={{ color: 'var(--text-muted)' }}>
+          <Spinner size={14}/> <span className="text-xs font-mono">Loading competitions…</span>
+        </div>
+      ) : competitions.length === 0 ? (
+        <p className="text-xs font-mono mb-4" style={{ color: 'var(--text-muted)' }}>
+          No competitions available. Ask an admin to create one.
+        </p>
+      ) : (
+        <div className="flex flex-col gap-2 mb-4">
+          {competitions.map((comp) => {
+            const isSelected = data.competition_id === comp.id
+            const style = STATUS_STYLE[comp.status] ?? STATUS_STYLE.FUTURE
+            return (
+              <button
+                key={comp.id}
+                onClick={() => {
+                  onChange('competition_id', comp.id)
+                  onChange('competition', comp.name)
+                }}
+                disabled={comp.status === 'COMPLETED'}
+                className="flex items-center gap-3 p-3 rounded-xl text-left transition-all"
+                style={{
+                  background: isSelected ? 'var(--accent-purple-dim)' : 'var(--bg-surface2)',
+                  border: isSelected ? '1px solid var(--accent-purple)' : '1px solid transparent',
+                  opacity: comp.status === 'COMPLETED' ? 0.45 : 1,
+                }}
+              >
+                {/* Logo */}
+                {comp.logo_url ? (
+                  <img src={comp.logo_url} alt="" className="w-9 h-9 rounded-lg object-cover flex-shrink-0"/>
+                ) : (
+                  <div className="w-9 h-9 rounded-lg flex items-center justify-center text-xl flex-shrink-0"
+                    style={{ background: 'var(--bg-surface)' }}>🏆</div>
+                )}
+                {/* Info */}
+                <div className="flex-1 min-w-0">
+                  <p className="text-sm font-syne font-700 truncate" style={{ color: 'var(--text-primary)' }}>
+                    {comp.name}
+                  </p>
+                  <p className="text-[10px] font-mono" style={{ color: 'var(--text-muted)' }}>
+                    {comp.num_weeks} weeks · {new Date(comp.start_date).toLocaleDateString('en-GB', { day:'numeric', month:'short' })} – {new Date(comp.end_date).toLocaleDateString('en-GB', { day:'numeric', month:'short', year:'numeric' })}
+                  </p>
+                </div>
+                {/* Status badge */}
+                <span className="flex-shrink-0 flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-mono"
+                  style={{ background: style.bg, border: `1px solid ${style.border}`, color: style.text }}>
+                  <span style={{ width: 5, height: 5, borderRadius: '50%', background: style.dot, display: 'inline-block',
+                    boxShadow: comp.status === 'IN_PROGRESS' ? `0 0 6px ${style.dot}` : 'none' }}/>
+                  {style.label}
+                </span>
+              </button>
+            )
+          })}
+        </div>
+      )}
 
       {/* Season */}
       <label className="text-[10px] font-mono tracking-widest block mb-1.5" style={{ color: 'var(--text-muted)' }}>SEASON</label>
@@ -136,9 +191,9 @@ function Step1({ data, onChange, onNext }) {
 
       <button
         onClick={onNext}
-        disabled={!data.name || !data.competition}
+        disabled={!data.name || !data.competition_id}
         className="w-full py-3 rounded-xl font-syne font-700 text-sm tracking-wide transition-all hover:brightness-110 active:scale-[0.99]"
-        style={{ background: data.name && data.competition ? 'var(--accent-purple)' : 'var(--bg-surface2)', color: '#fff' }}
+        style={{ background: data.name && data.competition_id ? 'var(--accent-purple)' : 'var(--bg-surface2)', color: '#fff' }}
       >
         CONTINUE →
       </button>
@@ -350,7 +405,7 @@ export default function CreateLeaguePage() {
   const [loading, setLoading] = useState(false)
   const [toast, setToast] = useState(null)
   const [form, setForm] = useState({
-    name: '', logo: '🏆', competition: 'EPL', season: '2024/25',
+    name: '', logo: '🏆', competition: '', competition_id: '', season: '2024/25',
     teamLimit: 12, paid: false, missedWeek: 'random', format: 'standings',
   })
 
