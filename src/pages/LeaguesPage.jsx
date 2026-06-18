@@ -7,6 +7,15 @@ import BottomNav from '../components/layout/BottomNav'
 import Avatar from '../components/ui/Avatar'
 import Spinner from '../components/ui/Spinner'
 
+const BtnSm = ({ children, onClick, purple }) => (
+  <button onClick={onClick} style={{
+    fontSize: 11, fontFamily: "'IBM Plex Mono', monospace",
+    padding: '5px 11px', borderRadius: 8, cursor: 'pointer', border: 'none',
+    background: purple ? 'var(--accent-purple)' : 'var(--bg-surface2)',
+    color: purple ? '#fff' : 'var(--text-muted)',
+  }}>{children}</button>
+)
+
 const MOCK_LEAGUES = [
   {
     id: '1', name: 'Sunday Ballers', icon: '⚽', competition: 'EPL', type: 'Private League',
@@ -70,12 +79,12 @@ export default function LeaguesPage() {
                 {leagues.length} Leagues Joined
               </p>
             </div>
-            <span
-              className="text-[11px] font-mono px-2.5 py-1 rounded-xl"
-              style={{ background: 'var(--accent-purple-dim)', color: 'var(--accent-purple)' }}
-            >
-              Top 2 in 4 leagues
-            </span>
+            <div style={{ display: 'flex', flexDirection: 'column', gap: 6, alignItems: 'flex-end' }}>
+              {user?.role === 'admin' && (
+                <BtnSm purple onClick={() => navigate('/admin')}>⚙ Admin</BtnSm>
+              )}
+              <BtnSm onClick={() => { useAuthStore.getState().logout() }}>↩ Logout</BtnSm>
+            </div>
           </div>
         </div>
 
