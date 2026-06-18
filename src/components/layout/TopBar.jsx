@@ -1,7 +1,9 @@
 import { useNavigate } from 'react-router-dom'
+import { useAuthStore } from '../../store/authStore'
 
 export default function TopBar({ title, subtitle, showBack = false, right }) {
   const navigate = useNavigate()
+  const { user, logout } = useAuthStore()
 
   return (
     <header
@@ -31,7 +33,22 @@ export default function TopBar({ title, subtitle, showBack = false, right }) {
           </p>
         )}
       </div>
-      {right && <div className="flex-shrink-0">{right}</div>}
+      <div className="flex items-center gap-2 flex-shrink-0">
+        {right && <div>{right}</div>}
+        {user && (
+          <button
+            onClick={logout}
+            title="Logout"
+            className="text-[11px] font-mono px-2 py-1 rounded transition-colors"
+            style={{
+              color: 'var(--text-muted)',
+              border: '1px solid var(--bg-surface2)',
+            }}
+          >
+            ↩ logout
+          </button>
+        )}
+      </div>
     </header>
   )
 }
