@@ -12,3 +12,4 @@ export const getGloryDivisions     = ()           => client.get('/glory/division
 export const getMyRelevantSprints  = ()           => client.get('/glory/sprints/my')
 export const getCommunityPicks     = (id)         => client.get(`/glory/gameweek/${id}/community`)
 export const getPublicProfile      = (userId)     => client.get(`/glory/users/${userId}`)
+export const getFixtureStats       = (fixtureId)  => client.get(`/glory/fixtures/${fixtureId}/stats`)

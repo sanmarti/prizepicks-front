@@ -112,7 +112,14 @@ function EventCard({ event, selectedOptionId, onSelect, isLocked, dimmed }) {
                     }}
                   />
                 )}
-                <span className="relative z-10">{opt.label}</span>
+                <span className="relative z-10 flex items-center gap-2">
+                  {opt.label}
+                  {!isLocked && !won && !lost && opt.energy_cost && (
+                    <span className={`text-[10px] font-mono font-bold px-1.5 py-0.5 rounded ${
+                      isSelected ? 'bg-indigo-500/40 text-indigo-200' : 'bg-white/8 text-gray-500'
+                    }`}>⚡{opt.energy_cost}</span>
+                  )}
+                </span>
                 <span className="relative z-10 flex items-center gap-2 text-xs flex-shrink-0">
                   {pct !== null && <span className="text-gray-500">{pct}%</span>}
                   {won  && <span className="text-green-400">✓</span>}
@@ -266,6 +273,18 @@ export default function MatchweekPage() {
   const events = gw?.events || []
   const pickCount = Object.keys(picks).length
 
+  // Total energy cost of currently selected picks
+  const totalEnergy = useMemo(() => {
+    let sum = 0
+    for (const ev of events) {
+      const chosenOptId = picks[ev.id]
+      if (!chosenOptId) continue
+      const opt = ev.options.find(o => o.id === chosenOptId)
+      if (opt?.energy_cost) sum += opt.energy_cost
+    }
+    return sum
+  }, [picks, events])
+
   // Merge community pick counts into events
   const eventsWithCounts = useMemo(() => {
     if (!community) return events
@@ -388,9 +407,14 @@ export default function MatchweekPage() {
                 <>
                   <div className="flex items-center justify-between text-xs mb-1.5">
                     <span className="text-gray-500">Picks selected</span>
-                    <span className={pickCount === 6 ? 'text-green-400 font-bold' : 'text-indigo-400 font-bold'}>
-                      {pickCount}/6 {pickCount === 6 && '✓'}
-                    </span>
+                    <div className="flex items-center gap-3">
+                      {totalEnergy > 0 && (
+                        <span className="text-yellow-500 font-mono font-bold text-[11px]">⚡{totalEnergy} energy</span>
+                      )}
+                      <span className={pickCount === 6 ? 'text-green-400 font-bold' : 'text-indigo-400 font-bold'}>
+                        {pickCount}/6 {pickCount === 6 && '✓'}
+                      </span>
+                    </div>
                   </div>
                   <div className="flex gap-1">
                     {Array.from({ length: 6 }, (_, i) => (
