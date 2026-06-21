@@ -10,6 +10,8 @@ import PickSelectionPage from './pages/PickSelectionPage'
 import MatchupPage from './pages/MatchupPage'
 import EnergyShopPage from './pages/EnergyShopPage'
 import ProfilePage from './pages/ProfilePage'
+import GloryHomePage from './pages/GloryHomePage'
+import GloryPicksPage from './pages/GloryPicksPage'
 
 function RequireAuth({ children }) {
   const token = useAuthStore((s) => s.token)
@@ -23,7 +25,12 @@ export default function App() {
       <Route path="/login"    element={<LoginPage />} />
       <Route path="/register" element={<RegisterPage />} />
 
-      <Route path="/"                    element={<RequireAuth><LeaguesPage /></RequireAuth>} />
+      {/* 6 to Glory — new home */}
+      <Route path="/"                          element={<RequireAuth><GloryHomePage /></RequireAuth>} />
+      <Route path="/glory/picks/:gameweekId"   element={<RequireAuth><GloryPicksPage /></RequireAuth>} />
+
+      {/* Legacy routes */}
+      <Route path="/leagues"             element={<RequireAuth><LeaguesPage /></RequireAuth>} />
       <Route path="/leagues/:id"         element={<RequireAuth><LeagueDetailPage /></RequireAuth>} />
       <Route path="/picks/:gameweekId"   element={<RequireAuth><PickSelectionPage /></RequireAuth>} />
       <Route path="/matchup/:id"         element={<RequireAuth><MatchupPage /></RequireAuth>} />
