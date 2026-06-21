@@ -8,16 +8,13 @@ const LIVE_STATUSES   = new Set(['1H', 'HT', '2H', 'ET', 'BT', 'P', 'SUSP', 'INT
 const DONE_STATUSES   = new Set(['FT', 'AET', 'PEN', 'AWD', 'WO'])
 const CANCEL_STATUSES = new Set(['PST', 'CANC', 'ABD'])
 
-const EVENT_ICONS = {
-  Goal:          '⚽',
-  'subst':       '🔄',
-  Card:          '🟨',
-  Var:           '📺',
-}
-const STAT_ORDER = [
-  'Ball Possession', 'Total Shots', 'Shots on Goal', 'Shots off Goal',
-  'Corner Kicks', 'Fouls', 'Yellow Cards', 'Red Cards', 'Offsides',
-  'Goalkeeper Saves', 'Total passes', 'Passes accurate', 'Passes %',
+const KEY_STATS = [
+  'Ball Possession',
+  'Total Shots',
+  'Shots on Goal',
+  'Corner Kicks',
+  'Fouls',
+  'Yellow Cards',
 ]
 
 function toDateStr(d) { return d.toISOString().slice(0, 10) }
@@ -27,270 +24,215 @@ function offsetDate(days) {
   return toDateStr(d)
 }
 
-function StatusBadge({ status, elapsed }) {
-  if (LIVE_STATUSES.has(status)) {
-    const label = status === 'HT' ? 'HT' : status === 'BT' ? 'BT' : elapsed ? `${elapsed}'` : status
+function elapsed(ev) {
+  return `${ev.elapsed}${ev.extra ? `+${ev.extra}` : ''}'`
+}
+
+// ── Inline stats panel ─────────────────────────────────────────────────────────
+function InlineStats({ fix, data, loading }) {
+  if (loading) {
     return (
-      <div className="flex flex-col items-center gap-0.5 w-10 flex-shrink-0">
-        <span className="w-1.5 h-1.5 rounded-full bg-green-400 animate-pulse" />
-        <span className="text-[10px] font-bold text-green-400 leading-none">{label}</span>
+      <div className="flex items-center justify-center py-4 gap-2 text-gray-600 text-xs">
+        <div className="w-3 h-3 border border-gray-700 border-t-indigo-400 rounded-full animate-spin" />
+        Loading…
       </div>
     )
   }
-  if (DONE_STATUSES.has(status)) {
-    return <div className="w-10 flex-shrink-0 text-center"><span className="text-[10px] font-semibold text-gray-500">{status}</span></div>
+
+  if (!data) return null
+
+  const isLive = LIVE_STATUSES.has(fix.status_short)
+  const hasEvents = data.events?.length > 0
+  const hasStats  = data.statistics?.length >= 2
+
+  if (!hasEvents && !hasStats) {
+    return (
+      <p className="text-center text-gray-700 text-xs py-3">
+        {isLive ? 'No events yet' : 'Stats not available yet'}
+      </p>
+    )
   }
-  if (CANCEL_STATUSES.has(status)) {
-    return <div className="w-10 flex-shrink-0 text-center"><span className="text-[10px] font-semibold text-yellow-600">{status}</span></div>
-  }
-  return null
-}
 
-function ScoreOrTime({ fix }) {
-  const live = LIVE_STATUSES.has(fix.status_short)
-  const done = DONE_STATUSES.has(fix.status_short)
-  const hasScore = fix.home_goals !== null && fix.away_goals !== null
-  if (!hasScore) {
-    const time = new Date(fix.date).toLocaleTimeString('en-GB', { hour: '2-digit', minute: '2-digit' })
-    return <span className="text-gray-500 text-xs font-mono w-14 text-center flex-shrink-0">{time}</span>
-  }
-  return (
-    <span className={`font-mono font-bold text-sm w-14 text-center flex-shrink-0 ${
-      live ? 'text-green-400' : done ? 'text-white' : 'text-gray-400'
-    }`}>{fix.home_goals} – {fix.away_goals}</span>
-  )
-}
+  // Key events: goals + cards only, sorted by minute
+  const keyEvents = (data.events || [])
+    .filter(e => e.type === 'Goal' || e.type === 'Card')
+    .sort((a, b) => (a.elapsed * 100 + (a.extra || 0)) - (b.elapsed * 100 + (b.extra || 0)))
 
-// ── Fixture stats drawer ───────────────────────────────────────────────────────
-function StatsDrawer({ fixtureId, fix, onClose }) {
-  const [data, setData]   = useState(null)
-  const [loading, setLoading] = useState(true)
+  const homeStats = data.statistics?.find(t => t.team === fix.home_team) || data.statistics?.[0]
+  const awayStats = data.statistics?.find(t => t.team === fix.away_team) || data.statistics?.[1]
 
-  useEffect(() => {
-    if (!fixtureId) return
-    setLoading(true)
-    getFixtureStats(fixtureId)
-      .then(r => setData(r.data))
-      .catch(() => setData(null))
-      .finally(() => setLoading(false))
-  }, [fixtureId])
-
-  const goals = (data?.events || []).filter(e => e.type === 'Goal')
-  const cards = (data?.events || []).filter(e => e.type === 'Card')
-  const subs  = (data?.events || []).filter(e => e.type === 'subst')
-
-  const [homeStats, awayStats] = (() => {
-    if (!data?.statistics?.length) return [null, null]
-    const h = data.statistics.find(t => t.team === fix.home_team) || data.statistics[0]
-    const a = data.statistics.find(t => t.team === fix.away_team) || data.statistics[1]
-    return [h, a]
-  })()
-
-  const getStatValue = (teamStats, type) =>
-    teamStats?.stats.find(s => s.type === type)?.value ?? null
+  const getVal = (teamStats, type) => teamStats?.stats.find(s => s.type === type)?.value ?? null
 
   return (
-    <div className="fixed inset-0 z-50 flex flex-col" style={{ background: 'rgba(0,0,0,0.85)' }}
-      onClick={onClose}>
-      <div className="flex-1" />
-      <div
-        className="rounded-t-3xl overflow-hidden flex flex-col max-h-[85dvh]"
-        style={{ background: 'var(--bg-surface)' }}
-        onClick={e => e.stopPropagation()}
-      >
-        {/* Handle */}
-        <div className="flex justify-center pt-3 pb-1 flex-shrink-0">
-          <div className="w-10 h-1 rounded-full bg-white/20" />
+    <div className="space-y-3">
+      {/* Event timeline */}
+      {keyEvents.length > 0 && (
+        <div className="space-y-0.5">
+          {keyEvents.map((ev, i) => {
+            const isHome = ev.team === fix.home_team
+            const isRed  = ev.type === 'Card' && ev.detail?.toLowerCase().includes('red')
+            const icon   = ev.type === 'Goal' ? '⚽' : isRed ? '🟥' : '🟨'
+            return (
+              <div key={i} className={`flex items-center gap-1.5 text-xs ${isHome ? '' : 'flex-row-reverse'}`}>
+                {/* minute */}
+                <span className="text-gray-600 font-mono text-[10px] w-8 flex-shrink-0 text-center">
+                  {elapsed(ev)}
+                </span>
+                <span className="text-[11px]">{icon}</span>
+                <div className={`flex-1 min-w-0 ${isHome ? 'text-left' : 'text-right'}`}>
+                  <span className={`font-medium ${
+                    ev.type === 'Goal' ? 'text-white' :
+                    isRed ? 'text-red-400' : 'text-yellow-300'
+                  }`}>{ev.player}</span>
+                  {ev.type === 'Goal' && ev.assist && (
+                    <span className="text-gray-600 ml-1">({ev.assist})</span>
+                  )}
+                </div>
+              </div>
+            )
+          })}
         </div>
+      )}
 
-        {/* Header */}
-        <div className="px-5 pt-2 pb-4 flex-shrink-0 border-b border-white/8">
-          <div className="flex items-center justify-between mb-3">
-            <button onClick={onClose} className="text-gray-500 text-sm hover:text-white">✕</button>
-            <span className="text-gray-500 text-xs">{fix.competition_name || ''} · {fix.round || ''}</span>
-            <div />
-          </div>
-          <div className="flex items-center justify-between gap-4">
-            <div className="flex items-center gap-2 flex-1">
-              {fix.home_logo && <img src={fix.home_logo} alt="" className="w-8 h-8 object-contain" />}
-              <span className="font-semibold text-white text-sm leading-tight">{fix.home_team}</span>
-            </div>
-            <div className="text-center flex-shrink-0">
-              {fix.home_goals !== null
-                ? <span className="font-black text-2xl text-white">{fix.home_goals} – {fix.away_goals}</span>
-                : <span className="text-gray-500 text-sm">{new Date(fix.date).toLocaleTimeString('en-GB', { hour: '2-digit', minute: '2-digit' })}</span>
-              }
-              <div className={`text-[10px] font-semibold mt-0.5 ${LIVE_STATUSES.has(fix.status_short) ? 'text-green-400' : 'text-gray-600'}`}>
-                {fix.status_long || fix.status_short}
-                {fix.status_elapsed ? ` ${fix.status_elapsed}'` : ''}
-              </div>
-            </div>
-            <div className="flex items-center gap-2 flex-1 justify-end">
-              <span className="font-semibold text-white text-sm leading-tight text-right">{fix.away_team}</span>
-              {fix.away_logo && <img src={fix.away_logo} alt="" className="w-8 h-8 object-contain" />}
-            </div>
-          </div>
-        </div>
+      {/* Divider if we have both events and stats */}
+      {keyEvents.length > 0 && hasStats && (
+        <div className="h-px bg-white/6" />
+      )}
 
-        {/* Content */}
-        <div className="overflow-y-auto flex-1 px-4 py-4 space-y-5">
-          {loading && (
-            <div className="flex items-center justify-center py-12 gap-2 text-gray-600 text-sm">
-              <div className="w-4 h-4 border border-gray-600 border-t-indigo-400 rounded-full animate-spin" />
-              Loading stats…
-            </div>
-          )}
-
-          {!loading && !data?.cached && (
-            <p className="text-center text-gray-600 text-sm py-8">
-              Stats not yet available — synced after the match is finished
-            </p>
-          )}
-
-          {/* Goals / Key events */}
-          {!loading && goals.length > 0 && (
-            <div>
-              <p className="text-gray-500 text-[10px] font-semibold tracking-widest uppercase mb-2">Goals</p>
-              <div className="space-y-1.5">
-                {goals.map((g, i) => {
-                  const isHome = g.team === fix.home_team
-                  return (
-                    <div key={i} className={`flex items-center gap-2 text-sm ${isHome ? '' : 'flex-row-reverse'}`}>
-                      <span className="text-[10px] font-mono text-gray-500 w-7 flex-shrink-0 text-center">
-                        {g.elapsed}{g.extra ? `+${g.extra}` : ''}'
-                      </span>
-                      <span className="text-sm">⚽</span>
-                      <div className={isHome ? 'text-left' : 'text-right'}>
-                        <span className="text-white text-sm font-medium">{g.player}</span>
-                        {g.assist && <span className="text-gray-500 text-xs ml-1">(assist: {g.assist})</span>}
-                      </div>
-                    </div>
-                  )
-                })}
-              </div>
-            </div>
-          )}
-
-          {/* Cards */}
-          {!loading && cards.length > 0 && (
-            <div>
-              <p className="text-gray-500 text-[10px] font-semibold tracking-widest uppercase mb-2">Cards</p>
-              <div className="space-y-1.5">
-                {cards.map((c, i) => {
-                  const isHome = c.team === fix.home_team
-                  const isRed  = c.detail?.toLowerCase().includes('red')
-                  return (
-                    <div key={i} className={`flex items-center gap-2 text-sm ${isHome ? '' : 'flex-row-reverse'}`}>
-                      <span className="text-[10px] font-mono text-gray-500 w-7 flex-shrink-0 text-center">
-                        {c.elapsed}{c.extra ? `+${c.extra}` : ''}'
-                      </span>
-                      <span>{isRed ? '🟥' : '🟨'}</span>
-                      <span className={`text-sm ${isHome ? 'text-left' : 'text-right'} ${isRed ? 'text-red-400' : 'text-yellow-300'}`}>{c.player}</span>
-                    </div>
-                  )
-                })}
-              </div>
-            </div>
-          )}
-
-          {/* Statistics bars */}
-          {!loading && homeStats && awayStats && (
-            <div>
-              <p className="text-gray-500 text-[10px] font-semibold tracking-widest uppercase mb-3">Statistics</p>
-              <div className="space-y-3">
-                {STAT_ORDER.map(type => {
-                  const hVal = getStatValue(homeStats, type)
-                  const aVal = getStatValue(awayStats, type)
-                  if (hVal === null && aVal === null) return null
-                  const hNum = parseFloat(String(hVal).replace('%', '')) || 0
-                  const aNum = parseFloat(String(aVal).replace('%', '')) || 0
-                  const total = hNum + aNum || 1
-                  const hPct = (hNum / total) * 100
-                  return (
-                    <div key={type}>
-                      <div className="flex items-center justify-between text-xs mb-1">
-                        <span className="text-white font-semibold">{hVal ?? 0}</span>
-                        <span className="text-gray-500 text-[10px]">{type}</span>
-                        <span className="text-white font-semibold">{aVal ?? 0}</span>
-                      </div>
-                      <div className="flex h-1.5 rounded-full overflow-hidden bg-white/8">
-                        <div className="bg-indigo-500 rounded-l-full transition-all" style={{ width: `${hPct}%` }} />
-                        <div className="bg-purple-500 rounded-r-full flex-1 transition-all" />
-                      </div>
-                    </div>
-                  )
-                })}
-              </div>
-            </div>
-          )}
-
-          {/* Substitutions */}
-          {!loading && subs.length > 0 && (
-            <div>
-              <p className="text-gray-500 text-[10px] font-semibold tracking-widest uppercase mb-2">Substitutions</p>
-              <div className="space-y-1">
-                {subs.map((s, i) => (
-                  <div key={i} className="flex items-center gap-2 text-xs text-gray-400">
-                    <span className="text-[10px] font-mono text-gray-600 w-7 text-center">{s.elapsed}'</span>
-                    <span>🔄</span>
-                    <span className="text-green-400">↑ {s.assist}</span>
-                    <span className="text-red-400">↓ {s.player}</span>
-                    <span className="text-gray-600 ml-auto">{s.team === fix.home_team ? fix.home_team : fix.away_team}</span>
+      {/* Key stats */}
+      {hasStats && (
+        <div className="space-y-1.5">
+          {KEY_STATS.map(type => {
+            const hVal = getVal(homeStats, type)
+            const aVal = getVal(awayStats, type)
+            if (hVal === null && aVal === null) return null
+            const hNum = parseFloat(String(hVal ?? 0).replace('%', '')) || 0
+            const aNum = parseFloat(String(aVal ?? 0).replace('%', '')) || 0
+            const total = hNum + aNum || 1
+            const hPct  = (hNum / total) * 100
+            return (
+              <div key={type}>
+                <div className="flex items-center gap-2">
+                  <span className="text-white text-[11px] font-semibold w-6 text-right flex-shrink-0">{hVal ?? 0}</span>
+                  <div className="flex-1 flex h-1 rounded-full overflow-hidden bg-white/8">
+                    <div className="bg-indigo-500 transition-all" style={{ width: `${hPct}%` }} />
+                    <div className="bg-purple-500 flex-1" />
                   </div>
-                ))}
+                  <span className="text-white text-[11px] font-semibold w-6 text-left flex-shrink-0">{aVal ?? 0}</span>
+                  <span className="text-gray-600 text-[10px] w-20 flex-shrink-0 text-center">{type}</span>
+                </div>
               </div>
-            </div>
-          )}
+            )
+          })}
         </div>
-      </div>
+      )}
     </div>
   )
 }
 
-function FixtureRow({ fix, onTap }) {
-  const live = LIVE_STATUSES.has(fix.status_short)
-  const done = DONE_STATUSES.has(fix.status_short)
+// ── Fixture row with inline expand ────────────────────────────────────────────
+function FixtureRow({ fix }) {
+  const live    = LIVE_STATUSES.has(fix.status_short)
+  const done    = DONE_STATUSES.has(fix.status_short)
   const hasScore = fix.home_goals !== null && fix.away_goals !== null
+  const canExpand = live || done
+
+  const [expanded, setExpanded] = useState(false)
+  const [statsData, setStatsData] = useState(null)
+  const [statsLoading, setStatsLoading] = useState(false)
+  const fetched = useRef(false)
+
+  const toggle = () => {
+    if (!canExpand) return
+    setExpanded(e => !e)
+    if (!fetched.current) {
+      fetched.current = true
+      setStatsLoading(true)
+      getFixtureStats(fix.id)
+        .then(r => setStatsData(r.data))
+        .catch(() => setStatsData(null))
+        .finally(() => setStatsLoading(false))
+    }
+  }
+
+  const homeWin = done && hasScore && fix.home_goals > fix.away_goals
+  const awayWin = done && hasScore && fix.away_goals > fix.home_goals
 
   return (
-    <button
-      onClick={() => onTap(fix)}
-      className={`w-full flex items-center gap-2 px-3 py-2.5 rounded-xl transition-colors text-left ${
-        live
-          ? 'bg-green-950/20 border border-green-500/15 hover:bg-green-950/30'
-          : 'bg-white/2 border border-transparent hover:bg-white/5'
-      }`}
-    >
-      <StatusBadge status={fix.status_short} elapsed={fix.status_elapsed} />
-
-      <div className="flex-1 min-w-0 space-y-1.5">
-        <div className="flex items-center gap-1.5">
-          {fix.home_logo && <img src={fix.home_logo} alt="" className="w-4 h-4 object-contain flex-shrink-0" onError={e => { e.target.style.display = 'none' }} />}
-          <span className={`text-sm leading-tight truncate ${
-            done && hasScore && fix.home_goals > fix.away_goals ? 'text-white font-semibold' :
-            done && hasScore && fix.home_goals < fix.away_goals ? 'text-gray-500' :
-            live ? 'text-white' : 'text-gray-300'
-          }`}>{fix.home_team}</span>
+    <div className={`rounded-xl overflow-hidden transition-colors ${
+      live ? 'bg-green-950/20 border border-green-500/15' :
+      expanded ? 'bg-white/4 border border-white/10' :
+      'bg-white/2 border border-transparent'
+    }`}>
+      {/* Main row */}
+      <button
+        onClick={toggle}
+        className={`w-full px-3 py-2.5 flex items-center gap-3 text-left ${canExpand ? 'cursor-pointer' : 'cursor-default'}`}
+      >
+        {/* Status */}
+        <div className="w-8 flex-shrink-0 flex flex-col items-center gap-0.5">
+          {live ? (
+            <>
+              <span className="w-1.5 h-1.5 rounded-full bg-green-400 animate-pulse" />
+              <span className="text-[10px] font-bold text-green-400 leading-none">
+                {fix.status_short === 'HT' ? 'HT' : fix.status_short === 'BT' ? 'BT' : fix.status_elapsed ? `${fix.status_elapsed}'` : fix.status_short}
+              </span>
+            </>
+          ) : done ? (
+            <span className="text-[10px] font-semibold text-gray-500">{fix.status_short}</span>
+          ) : CANCEL_STATUSES.has(fix.status_short) ? (
+            <span className="text-[10px] font-semibold text-yellow-700">{fix.status_short}</span>
+          ) : null}
         </div>
-        <div className="flex items-center gap-1.5">
-          {fix.away_logo && <img src={fix.away_logo} alt="" className="w-4 h-4 object-contain flex-shrink-0" onError={e => { e.target.style.display = 'none' }} />}
-          <span className={`text-sm leading-tight truncate ${
-            done && hasScore && fix.away_goals > fix.home_goals ? 'text-white font-semibold' :
-            done && hasScore && fix.away_goals < fix.home_goals ? 'text-gray-500' :
-            live ? 'text-white' : 'text-gray-300'
-          }`}>{fix.away_team}</span>
-        </div>
-      </div>
 
-      <div className="flex flex-col items-center gap-1.5 flex-shrink-0">
-        <ScoreOrTime fix={fix} />
-        {(done || live) && <span className="text-gray-700 text-[9px]">tap for stats</span>}
-      </div>
-    </button>
+        {/* Teams */}
+        <div className="flex-1 min-w-0 space-y-1.5">
+          <div className="flex items-center gap-1.5">
+            {fix.home_logo && <img src={fix.home_logo} alt="" className="w-4 h-4 object-contain flex-shrink-0" onError={e => { e.target.style.display = 'none' }} />}
+            <span className={`text-sm leading-tight truncate ${
+              homeWin ? 'text-white font-semibold' :
+              awayWin ? 'text-gray-500' :
+              live ? 'text-white' : 'text-gray-300'
+            }`}>{fix.home_team}</span>
+          </div>
+          <div className="flex items-center gap-1.5">
+            {fix.away_logo && <img src={fix.away_logo} alt="" className="w-4 h-4 object-contain flex-shrink-0" onError={e => { e.target.style.display = 'none' }} />}
+            <span className={`text-sm leading-tight truncate ${
+              awayWin ? 'text-white font-semibold' :
+              homeWin ? 'text-gray-500' :
+              live ? 'text-white' : 'text-gray-300'
+            }`}>{fix.away_team}</span>
+          </div>
+        </div>
+
+        {/* Score / time + chevron */}
+        <div className="flex items-center gap-2 flex-shrink-0">
+          {hasScore ? (
+            <span className={`font-mono font-bold text-sm tabular-nums ${live ? 'text-green-400' : done ? 'text-white' : 'text-gray-400'}`}>
+              {fix.home_goals} – {fix.away_goals}
+            </span>
+          ) : (
+            <span className="text-gray-500 text-xs font-mono">
+              {new Date(fix.date).toLocaleTimeString('en-GB', { hour: '2-digit', minute: '2-digit' })}
+            </span>
+          )}
+          {canExpand && (
+            <span className={`text-gray-600 text-[10px] transition-transform ${expanded ? 'rotate-180' : ''}`}>▼</span>
+          )}
+        </div>
+      </button>
+
+      {/* Expanded stats */}
+      {expanded && (
+        <div className="px-3 pb-3 pt-0.5 border-t border-white/5">
+          <InlineStats fix={fix} data={statsData} loading={statsLoading} />
+        </div>
+      )}
+    </div>
   )
 }
 
-function CompetitionSection({ name, logo, fixtures, onTap }) {
+function CompetitionSection({ name, logo, fixtures }) {
   const liveCount = fixtures.filter(f => LIVE_STATUSES.has(f.status_short)).length
   return (
     <div className="space-y-1">
@@ -305,7 +247,7 @@ function CompetitionSection({ name, logo, fixtures, onTap }) {
         )}
       </div>
       <div className="space-y-1">
-        {fixtures.map(fix => <FixtureRow key={fix.id} fix={fix} onTap={onTap} />)}
+        {fixtures.map(fix => <FixtureRow key={fix.id} fix={fix} />)}
       </div>
     </div>
   )
@@ -322,7 +264,6 @@ export default function ScoresPage() {
   const [fixtures, setFixtures]         = useState([])
   const [loading, setLoading]           = useState(true)
   const [err, setErr]                   = useState('')
-  const [selected, setSelected]         = useState(null)
   const intervalRef = useRef(null)
 
   const date = offsetDate(activeOffset)
@@ -357,7 +298,7 @@ export default function ScoresPage() {
   }
 
   const totalLive = fixtures.filter(f => LIVE_STATUSES.has(f.status_short)).length
-  const fmtDate = (d) => new Date(d + 'T12:00:00Z').toLocaleDateString('en-GB', {
+  const fmtDate = d => new Date(d + 'T12:00:00Z').toLocaleDateString('en-GB', {
     weekday: 'short', day: 'numeric', month: 'short',
   })
 
@@ -407,29 +348,21 @@ export default function ScoresPage() {
           <div className="text-center py-20">
             <p className="text-gray-500 text-sm">No fixtures for {fmtDate(date)}</p>
             <p className="text-gray-700 text-xs mt-2">
-              {activeOffset === 0 ? 'No matches scheduled today in your imported competitions'
-                : activeOffset < 0 ? 'No matches played on this date'
+              {activeOffset === 0 ? 'No matches scheduled today'
+                : activeOffset < 0 ? 'No matches on this date'
                 : 'No matches scheduled for tomorrow yet'}
             </p>
           </div>
         )}
         {!loading && groups.map(g => (
-          <CompetitionSection key={g.name} name={g.name} logo={g.logo} fixtures={g.fixtures} onTap={setSelected} />
+          <CompetitionSection key={g.name} name={g.name} logo={g.logo} fixtures={g.fixtures} />
         ))}
         {activeOffset === 0 && !loading && fixtures.length > 0 && (
-          <p className="text-center text-gray-700 text-[10px] pb-2">Live scores refresh every 60s automatically</p>
+          <p className="text-center text-gray-700 text-[10px] pb-2">Scores refresh every 60s</p>
         )}
       </div>
 
       <BottomNav />
-
-      {selected && (
-        <StatsDrawer
-          fixtureId={selected.id}
-          fix={selected}
-          onClose={() => setSelected(null)}
-        />
-      )}
     </div>
   )
 }
