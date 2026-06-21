@@ -22,6 +22,18 @@ const TABS = [
     ),
   },
   {
+    to: '/scores',
+    label: 'Scores',
+    icon: (active) => (
+      <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={active ? 2.2 : 1.8} strokeLinecap="round" strokeLinejoin="round">
+        <circle cx="12" cy="12" r="9"/>
+        <path d="M12 3c0 0-3.5 3-3.5 9s3.5 9 3.5 9"/>
+        <path d="M12 3c0 0 3.5 3 3.5 9s-3.5 9-3.5 9"/>
+        <path d="M3.5 9h17M3.5 15h17"/>
+      </svg>
+    ),
+  },
+  {
     to: '/divisions',
     label: 'Divisions',
     icon: (active) => (

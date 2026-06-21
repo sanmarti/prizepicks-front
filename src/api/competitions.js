@@ -5,3 +5,4 @@ const publicClient = axios.create({
 })
 
 export const getCompetitions = () => publicClient.get('/competitions')
+export const getScores = (date) => publicClient.get('/scores', { params: date ? { date } : {} })
