@@ -1,6 +1,7 @@
 import { useEffect, useState, useCallback } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { getGloryDivisions, getGloryLeaderboard, getGloryStatus } from '../api/glory'
+import { getProfile } from '../api/users'
 import BottomNav from '../components/layout/BottomNav'
 
 // Exact same visuals as admin panel
@@ -169,10 +170,20 @@ function DivisionCard({ div, myDivisionId, myUserId, sprintId }) {
       className="rounded-3xl overflow-hidden border transition-all duration-300"
       style={{
         background: '#0d1117',
-        borderColor: isMyDiv ? v.accentBorder : 'rgba(255,255,255,0.07)',
-        boxShadow: isMyDiv ? `0 0 0 1px ${v.accent}30, 0 8px 40px ${v.accent}10` : undefined,
+        borderColor: isMyDiv ? v.accent + 'bb' : 'rgba(255,255,255,0.07)',
+        boxShadow: isMyDiv ? `0 0 0 1px ${v.accent}40, 0 0 40px ${v.accent}20, 0 8px 40px rgba(0,0,0,0.5)` : undefined,
       }}
     >
+      {/* ── YOU ARE HERE banner ── */}
+      {isMyDiv && (
+        <div className="flex items-center justify-center gap-2 py-2.5 text-xs font-bold tracking-widest"
+          style={{ background: `linear-gradient(135deg, ${v.accent}25, ${v.accent}15)`, color: v.accent, borderBottom: `1px solid ${v.accent}30` }}>
+          <span className="w-1.5 h-1.5 rounded-full animate-pulse" style={{ background: v.accent }} />
+          YOUR CURRENT DIVISION
+          <span className="w-1.5 h-1.5 rounded-full animate-pulse" style={{ background: v.accent }} />
+        </div>
+      )}
+
       {/* ── Cover image ── */}
       <div className="relative h-44 overflow-hidden">
         {!imgError ? (
@@ -212,14 +223,6 @@ function DivisionCard({ div, myDivisionId, myUserId, sprintId }) {
             </span>
           )}
         </div>
-        {isMyDiv && (
-          <div className="absolute top-3 right-3">
-            <span className="text-[10px] px-2.5 py-1 rounded-full font-bold backdrop-blur-sm border"
-              style={{ background: v.accentBg, borderColor: v.accentBorder, color: v.accent }}>
-              YOUR DIVISION
-            </span>
-          </div>
-        )}
 
         {/* Identity */}
         <div className="absolute bottom-0 left-0 right-0 px-4 pb-4 flex items-end gap-3">
@@ -364,19 +367,89 @@ function DivisionCard({ div, myDivisionId, myUserId, sprintId }) {
   )
 }
 
+// ── Profile hero ──────────────────────────────────────────────────────────────
+function ProfileHero({ profile, status }) {
+  const div    = status?.division
+  const sprint = status?.sprint
+  const prog   = status?.sprint_progress
+  const v      = div ? getV({ display_order: div.display_order }) : DIVISION_VISUALS[1]
+  const name   = profile?.display_name || profile?.email?.split('@')[0] || 'Player'
+  const lp     = prog?.total_league_points ?? 0
+  const correct = prog?.total_correct_picks ?? 0
+  const perfect = prog?.perfect_weeks ?? 0
+
+  return (
+    <div className="rounded-3xl overflow-hidden border" style={{ borderColor: v.accentBorder, background: '#0d1117' }}>
+      {/* Accent strip */}
+      <div className="h-1 w-full" style={{ background: `linear-gradient(to right, ${v.accent}00, ${v.accent}, ${v.accent}00)` }} />
+
+      <div className="p-4">
+        {/* Top row: avatar + name + division */}
+        <div className="flex items-center gap-4">
+          {/* Avatar */}
+          <div className="relative flex-shrink-0">
+            {profile?.avatar_url
+              ? <img src={profile.avatar_url} alt={name}
+                  className="w-16 h-16 rounded-2xl object-cover border-2"
+                  style={{ borderColor: v.accent + '60' }} />
+              : <div className="w-16 h-16 rounded-2xl flex items-center justify-center text-2xl font-black border-2"
+                  style={{ background: v.accentBg, borderColor: v.accentBorder, color: v.accent }}>
+                  {name[0].toUpperCase()}
+                </div>
+            }
+            {/* Division badge overlaid */}
+            <div className="absolute -bottom-1.5 -right-1.5 w-7 h-7 rounded-xl flex items-center justify-center text-sm border-2 border-[#0d1117]"
+              style={{ background: v.accentBg }}>
+              {div?.icon || '🎓'}
+            </div>
+          </div>
+
+          {/* Name + division */}
+          <div className="flex-1 min-w-0">
+            <p className="text-white font-bold text-lg leading-tight truncate">{name}</p>
+            <p className="font-semibold text-sm mt-0.5" style={{ color: v.accent }}>
+              {div?.division_name || 'Academy'}
+            </p>
+            {sprint && (
+              <p className="text-gray-500 text-xs mt-0.5 truncate">{sprint.name}</p>
+            )}
+          </div>
+        </div>
+
+        {/* Stats row */}
+        <div className="grid grid-cols-3 gap-2 mt-4">
+          <div className="rounded-2xl p-3 text-center" style={{ background: v.accentBg, border: `1px solid ${v.accentBorder}` }}>
+            <p className="font-black text-2xl" style={{ color: v.accent }}>{lp}</p>
+            <p className="text-gray-500 text-[10px] mt-0.5">League Points</p>
+          </div>
+          <div className="rounded-2xl p-3 text-center bg-white/4 border border-white/8">
+            <p className="font-black text-2xl text-green-400">{correct}</p>
+            <p className="text-gray-500 text-[10px] mt-0.5">Correct picks</p>
+          </div>
+          <div className="rounded-2xl p-3 text-center bg-white/4 border border-white/8">
+            <p className="font-black text-2xl text-yellow-400">{perfect}</p>
+            <p className="text-gray-500 text-[10px] mt-0.5">Perfect weeks</p>
+          </div>
+        </div>
+      </div>
+    </div>
+  )
+}
+
 // ── Main page ──────────────────────────────────────────────────────────────────
 export default function DivisionsPage() {
   const [divisions, setDivisions]   = useState([])
   const [myStatus,  setMyStatus]    = useState(null)
+  const [myProfile, setMyProfile]   = useState(null)
   const [loading,   setLoading]     = useState(true)
 
   useEffect(() => {
-    Promise.all([getGloryDivisions(), getGloryStatus()])
-      .then(([divsRes, statusRes]) => {
-        // Sort ascending by display_order: Academy (1) at top, Champions (6) at bottom
+    Promise.all([getGloryDivisions(), getGloryStatus(), getProfile()])
+      .then(([divsRes, statusRes, profileRes]) => {
         const sorted = [...divsRes.data].sort((a, b) => a.display_order - b.display_order)
         setDivisions(sorted)
         setMyStatus(statusRes.data)
+        setMyProfile(profileRes.data?.user ?? null)
       })
       .catch(() => {})
       .finally(() => setLoading(false))
@@ -388,24 +461,22 @@ export default function DivisionsPage() {
     </div>
   )
 
-  const myUserId    = myStatus?.user?.id
-  const myDivId     = myStatus?.division?.division_id
-  const sprintId    = myStatus?.sprint?.id
+  const myUserId = myStatus?.user?.id
+  const myDivId  = myStatus?.division?.division_id
+  const sprintId = myStatus?.sprint?.id
 
   return (
     <div className="min-h-screen bg-[#0a0d12] text-white pb-24">
       <div className="max-w-md mx-auto px-4 pt-5 space-y-4">
 
-        <div>
-          <h1 className="text-white text-xl font-bold">Divisions</h1>
-          <p className="text-gray-500 text-sm mt-0.5">
-            From Academy to Legend — every division ranked live
-          </p>
-        </div>
+        <h1 className="text-white text-xl font-bold">Divisions</h1>
+
+        {/* Profile hero — avatar, name, division, sprint LP */}
+        <ProfileHero profile={myProfile} status={myStatus} />
 
         {/* Journey label */}
-        <div className="flex items-center gap-2 text-xs text-gray-600">
-          <span>Entry</span>
+        <div className="flex items-center gap-2 text-xs text-gray-600 pt-1">
+          <span>Entry level</span>
           <div className="flex-1 h-px bg-gradient-to-r from-gray-700 via-indigo-700 to-purple-700" />
           <span>Elite</span>
         </div>
