@@ -21,6 +21,7 @@ function WeekNav({ gwCount, byWeek, selectedWeek, currentWeek, onSelect }) {
     <div className="flex gap-1.5">
       {Array.from({ length: gwCount }, (_, i) => i + 1).map(w => {
         const gw         = byWeek[w]
+        const isDraft    = !gw || gw.status === 'DRAFT'
         const isSelected = w === selectedWeek
         const isCurrent  = w === currentWeek
         const done       = gw?.status === 'FINISHED'
@@ -30,25 +31,25 @@ function WeekNav({ gwCount, byWeek, selectedWeek, currentWeek, onSelect }) {
         return (
           <button
             key={w}
-            onClick={() => gw && onSelect(w)}
-            disabled={!gw}
+            onClick={() => !isDraft && onSelect(w)}
+            disabled={isDraft}
             className={`flex-1 flex flex-col items-center gap-0.5 py-2 rounded-xl text-[11px] font-semibold border transition-all ${
               isSelected
                 ? 'bg-indigo-600/25 border-indigo-500/50 text-indigo-300'
                 : isCurrent
                   ? 'bg-white/8 border-white/20 text-white'
-                  : gw
+                  : !isDraft
                     ? 'bg-white/4 border-white/8 text-gray-500 hover:text-gray-300 hover:bg-white/8'
                     : 'bg-white/2 border-transparent text-gray-800 cursor-not-allowed'
             }`}
           >
             <span>W{w}</span>
-            {isCurrent && (
+            {isCurrent && !isDraft && (
               <span className={`text-[8px] font-bold tracking-widest ${isSelected ? 'text-indigo-400' : 'text-indigo-500'}`}>NOW</span>
             )}
-            {!isCurrent && (
+            {(!isCurrent || isDraft) && (
               <span className={`w-1.5 h-1.5 rounded-full ${
-                done ? 'bg-purple-400' : locked ? 'bg-yellow-400' : open ? 'bg-green-400' : gw ? 'bg-gray-700' : 'bg-transparent'
+                done ? 'bg-purple-400' : locked ? 'bg-yellow-400' : open ? 'bg-green-400' : 'bg-transparent'
               }`} />
             )}
           </button>
@@ -261,7 +262,7 @@ export default function MatchweekPage() {
     if (isFirstRender.current) { isFirstRender.current = false; return }
     if (!status || selectedWeek === null) return
     const gw = (status.sprint?.gameweeks || []).find(g => g.sprint_week === selectedWeek)
-    if (gw?.id) loadGw(gw.id)
+    if (gw?.id && gw.status !== 'DRAFT') loadGw(gw.id)
     else { setGwData(null) }
   }, [selectedWeek]) // eslint-disable-line react-hooks/exhaustive-deps
 
@@ -372,14 +373,17 @@ export default function MatchweekPage() {
             <div className="flex items-center justify-between gap-3">
               <button
                 onClick={() => setSelectedWeek(w => Math.max(1, w - 1))}
-                disabled={selectedWeek <= 1}
+                disabled={selectedWeek <= 1 || byWeek[selectedWeek - 1]?.status === 'DRAFT' || !byWeek[selectedWeek - 1]}
                 className="w-9 h-9 rounded-xl bg-white/5 border border-white/8 flex items-center justify-center text-gray-400 disabled:opacity-25 hover:bg-white/10 transition-colors flex-shrink-0"
               >
                 ←
               </button>
               <div className="flex-1 text-center">
                 <p className="text-white font-bold text-base">Gameweek {selectedWeek}</p>
-                {selectedWeek === currentWeek && (
+                {selectedWeek === currentWeek && !isLocked && (
+                  <p className="text-green-400 text-[10px] font-semibold tracking-widest">PICKS OPEN</p>
+                )}
+                {selectedWeek === currentWeek && isLocked && (
                   <p className="text-indigo-400 text-[10px] font-semibold tracking-widest">CURRENT WEEK</p>
                 )}
                 {selectedWeek !== currentWeek && gw && (
@@ -388,7 +392,7 @@ export default function MatchweekPage() {
               </div>
               <button
                 onClick={() => setSelectedWeek(w => Math.min(gwCount, w + 1))}
-                disabled={selectedWeek >= gwCount || !byWeek[selectedWeek + 1]}
+                disabled={selectedWeek >= gwCount || !byWeek[selectedWeek + 1] || byWeek[selectedWeek + 1]?.status === 'DRAFT'}
                 className="w-9 h-9 rounded-xl bg-white/5 border border-white/8 flex items-center justify-center text-gray-400 disabled:opacity-25 hover:bg-white/10 transition-colors flex-shrink-0"
               >
                 →
@@ -403,8 +407,8 @@ export default function MatchweekPage() {
               </div>
             )}
 
-            {/* Week not yet created */}
-            {!gwLoading && !gw && byWeek[selectedWeek] === undefined && (
+            {/* Week not yet set up (no gw, or gw is DRAFT) */}
+            {!gwLoading && !gw && (
               <div className="bg-[#0d1117] border border-white/8 rounded-2xl p-8 text-center">
                 <p className="text-gray-500 text-sm font-medium">Gameweek {selectedWeek} not yet set up</p>
                 <p className="text-gray-700 text-xs mt-1">Events will appear here once the admin publishes this week</p>
