@@ -13,3 +13,4 @@ export const getMyRelevantSprints  = ()           => client.get('/glory/sprints/
 export const getCommunityPicks     = (id)         => client.get(`/glory/gameweek/${id}/community`)
 export const getPublicProfile      = (userId)     => client.get(`/glory/users/${userId}`)
 export const getFixtureStats       = (fixtureId)  => client.get(`/glory/fixtures/${fixtureId}/stats`)
+export const getSprintDetail       = (sprintId)   => client.get(`/glory/sprints/${sprintId}`)
