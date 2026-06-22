@@ -691,12 +691,15 @@ export default function MatchweekPage() {
     loadStatus().then(st => {
       if (!st) { setLoading(false); return }
       const gws = st.sprint?.gameweeks || []
-      // Prefer: current_gameweek from backend; fallback: scan gameweeks for best active week
+      // Prefer backend current_gameweek; fallback: active PUBLISHED (future lock), LOCKED, last FINISHED
       let targetGw = st.current_gameweek
       if (!targetGw || !targetGw.id) {
-        targetGw = gws.find(g => g.status === 'PUBLISHED')
+        const now = new Date()
+        const pubRows = gws.filter(g => g.status === 'PUBLISHED')
+        targetGw = pubRows.find(g => new Date(g.lock_time) > now)
+          ?? pubRows[pubRows.length - 1]
           ?? gws.find(g => g.status === 'LOCKED')
-          ?? gws.reverse().find(g => g.status === 'FINISHED')
+          ?? [...gws].reverse().find(g => g.status === 'FINISHED')
           ?? gws[0]
           ?? null
       }
