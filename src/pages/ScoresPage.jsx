@@ -280,7 +280,8 @@ export default function ScoresPage() {
   useEffect(() => {
     load(true)
     if (intervalRef.current) clearInterval(intervalRef.current)
-    if (activeOffset === 0) {
+    // Poll every 60s for today and yesterday (backend auto-refreshes from API-Football every 5 min)
+    if (activeOffset === 0 || activeOffset === -1) {
       intervalRef.current = setInterval(() => load(false), 60000)
     }
     return () => clearInterval(intervalRef.current)
