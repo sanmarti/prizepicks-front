@@ -7,8 +7,8 @@ import MatchweekPage          from './pages/MatchweekPage'
 import MySprintsPage          from './pages/MySprintsPage'
 import DivisionsPage          from './pages/DivisionsPage'
 import ProfilePage            from './pages/ProfilePage'
-import ScoresPage             from './pages/ScoresPage'
 import UserPublicProfilePage  from './pages/UserPublicProfilePage'
+import EnergyStorePage        from './pages/EnergyStorePage'
 
 function RequireAuth({ children }) {
   const token = useAuthStore((s) => s.token)
@@ -22,13 +22,12 @@ export default function App() {
       <Route path="/login"    element={<LoginPage />} />
       <Route path="/register" element={<RegisterPage />} />
 
-      {/* Main 5-tab navigation */}
-      <Route path="/"           element={<RequireAuth><MatchweekPage /></RequireAuth>} />
-      <Route path="/sprints"    element={<RequireAuth><MySprintsPage /></RequireAuth>} />
-      <Route path="/scores"     element={<RequireAuth><ScoresPage /></RequireAuth>} />
-      <Route path="/divisions"  element={<RequireAuth><DivisionsPage /></RequireAuth>} />
-      <Route path="/profile"    element={<RequireAuth><ProfilePage /></RequireAuth>} />
-      <Route path="/users/:id"  element={<RequireAuth><UserPublicProfilePage /></RequireAuth>} />
+      <Route path="/"          element={<RequireAuth><MatchweekPage /></RequireAuth>} />
+      <Route path="/sprints"   element={<RequireAuth><MySprintsPage /></RequireAuth>} />
+      <Route path="/divisions" element={<RequireAuth><DivisionsPage /></RequireAuth>} />
+      <Route path="/store"     element={<RequireAuth><EnergyStorePage /></RequireAuth>} />
+      <Route path="/profile"   element={<RequireAuth><ProfilePage /></RequireAuth>} />
+      <Route path="/users/:id" element={<RequireAuth><UserPublicProfilePage /></RequireAuth>} />
 
       <Route path="*" element={<Navigate to="/" replace />} />
     </Routes>

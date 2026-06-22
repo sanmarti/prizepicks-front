@@ -13,4 +13,8 @@ export const getMyRelevantSprints  = ()           => client.get('/glory/sprints/
 export const getCommunityPicks     = (id)         => client.get(`/glory/gameweek/${id}/community`)
 export const getPublicProfile      = (userId)     => client.get(`/glory/users/${userId}`)
 export const getFixtureStats       = (fixtureId)  => client.get(`/glory/fixtures/${fixtureId}/stats`)
+export const getFixtureForm        = (fixtureId)  => client.get(`/glory/fixtures/${fixtureId}/form`)
 export const getSprintDetail       = (sprintId)   => client.get(`/glory/sprints/${sprintId}`)
+export const getGameweekLive       = (id)         => client.get(`/glory/gameweek/${id}/live`)
+export const getEnergyPacks        = ()           => client.get('/glory/energy-packs')
+export const purchaseEnergyPack    = (id)         => client.post(`/glory/energy-packs/${id}/purchase`)
