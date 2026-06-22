@@ -13,6 +13,7 @@ const PACK_THEMES = [
     border: 'border-cyan-500/30',
     accent: 'text-cyan-300',
     badge: 'bg-cyan-900/60 border-cyan-500/30 text-cyan-300',
+    btn: 'bg-cyan-600 hover:bg-cyan-500 shadow-[0_4px_14px_-4px_rgba(6,182,212,0.7)]',
     visual: (
       <div className="relative w-full h-full flex items-center justify-center select-none">
         {/* Field lines */}
@@ -37,6 +38,7 @@ const PACK_THEMES = [
     border: 'border-purple-500/30',
     accent: 'text-purple-300',
     badge: 'bg-purple-900/60 border-purple-500/30 text-purple-300',
+    btn: 'bg-violet-600 hover:bg-violet-500 shadow-[0_4px_14px_-4px_rgba(139,92,246,0.7)]',
     visual: (
       <div className="relative w-full h-full flex items-center justify-center select-none">
         <div className="absolute inset-0 opacity-10">
@@ -60,6 +62,7 @@ const PACK_THEMES = [
     border: 'border-orange-500/30',
     accent: 'text-orange-300',
     badge: 'bg-orange-900/60 border-orange-500/30 text-orange-300',
+    btn: 'bg-orange-600 hover:bg-orange-500 shadow-[0_4px_14px_-4px_rgba(234,88,12,0.7)]',
     visual: (
       <div className="relative w-full h-full flex items-center justify-center select-none">
         <div className="absolute inset-0 opacity-10">
@@ -83,6 +86,7 @@ const PACK_THEMES = [
     border: 'border-emerald-500/30',
     accent: 'text-emerald-300',
     badge: 'bg-emerald-900/60 border-emerald-500/30 text-emerald-300',
+    btn: 'bg-emerald-600 hover:bg-emerald-500 shadow-[0_4px_14px_-4px_rgba(16,185,129,0.7)]',
     visual: (
       <div className="relative w-full h-full flex items-center justify-center select-none">
         <div className="absolute inset-0 opacity-10">
@@ -109,62 +113,64 @@ function PackCard({ pack, idx, onPurchase, purchasing }) {
   const isBuying = purchasing === pack.id
 
   return (
-    <div className={`relative rounded-2xl border overflow-hidden transition-all hover:scale-[1.01] ${theme.border} ${theme.glow} bg-gradient-to-br ${theme.bg}`}>
+    <div className={`relative rounded-2xl border overflow-hidden transition-all hover:scale-[1.005] ${theme.border} ${theme.glow} bg-gradient-to-br ${theme.bg}`}>
       {pack.discount_pct > 0 && (
         <div className="absolute top-3 right-3 z-10 bg-red-600 text-white text-[10px] font-black px-2 py-0.5 rounded-full tracking-wide">
           -{pack.discount_pct}% OFF
         </div>
       )}
 
-      {/* Visual hero */}
-      <div className="h-36 relative overflow-hidden">
-        {pack.image_url
-          ? <img src={pack.image_url} alt={pack.name} className="w-full h-full object-cover" />
-          : theme.visual}
-        {/* Bottom fade */}
-        <div className="absolute bottom-0 left-0 right-0 h-8 bg-gradient-to-t from-black/40 to-transparent" />
-      </div>
-
-      {/* Content */}
-      <div className="p-4 flex flex-col gap-3">
-        <div>
-          <p className="text-white font-bold text-sm leading-tight">{pack.name}</p>
-          {pack.description && (
-            <p className="text-gray-400 text-xs mt-1 leading-relaxed">{pack.description}</p>
-          )}
+      <div className="flex items-stretch">
+        {/* Visual — left column */}
+        <div className="w-28 flex-shrink-0 relative overflow-hidden">
+          {pack.image_url
+            ? <img src={pack.image_url} alt={pack.name} className="w-full h-full object-cover" />
+            : <div className="w-full h-full">{theme.visual}</div>}
+          {/* Right fade */}
+          <div className="absolute top-0 right-0 bottom-0 w-6 bg-gradient-to-r from-transparent to-black/30" />
         </div>
 
-        {/* Energy pill */}
-        <div className={`inline-flex items-center gap-2 self-start rounded-xl px-3 py-1.5 border text-sm font-black ${theme.badge}`}>
-          <span>⚡</span>
-          <span>+{pack.energy_amount} energy</span>
-        </div>
-
-        {/* Price row + purchase */}
-        <div className="flex items-center justify-between pt-1 border-t border-white/8">
+        {/* Content — right column */}
+        <div className="flex-1 p-4 flex flex-col gap-2.5 min-w-0">
           <div>
-            {originalPrice && (
-              <p className="text-gray-600 text-xs line-through leading-none">€{originalPrice}</p>
+            <p className="text-white font-bold text-sm leading-tight">{pack.name}</p>
+            {pack.description && (
+              <p className="text-gray-500 text-xs mt-0.5 leading-relaxed line-clamp-2">{pack.description}</p>
             )}
-            <p className="text-white font-black text-2xl leading-tight">€{parseFloat(pack.price_euros).toFixed(2)}</p>
           </div>
-          <button
-            onClick={() => onPurchase(pack)}
-            disabled={isBuying}
-            className={`flex items-center gap-2 font-bold text-sm px-5 py-2.5 rounded-xl transition-all active:scale-95 disabled:opacity-60 disabled:cursor-not-allowed text-white ${
-              isBuying ? 'bg-white/10' : 'bg-indigo-600 hover:bg-indigo-500'
-            }`}
-          >
-            {isBuying ? (
-              <>
-                <svg className="animate-spin h-4 w-4" fill="none" viewBox="0 0 24 24">
-                  <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"/>
-                  <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z"/>
-                </svg>
-                Purchasing…
-              </>
-            ) : 'Purchase'}
-          </button>
+
+          {/* Energy pill */}
+          <div className={`inline-flex items-center gap-1.5 self-start rounded-lg px-2.5 py-1 border text-xs font-black ${theme.badge}`}>
+            <span>⚡</span>
+            <span>+{pack.energy_amount} energy</span>
+          </div>
+
+          {/* Price + purchase */}
+          <div className="flex items-center justify-between mt-auto pt-2 border-t border-white/8">
+            <div className="leading-none">
+              {originalPrice && (
+                <p className="text-gray-600 text-[11px] line-through">€{originalPrice}</p>
+              )}
+              <p className="text-white font-black text-xl">€{parseFloat(pack.price_euros).toFixed(2)}</p>
+            </div>
+            <button
+              onClick={() => onPurchase(pack)}
+              disabled={isBuying}
+              className={`flex items-center gap-2 font-bold text-sm px-5 py-2 rounded-xl transition-all active:scale-95 disabled:opacity-60 disabled:cursor-not-allowed text-white ${
+                isBuying ? 'bg-white/10 shadow-none' : theme.btn
+              }`}
+            >
+              {isBuying ? (
+                <>
+                  <svg className="animate-spin h-4 w-4" fill="none" viewBox="0 0 24 24">
+                    <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"/>
+                    <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z"/>
+                  </svg>
+                  Purchasing…
+                </>
+              ) : 'Purchase'}
+            </button>
+          </div>
         </div>
       </div>
     </div>
@@ -261,7 +267,7 @@ export default function EnergyStorePage() {
         <p className="text-gray-600 text-xs uppercase tracking-widest font-semibold mb-4">Available packs</p>
 
         {loading ? (
-          <div className="grid grid-cols-2 gap-4">
+          <div className="flex flex-col gap-3">
             {[1,2,3,4].map(i => (
               <div key={i} className="h-64 bg-white/4 border border-white/8 rounded-2xl animate-pulse" />
             ))}
@@ -273,7 +279,7 @@ export default function EnergyStorePage() {
             <p className="text-gray-600 text-sm mt-1">Check back soon</p>
           </div>
         ) : (
-          <div className="grid grid-cols-2 gap-4">
+          <div className="flex flex-col gap-3">
             {packs.map((pack, idx) => (
               <PackCard
                 key={pack.id}
