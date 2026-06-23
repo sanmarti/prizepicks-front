@@ -818,21 +818,21 @@ export default function MatchweekPage() {
       <div className="max-w-md mx-auto px-4 pt-5 space-y-4">
 
         {/* Sprint header */}
-        <div className="flex items-center justify-between">
+        <div className="flex items-start justify-between">
           <div>
             <p className="text-indigo-400 text-[13px] font-bold tracking-wide">{sprint?.name || '6 to Glory'}</p>
             <h1 className="text-white text-xl font-bold mt-0.5">{div?.icon} {div?.division_name || 'Academy'}</h1>
           </div>
-          <div className="flex items-center gap-3">
+          <div className="flex flex-col items-end gap-2">
             <button
               onClick={() => navigate('/scores')}
-              className="flex items-center gap-1.5 bg-green-900/30 hover:bg-green-900/50 border border-green-500/25 text-green-400 text-[11px] font-bold px-3 py-1.5 rounded-xl transition-colors"
+              className="flex items-center gap-2 bg-green-500/15 hover:bg-green-500/25 border border-green-500/40 text-green-400 text-xs font-bold px-3 py-2 rounded-xl transition-colors active:scale-95"
             >
-              <span className="w-1.5 h-1.5 rounded-full bg-green-400 animate-pulse inline-block" />
+              <span className="w-2 h-2 rounded-full bg-green-400 animate-pulse" />
               Live Scores
             </button>
             <div className="text-right">
-              <p className="text-indigo-400 font-black text-2xl">{lp}</p>
+              <p className="text-indigo-400 font-black text-2xl leading-none">{lp}</p>
               <p className="text-gray-600 text-[11px]">Points</p>
             </div>
           </div>
