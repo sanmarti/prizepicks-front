@@ -641,6 +641,7 @@ function SprintLeaderboard({ sprintId, myUserId, myDivisionId }) {
 
 // ── Main page ──────────────────────────────────────────────────────────────────
 export default function MatchweekPage() {
+  const navigate = useNavigate()
   const [status,      setStatus]      = useState(null)
   const [gwData,      setGwData]      = useState(null)
   const [community,   setCommunity]   = useState(null)
