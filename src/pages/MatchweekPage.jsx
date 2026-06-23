@@ -823,9 +823,18 @@ export default function MatchweekPage() {
             <p className="text-indigo-400 text-[13px] font-bold tracking-wide">{sprint?.name || '6 to Glory'}</p>
             <h1 className="text-white text-xl font-bold mt-0.5">{div?.icon} {div?.division_name || 'Academy'}</h1>
           </div>
-          <div className="text-right">
-            <p className="text-indigo-400 font-black text-2xl">{lp}</p>
-            <p className="text-gray-600 text-[11px]">Points</p>
+          <div className="flex items-center gap-3">
+            <button
+              onClick={() => navigate('/scores')}
+              className="flex items-center gap-1.5 bg-green-900/30 hover:bg-green-900/50 border border-green-500/25 text-green-400 text-[11px] font-bold px-3 py-1.5 rounded-xl transition-colors"
+            >
+              <span className="w-1.5 h-1.5 rounded-full bg-green-400 animate-pulse inline-block" />
+              Live Scores
+            </button>
+            <div className="text-right">
+              <p className="text-indigo-400 font-black text-2xl">{lp}</p>
+              <p className="text-gray-600 text-[11px]">Points</p>
+            </div>
           </div>
         </div>
 

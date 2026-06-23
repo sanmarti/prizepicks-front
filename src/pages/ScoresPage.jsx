@@ -306,9 +306,10 @@ export default function ScoresPage() {
   return (
     <div className="flex flex-col min-h-dvh" style={{ background: 'var(--bg-primary)' }}>
       <TopBar
+        showBack
         title={
           <span className="flex items-center gap-2">
-            Scores
+            Live Scores
             {totalLive > 0 && (
               <span className="flex items-center gap-1 text-green-400 text-xs font-semibold">
                 <span className="w-1.5 h-1.5 rounded-full bg-green-400 animate-pulse inline-block" />
