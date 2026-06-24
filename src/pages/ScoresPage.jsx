@@ -321,7 +321,7 @@ export default function ScoresPage() {
         subtitle={fmtDate(date)}
       />
 
-      <div className="flex gap-1 px-4 pt-3 pb-1">
+      <div className="max-w-md mx-auto w-full px-4 pt-3 pb-1 flex gap-1">
         {DAY_TABS.map(({ label, offset }) => (
           <button
             key={offset}
@@ -336,32 +336,34 @@ export default function ScoresPage() {
         ))}
       </div>
 
-      <div className="flex-1 overflow-y-auto px-4 pt-2 pb-24 space-y-5">
-        {loading && (
-          <div className="flex items-center justify-center py-20 gap-2 text-gray-600 text-sm">
-            <div className="w-4 h-4 border border-gray-600 border-t-indigo-400 rounded-full animate-spin" />
-            Loading…
-          </div>
-        )}
-        {!loading && err && (
-          <div className="bg-red-900/15 border border-red-500/20 rounded-xl px-4 py-3 text-red-400 text-sm text-center">{err}</div>
-        )}
-        {!loading && !err && fixtures.length === 0 && (
-          <div className="text-center py-20">
-            <p className="text-gray-500 text-sm">No fixtures for {fmtDate(date)}</p>
-            <p className="text-gray-700 text-xs mt-2">
-              {activeOffset === 0 ? 'No matches scheduled today'
-                : activeOffset < 0 ? 'No matches on this date'
-                : 'No matches scheduled for tomorrow yet'}
-            </p>
-          </div>
-        )}
-        {!loading && groups.map(g => (
-          <CompetitionSection key={g.name} name={g.name} logo={g.logo} fixtures={g.fixtures} />
-        ))}
-        {activeOffset === 0 && !loading && fixtures.length > 0 && (
-          <p className="text-center text-gray-700 text-[10px] pb-2">Scores refresh every 60s</p>
-        )}
+      <div className="flex-1 overflow-y-auto pb-24">
+        <div className="max-w-md mx-auto px-4 pt-2 space-y-5">
+          {loading && (
+            <div className="flex items-center justify-center py-20 gap-2 text-gray-600 text-sm">
+              <div className="w-4 h-4 border border-gray-600 border-t-indigo-400 rounded-full animate-spin" />
+              Loading…
+            </div>
+          )}
+          {!loading && err && (
+            <div className="bg-red-900/15 border border-red-500/20 rounded-xl px-4 py-3 text-red-400 text-sm text-center">{err}</div>
+          )}
+          {!loading && !err && fixtures.length === 0 && (
+            <div className="text-center py-20">
+              <p className="text-gray-500 text-sm">No fixtures for {fmtDate(date)}</p>
+              <p className="text-gray-700 text-xs mt-2">
+                {activeOffset === 0 ? 'No matches scheduled today'
+                  : activeOffset < 0 ? 'No matches on this date'
+                  : 'No matches scheduled for tomorrow yet'}
+              </p>
+            </div>
+          )}
+          {!loading && groups.map(g => (
+            <CompetitionSection key={g.name} name={g.name} logo={g.logo} fixtures={g.fixtures} />
+          ))}
+          {activeOffset === 0 && !loading && fixtures.length > 0 && (
+            <p className="text-center text-gray-700 text-[10px] pb-2">Scores refresh every 60s</p>
+          )}
+        </div>
       </div>
 
       <BottomNav />

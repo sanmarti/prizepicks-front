@@ -59,14 +59,20 @@ function energyStyle(cost) {
   return { cls: 'bg-yellow-600/15 text-yellow-500' }
 }
 
-const ENERGY_BUDGET = 30
+const BASE_ENERGY      = 25
+const MAX_WEEKLY_EXTRA = 5
 
 const LIVE_STATUSES     = ['1H', 'HT', '2H', 'ET', 'BT', 'P', 'SUSP', 'INT', 'LIVE']
 const FINISHED_STATUSES = ['FT', 'AET', 'PEN', 'AWD', 'WO']
 
 // Compute the live color for a user's picked option given live fixture data
 function computePickLiveStatus(event, pickedOptionId, liveEvent) {
-  if (!liveEvent) return 'upcoming'
+  if (!liveEvent) {
+    const opt = (event.options || []).find(o => o.id === pickedOptionId)
+    if (opt?.result === 'WON') return 'won'
+    if (opt?.result === 'LOST') return 'lost'
+    return 'upcoming'
+  }
   const { fixture_status_short: st, fixture_elapsed: elapsed, home_goals: hg, away_goals: ag, options } = liveEvent
 
   if (!st || st === 'NS' || st === 'TBD') return 'upcoming'
@@ -191,6 +197,24 @@ function LivePickBadge({ status, elapsed }) {
 function fmt(d, opts) { return new Date(d).toLocaleString('en-GB', opts) }
 function fmtFull(d)   { return fmt(d, { weekday: 'short', day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit' }) }
 function fmtShort(d)  { return new Date(d).toLocaleDateString('en-GB', { day: 'numeric', month: 'short' }) }
+function fmtWeekRange(lockTime) {
+  if (!lockTime) return null
+  const lock = new Date(lockTime)
+  const start = new Date(lock); start.setDate(start.getDate() - 6)
+  const o = { day: 'numeric', month: 'short' }
+  return `${start.toLocaleDateString('en-GB', o)} – ${lock.toLocaleDateString('en-GB', o)}`
+}
+function fmtCountdown(lockTime) {
+  if (!lockTime) return null
+  const diff = new Date(lockTime) - Date.now()
+  if (diff <= 0) return 'Deadline passed'
+  const d = Math.floor(diff / 86400000)
+  const h = Math.floor((diff % 86400000) / 3600000)
+  const m = Math.floor((diff % 3600000) / 60000)
+  if (d > 0) return `${d}d ${h}h left`
+  if (h > 0) return `${h}h ${m}m left`
+  return `${m}m left`
+}
 
 // ── Team form dropdown ─────────────────────────────────────────────────────────
 function FormDot({ result }) {
@@ -279,50 +303,169 @@ function FormDropdown({ fixtureId, homeTeam, awayTeam, homeFlag, awayFlag }) {
   )
 }
 
-// ── Week navigation bar ────────────────────────────────────────────────────────
-function weekStatusInfo(gw, weekNum, weekHasPicks) {
-  if (!gw || gw.status === 'DRAFT') return { label: 'Upcoming', color: 'text-gray-700', dot: 'bg-gray-800', canClick: false }
-  if (gw.status === 'FINISHED') return { label: 'Closed', color: 'text-gray-600', dot: 'bg-gray-600', canClick: true }
-  if (gw.status === 'LOCKED' || (gw.lock_time && new Date() > new Date(gw.lock_time)))
-    return { label: 'Picks Locked', color: 'text-yellow-600', dot: 'bg-yellow-500', canClick: true }
-  if (gw.status === 'PUBLISHED') {
-    if (weekHasPicks[weekNum]) return { label: 'Confirmed ✓', color: 'text-green-400', dot: 'bg-green-500', canClick: true }
-    return { label: 'Awaiting', color: 'text-amber-500', dot: 'bg-amber-500', canClick: true }
-  }
-  return { label: 'Upcoming', color: 'text-gray-700', dot: 'bg-gray-800', canClick: false }
+// ── Mock events (used when API returns no events) ──────────────────────────────
+const MOCK_GW_EVENTS = [
+  // ── Premier League ──
+  { id:'mg1',  fixture_name:'Arsenal vs Chelsea',          event_type:'MATCH_RESULT', competition:'Premier League', match_time:'2026-06-20T19:45:00Z', total_picks:312,  options:[{id:'mg1o1',label:'Arsenal Win',energy_cost:4,pick_count:145},{id:'mg1o2',label:'Draw',energy_cost:7,pick_count:89},{id:'mg1o3',label:'Chelsea Win',energy_cost:5,pick_count:78}] },
+  { id:'mg2',  fixture_name:'Liverpool vs Man City',       event_type:'MATCH_RESULT', competition:'Premier League', match_time:'2026-06-21T14:00:00Z', total_picks:445,  options:[{id:'mg2o1',label:'Liverpool Win',energy_cost:5,pick_count:178},{id:'mg2o2',label:'Draw',energy_cost:7,pick_count:134},{id:'mg2o3',label:'Man City Win',energy_cost:4,pick_count:133}] },
+  { id:'mg3',  fixture_name:'Man United vs Tottenham',     event_type:'MATCH_RESULT', competition:'Premier League', match_time:'2026-06-21T16:30:00Z', total_picks:278,  options:[{id:'mg3o1',label:'Man United Win',energy_cost:6,pick_count:89},{id:'mg3o2',label:'Draw',energy_cost:6,pick_count:95},{id:'mg3o3',label:'Tottenham Win',energy_cost:5,pick_count:94}] },
+  { id:'mg4',  fixture_name:'Arsenal vs Liverpool',        event_type:'BTTS',         competition:'Premier League', match_time:'2026-06-20T19:45:00Z', total_picks:389,  options:[{id:'mg4o1',label:'Both Teams Score',energy_cost:4,pick_count:245},{id:'mg4o2',label:'Clean Sheet',energy_cost:5,pick_count:144}] },
+  { id:'mg12', fixture_name:'Man City vs Chelsea',         event_type:'GOALS',        competition:'Premier League', match_time:'2026-06-21T14:00:00Z', total_picks:334,  options:[{id:'mg12o1',label:'Over 2.5 Goals',energy_cost:4,pick_count:212},{id:'mg12o2',label:'Under 2.5 Goals',energy_cost:5,pick_count:122}] },
+  { id:'mg13', fixture_name:'Arsenal vs Tottenham',        event_type:'BTTS',         competition:'Premier League', match_time:'2026-06-22T16:30:00Z', total_picks:445,  options:[{id:'mg13o1',label:'Both Teams Score',energy_cost:4,pick_count:289},{id:'mg13o2',label:'Clean Sheet',energy_cost:6,pick_count:156}] },
+  // ── La Liga ──
+  { id:'mg5',  fixture_name:'Real Madrid vs Barcelona',    event_type:'MATCH_RESULT', competition:'La Liga',        match_time:'2026-06-22T20:00:00Z', total_picks:892,  options:[{id:'mg5o1',label:'Real Madrid Win',energy_cost:4,pick_count:356},{id:'mg5o2',label:'Draw',energy_cost:7,pick_count:267},{id:'mg5o3',label:'Barcelona Win',energy_cost:5,pick_count:269}] },
+  { id:'mg6',  fixture_name:'Real Madrid vs Atletico',     event_type:'GOALS',        competition:'La Liga',        match_time:'2026-06-22T20:00:00Z', total_picks:534,  options:[{id:'mg6o1',label:'Over 2.5 Goals',energy_cost:4,pick_count:312},{id:'mg6o2',label:'Under 2.5 Goals',energy_cost:5,pick_count:222}] },
+  { id:'mg11', fixture_name:'Barcelona vs Atletico',       event_type:'MATCH_RESULT', competition:'La Liga',        match_time:'2026-06-19T20:00:00Z', total_picks:512,  options:[{id:'mg11o1',label:'Barcelona Win',energy_cost:4,pick_count:245},{id:'mg11o2',label:'Draw',energy_cost:6,pick_count:145},{id:'mg11o3',label:'Atletico Win',energy_cost:5,pick_count:122}] },
+  // ── Bundesliga / Ligue 1 / Serie A ──
+  { id:'mg7',  fixture_name:'Bayern Munich vs Dortmund',   event_type:'MATCH_RESULT', competition:'Bundesliga',     match_time:'2026-06-21T17:30:00Z', total_picks:621,  options:[{id:'mg7o1',label:'Bayern Win',energy_cost:3,pick_count:334},{id:'mg7o2',label:'Draw',energy_cost:7,pick_count:156},{id:'mg7o3',label:'Dortmund Win',energy_cost:6,pick_count:131}] },
+  { id:'mg14', fixture_name:'Bayern Munich vs Leverkusen', event_type:'GOALS',        competition:'Bundesliga',     match_time:'2026-06-21T17:30:00Z', total_picks:289,  options:[{id:'mg14o1',label:'Over 2.5 Goals',energy_cost:4,pick_count:189},{id:'mg14o2',label:'Under 2.5 Goals',energy_cost:5,pick_count:100}] },
+  { id:'mg8',  fixture_name:'PSG vs Marseille',            event_type:'MATCH_RESULT', competition:'Ligue 1',        match_time:'2026-06-22T21:00:00Z', total_picks:445,  options:[{id:'mg8o1',label:'PSG Win',energy_cost:3,pick_count:267},{id:'mg8o2',label:'Draw',energy_cost:7,pick_count:111},{id:'mg8o3',label:'Marseille Win',energy_cost:7,pick_count:67}] },
+  { id:'mg15', fixture_name:'PSG vs Monaco',               event_type:'MATCH_RESULT', competition:'Ligue 1',        match_time:'2026-06-19T20:00:00Z', total_picks:234,  options:[{id:'mg15o1',label:'PSG Win',energy_cost:3,pick_count:145},{id:'mg15o2',label:'Draw',energy_cost:7,pick_count:56},{id:'mg15o3',label:'Monaco Win',energy_cost:6,pick_count:33}] },
+  { id:'mg9',  fixture_name:'Juventus vs Inter Milan',     event_type:'MATCH_RESULT', competition:'Serie A',        match_time:'2026-06-20T20:45:00Z', total_picks:378,  options:[{id:'mg9o1',label:'Juventus Win',energy_cost:5,pick_count:145},{id:'mg9o2',label:'Draw',energy_cost:6,pick_count:123},{id:'mg9o3',label:'Inter Win',energy_cost:4,pick_count:110}] },
+  { id:'mg10', fixture_name:'Juventus vs Inter Milan',     event_type:'BTTS',         competition:'Serie A',        match_time:'2026-06-20T20:45:00Z', total_picks:267,  options:[{id:'mg10o1',label:'Both Teams Score',energy_cost:4,pick_count:167},{id:'mg10o2',label:'Clean Sheet',energy_cost:5,pick_count:100}] },
+  // ── World Cup 2026 ──
+  { id:'wc1',  fixture_name:'England vs Spain',            event_type:'MATCH_RESULT', competition:'World Cup',      match_time:'2026-06-20T22:00:00Z', total_picks:1245, options:[{id:'wc1o1',label:'England Win',energy_cost:5,pick_count:445},{id:'wc1o2',label:'Draw',energy_cost:7,pick_count:378},{id:'wc1o3',label:'Spain Win',energy_cost:4,pick_count:422}] },
+  { id:'wc2',  fixture_name:'Brazil vs France',            event_type:'MATCH_RESULT', competition:'World Cup',      match_time:'2026-06-21T22:00:00Z', total_picks:1891, options:[{id:'wc2o1',label:'Brazil Win',energy_cost:4,pick_count:756},{id:'wc2o2',label:'Draw',energy_cost:6,pick_count:567},{id:'wc2o3',label:'France Win',energy_cost:5,pick_count:568}] },
+  { id:'wc3',  fixture_name:'Argentina vs Germany',        event_type:'MATCH_RESULT', competition:'World Cup',      match_time:'2026-06-22T18:00:00Z', total_picks:1567, options:[{id:'wc3o1',label:'Argentina Win',energy_cost:4,pick_count:623},{id:'wc3o2',label:'Draw',energy_cost:6,pick_count:489},{id:'wc3o3',label:'Germany Win',energy_cost:5,pick_count:455}] },
+  { id:'wc4',  fixture_name:'Brazil vs Argentina',         event_type:'BTTS',         competition:'World Cup',      match_time:'2026-06-22T22:00:00Z', total_picks:2134, options:[{id:'wc4o1',label:'Both Teams Score',energy_cost:4,pick_count:1345},{id:'wc4o2',label:'Clean Sheet',energy_cost:6,pick_count:789}] },
+  { id:'wc5',  fixture_name:'USA vs Mexico',               event_type:'MATCH_RESULT', competition:'World Cup',      match_time:'2026-06-21T20:00:00Z', total_picks:987,  options:[{id:'wc5o1',label:'USA Win',energy_cost:5,pick_count:389},{id:'wc5o2',label:'Draw',energy_cost:7,pick_count:312},{id:'wc5o3',label:'Mexico Win',energy_cost:5,pick_count:286}] },
+  { id:'wc6',  fixture_name:'England vs Germany',          event_type:'GOALS',        competition:'World Cup',      match_time:'2026-06-20T22:00:00Z', total_picks:1123, options:[{id:'wc6o1',label:'Over 2.5 Goals',energy_cost:4,pick_count:712},{id:'wc6o2',label:'Under 2.5 Goals',energy_cost:5,pick_count:411}] },
+  { id:'wc7',  fixture_name:'Portugal vs Morocco',         event_type:'MATCH_RESULT', competition:'World Cup',      match_time:'2026-06-22T00:00:00Z', total_picks:834,  options:[{id:'wc7o1',label:'Portugal Win',energy_cost:4,pick_count:389},{id:'wc7o2',label:'Draw',energy_cost:6,pick_count:245},{id:'wc7o3',label:'Morocco Win',energy_cost:6,pick_count:200}] },
+]
+
+// ── Mock previous-week results (shown when a FINISHED week has no API events) ──
+const MOCK_RESULTS_EVENTS = [
+  { id:'mr1', fixture_name:'England vs France',        event_type:'MATCH_RESULT', competition:'World Cup',      match_time:'2026-06-13T19:00:00Z', total_picks:1567, options:[{id:'mr1o1',label:'England Win',energy_cost:5,pick_count:623,result:'WON'},{id:'mr1o2',label:'Draw',energy_cost:7,pick_count:489,result:'LOST'},{id:'mr1o3',label:'France Win',energy_cost:4,pick_count:455,result:'LOST'}] },
+  { id:'mr2', fixture_name:'Brazil vs Argentina',      event_type:'MATCH_RESULT', competition:'World Cup',      match_time:'2026-06-14T22:00:00Z', total_picks:2134, options:[{id:'mr2o1',label:'Brazil Win',energy_cost:4,pick_count:891,result:'WON'},{id:'mr2o2',label:'Draw',energy_cost:6,pick_count:712,result:'LOST'},{id:'mr2o3',label:'Argentina Win',energy_cost:5,pick_count:531,result:'LOST'}] },
+  { id:'mr3', fixture_name:'Germany vs Spain',         event_type:'BTTS',         competition:'World Cup',      match_time:'2026-06-13T20:00:00Z', total_picks:987,  options:[{id:'mr3o1',label:'Both Teams Score',energy_cost:4,pick_count:645,result:'WON'},{id:'mr3o2',label:'Clean Sheet',energy_cost:6,pick_count:342,result:'LOST'}] },
+  { id:'mr4', fixture_name:'USA vs Canada',            event_type:'MATCH_RESULT', competition:'World Cup',      match_time:'2026-06-14T00:00:00Z', total_picks:756,  options:[{id:'mr4o1',label:'USA Win',energy_cost:4,pick_count:412,result:'WON'},{id:'mr4o2',label:'Draw',energy_cost:7,pick_count:189,result:'LOST'},{id:'mr4o3',label:'Canada Win',energy_cost:6,pick_count:155,result:'LOST'}] },
+  { id:'mr5', fixture_name:'Portugal vs Netherlands',  event_type:'GOALS',        competition:'World Cup',      match_time:'2026-06-15T19:00:00Z', total_picks:834,  options:[{id:'mr5o1',label:'Over 2.5 Goals',energy_cost:4,pick_count:556,result:'WON'},{id:'mr5o2',label:'Under 2.5 Goals',energy_cost:5,pick_count:278,result:'LOST'}] },
+  { id:'mr6', fixture_name:'Italy vs Croatia',         event_type:'MATCH_RESULT', competition:'World Cup',      match_time:'2026-06-15T22:00:00Z', total_picks:689,  options:[{id:'mr6o1',label:'Italy Win',energy_cost:4,pick_count:312,result:'LOST'},{id:'mr6o2',label:'Draw',energy_cost:6,pick_count:245,result:'WON'},{id:'mr6o3',label:'Croatia Win',energy_cost:6,pick_count:132,result:'LOST'}] },
+  { id:'mr7', fixture_name:'Arsenal vs Man City',      event_type:'MATCH_RESULT', competition:'Premier League', match_time:'2026-06-14T14:00:00Z', total_picks:445,  options:[{id:'mr7o1',label:'Arsenal Win',energy_cost:5,pick_count:189,result:'LOST'},{id:'mr7o2',label:'Draw',energy_cost:6,pick_count:145,result:'LOST'},{id:'mr7o3',label:'Man City Win',energy_cost:4,pick_count:111,result:'WON'}] },
+  { id:'mr8', fixture_name:'Real Madrid vs Juventus',  event_type:'BTTS',         competition:'Champions League',match_time:'2026-06-13T21:00:00Z', total_picks:567,  options:[{id:'mr8o1',label:'Both Teams Score',energy_cost:4,pick_count:367,result:'WON'},{id:'mr8o2',label:'Clean Sheet',energy_cost:5,pick_count:200,result:'LOST'}] },
+]
+const MOCK_PREV_WEEK_PICKS = { mr1:'mr1o1', mr2:'mr2o1', mr3:'mr3o1', mr4:'mr4o1', mr5:'mr5o1', mr6:'mr6o2' }
+const MOCK_PREV_ENTRY = { status:'completed', correct_picks:5, league_points:9, is_perfect_week:false }
+
+// ── Week role helpers ──────────────────────────────────────────────────────────
+function getWeekRole(gw, isCurrentWeek, weekHasPicks, weekNum) {
+  if (!gw || gw.status === 'DRAFT') return 'unavailable'
+  if (gw.status === 'FINISHED') return 'results'
+  if (gw.status === 'LOCKED') return 'locked'
+  if (gw.status === 'PUBLISHED') return isCurrentWeek ? 'current' : 'open'
+  return 'unavailable'
 }
 
-function WeekNav({ gwCount, byWeek, selectedWeek, onSelect, weekHasPicks }) {
-  return (
-    <div className="flex gap-2">
-      {Array.from({ length: gwCount }, (_, i) => i + 1).map(w => {
-        const gw         = byWeek[w]
-        const isSelected = w === selectedWeek
-        const { label, color, dot, canClick } = weekStatusInfo(gw, w, weekHasPicks)
+function WeekRoleBadge({ role, weekHasPicks, weekNum }) {
+  const hasPicks = weekHasPicks?.[weekNum]
+  if (role === 'current') return (
+    <span className="inline-flex items-center gap-1.5 text-[10px] font-black tracking-widest text-green-400">
+      <span className="w-1.5 h-1.5 rounded-full bg-green-400 animate-pulse inline-block" />
+      PICKS OPEN{hasPicks ? ' · ✓ SAVED' : ''}
+    </span>
+  )
+  if (role === 'open') return (
+    <span className="text-[10px] font-bold tracking-widest text-blue-400">OPEN</span>
+  )
+  if (role === 'locked') return (
+    <span className="inline-flex items-center gap-1.5 text-[10px] font-black tracking-widest text-yellow-400">
+      <span className="w-1.5 h-1.5 rounded-full bg-yellow-400 animate-pulse inline-block" />
+      LOCKED · LIVE
+    </span>
+  )
+  if (role === 'results') return (
+    <span className="text-[10px] font-bold tracking-widest text-purple-400">RESULTS</span>
+  )
+  return <span className="text-[10px] font-bold tracking-widest text-gray-600">COMING SOON</span>
+}
 
-        return (
-          <button
-            key={w}
-            onClick={() => canClick && onSelect(w)}
-            disabled={!canClick}
-            className={`flex-1 flex flex-col items-center gap-1 py-2.5 rounded-xl border transition-all ${
-              isSelected
-                ? 'bg-indigo-600/20 border-indigo-500/50'
-                : canClick
-                  ? 'bg-white/4 border-white/8 hover:bg-white/8'
-                  : 'bg-white/2 border-transparent cursor-not-allowed'
-            }`}
-          >
-            <span className={`text-[12px] font-black ${isSelected ? 'text-indigo-300' : canClick ? 'text-gray-300' : 'text-gray-700'}`}>
-              W{w}
-            </span>
-            <span className={`w-1.5 h-1.5 rounded-full flex-shrink-0 ${dot}`} />
-            <span className={`text-[8px] font-bold tracking-wide leading-none text-center ${isSelected ? 'text-indigo-400' : color}`}>
-              {label}
-            </span>
-          </button>
-        )
-      })}
+// ── Week selector (prev / dots / next) ─────────────────────────────────────────
+function WeekSelector({ selectedWeek, gwCount, byWeek, currentWeek, weekHasPicks, onSelect }) {
+  const prevW  = selectedWeek - 1
+  const nextW  = selectedWeek + 1
+  const prevGw = byWeek[prevW]
+  const nextGw = byWeek[nextW]
+  const hasPrev = selectedWeek > 1 && prevGw && prevGw.status !== 'DRAFT'
+  const hasNext = selectedWeek < gwCount
+
+  const contextLabel = selectedWeek === currentWeek ? 'THIS WEEK' :
+                       selectedWeek < currentWeek   ? 'PREVIOUS WEEK' : 'NEXT WEEK'
+  const contextColor = selectedWeek === currentWeek ? 'text-green-400' :
+                       selectedWeek < currentWeek   ? 'text-purple-400' : 'text-blue-400'
+
+  const todayStr = new Date().toLocaleDateString('en-GB', { weekday:'short', day:'numeric', month:'short' })
+  const currentGw = byWeek[selectedWeek]
+  const weekRange = fmtWeekRange(currentGw?.lock_time)
+
+  return (
+    <div className="space-y-3">
+      {/* Prev / Week / Next row */}
+      <div className="flex items-center gap-2">
+        {/* Previous Week button */}
+        <button
+          onClick={() => hasPrev && onSelect(prevW)}
+          disabled={!hasPrev}
+          className={`flex items-center gap-2 pl-2.5 pr-3 py-2.5 rounded-2xl border flex-shrink-0 transition-all ${
+            hasPrev
+              ? 'bg-white/5 border-white/10 hover:bg-white/10 active:scale-95 cursor-pointer'
+              : 'opacity-0 pointer-events-none'
+          }`}
+        >
+          <span className="text-white text-sm">←</span>
+          <div className="text-left">
+            <p className="text-white text-[11px] font-bold leading-none">Previous</p>
+            <p className="text-gray-500 text-[9px] mt-0.5 leading-none">Week {prevW}</p>
+          </div>
+        </button>
+
+        {/* Center info */}
+        <div className="flex-1 flex flex-col items-center gap-1.5">
+          <p className="text-white font-black text-xl leading-none">Week {selectedWeek}</p>
+          <p className="text-gray-600 text-[10px]">of {gwCount} this sprint</p>
+          {/* Progress dots */}
+          <div className="flex gap-1.5 mt-0.5">
+            {Array.from({ length: gwCount }, (_, i) => i + 1).map(w => (
+              <button
+                key={w}
+                onClick={() => { const g = byWeek[w]; if (!g || g.status === 'DRAFT') return; onSelect(w) }}
+                className="p-0.5"
+              >
+                <div className={`rounded-full transition-all duration-200 h-1.5 ${
+                  w === selectedWeek ? 'w-5 bg-indigo-500' :
+                  w < selectedWeek   ? 'w-1.5 bg-white/30' :
+                  !byWeek[w] || byWeek[w]?.status === 'DRAFT' ? 'w-1.5 bg-white/8' : 'w-1.5 bg-white/20'
+                }`} />
+              </button>
+            ))}
+          </div>
+        </div>
+
+        {/* Next Week button */}
+        <button
+          onClick={() => hasNext && onSelect(nextW)}
+          disabled={!hasNext}
+          className={`flex items-center gap-2 pl-3 pr-2.5 py-2.5 rounded-2xl border flex-shrink-0 transition-all ${
+            hasNext
+              ? 'bg-white/5 border-white/10 hover:bg-white/10 active:scale-95 cursor-pointer'
+              : 'opacity-0 pointer-events-none'
+          }`}
+        >
+          <div className="text-right">
+            <p className="text-white text-[11px] font-bold leading-none">Next</p>
+            <p className="text-gray-500 text-[9px] mt-0.5 leading-none">Week {nextW}</p>
+          </div>
+          <span className="text-white text-sm">→</span>
+        </button>
+      </div>
+
+      {/* Context label + date info */}
+      <div className="text-center space-y-0.5">
+        <p className={`text-[10px] font-black tracking-widest ${contextColor}`}>{contextLabel}</p>
+        {weekRange && <p className="text-gray-600 text-[10px]">{weekRange}</p>}
+        {selectedWeek === currentWeek && (
+          <p className="text-gray-700 text-[9px]">Today: {todayStr}</p>
+        )}
+      </div>
     </div>
   )
 }
@@ -517,6 +660,45 @@ function EventCard({ event, selectedOptionId, onSelect, isLocked, dimmed, remain
   )
 }
 
+// ── Energy CTA banner ─────────────────────────────────────────────────────────
+function EnergyCTABanner({ remainingEnergy, onSaveAndGo }) {
+  const isEmpty = remainingEnergy <= 0
+  return (
+    <div className={`rounded-2xl border p-4 ${
+      isEmpty
+        ? 'bg-red-950/35 border-red-500/30'
+        : 'bg-amber-950/30 border-amber-500/25'
+    }`}>
+      <div className="flex items-start gap-3">
+        <span className="text-2xl flex-shrink-0">{isEmpty ? '🪫' : '⚡'}</span>
+        <div className="flex-1 min-w-0">
+          <p className={`font-black text-sm ${isEmpty ? 'text-red-300' : 'text-amber-300'}`}>
+            {isEmpty ? 'No energy left this week' : `Only ${remainingEnergy}⚡ remaining`}
+          </p>
+          <p className="text-gray-500 text-xs mt-1 leading-relaxed">
+            {isEmpty
+              ? "You've used all your energy this week. Top up to unlock premium picks."
+              : "Some picks cost more energy than you have left. Top up to unlock them all."}
+          </p>
+          <button
+            onClick={onSaveAndGo}
+            className={`mt-3 w-full py-2.5 rounded-xl text-sm font-black transition-all active:scale-[0.98] shadow-lg ${
+              isEmpty
+                ? 'bg-red-600 hover:bg-red-500 text-white shadow-red-900/50'
+                : 'bg-amber-600 hover:bg-amber-500 text-white shadow-amber-900/40'
+            }`}
+          >
+            ⚡ Save picks &amp; Buy Energy Pack →
+          </button>
+          <p className="text-[10px] text-gray-700 text-center mt-2">
+            Unused bonus energy carries over to future weeks
+          </p>
+        </div>
+      </div>
+    </div>
+  )
+}
+
 // ── Sprint leaderboard (compact) ───────────────────────────────────────────────
 function SprintLeaderboard({ sprintId, myUserId, myDivisionId }) {
   const [data, setData] = useState(null)
@@ -592,25 +774,11 @@ function SprintLeaderboard({ sprintId, myUserId, myDivisionId }) {
                     {r.is_rookie && <span className="text-[9px] bg-blue-900/40 text-blue-400 px-1.5 py-0.5 rounded-full flex-shrink-0">ROOKIE</span>}
                   </div>
                   <div className="flex items-center gap-2 mt-0.5 flex-wrap">
-                    {r.gameweeks_participated > 0 && (
-                      <span className="text-[10px] text-green-400 font-semibold">
-                        {r.total_correct_picks}✓ correct
-                      </span>
-                    )}
-                    {r.total_incorrect_picks > 0 && (
-                      <span className="text-[10px] text-red-400/70">
-                        {r.total_incorrect_picks}✗
-                      </span>
-                    )}
-                    {accuracy !== null && (
-                      <span className="text-[10px] text-gray-500">{accuracy}% acc</span>
-                    )}
-                    {r.perfect_weeks > 0 && (
-                      <span className="text-[10px] text-yellow-400">⭐{r.perfect_weeks} perfect</span>
-                    )}
-                    {r.gameweeks_participated > 0 && (
-                      <span className="text-[10px] text-gray-600">{r.gameweeks_participated}wk</span>
-                    )}
+                    <span className="text-[10px] text-green-400 font-semibold">{r.total_correct_picks ?? 0}✓</span>
+                    <span className="text-[10px] text-red-400/70">{r.total_incorrect_picks ?? 0}✗</span>
+                    {accuracy !== null && <span className="text-[10px] text-gray-500">{accuracy}%</span>}
+                    {r.gameweeks_participated > 0 && <span className="text-[10px] text-gray-600">{r.gameweeks_participated} GW</span>}
+                    {r.perfect_weeks > 0 && <span className="text-[10px] text-yellow-500">⭐{r.perfect_weeks}</span>}
                   </div>
                 </div>
 
@@ -674,6 +842,15 @@ export default function MatchweekPage() {
         setPicks(existing); setSubmitted(true)
         const sprintWeek = r.data.gameweek?.sprint_week
         if (sprintWeek) setWeekHasPicks(prev => ({ ...prev, [sprintWeek]: true }))
+        localStorage.removeItem(`draftPicks_${gwId}`)
+      } else {
+        // Restore draft picks saved before navigating to store
+        try {
+          const draft = JSON.parse(localStorage.getItem(`draftPicks_${gwId}`) || 'null')
+          if (draft && typeof draft === 'object' && Object.keys(draft).length > 0) {
+            setPicks(draft)
+          }
+        } catch {}
       }
       const locked = r.data.gameweek?.status === 'LOCKED' || r.data.gameweek?.status === 'FINISHED'
       if (locked) {
@@ -733,37 +910,60 @@ export default function MatchweekPage() {
   const gw       = gwData?.gameweek
   const isLocked = gwData?.is_locked ?? false
   const entry    = gwData?.my_entry
-  const events   = gw?.events || []
-  const pickCount = Object.keys(picks).length
+  const weekRole = getWeekRole(gw, selectedWeek === currentWeek, weekHasPicks, selectedWeek)
+  const events = gw?.events || []
+  const isMockResultsMode = events.length === 0 && weekRole === 'results'
+  const isMockOpenMode    = events.length === 0 && (weekRole === 'current' || weekRole === 'open' || weekRole === 'locked')
+  const effectiveEvents   = events.length > 0 ? events :
+    isMockResultsMode ? MOCK_RESULTS_EVENTS :
+    isMockOpenMode    ? MOCK_GW_EVENTS : []
+  const effectiveIsLocked = isLocked || isMockResultsMode
+  const effectiveEntry    = entry ?? (isMockResultsMode ? MOCK_PREV_ENTRY : null)
+  const pickCount         = Object.keys(picks).length
 
   const totalEnergy = useMemo(() => {
     let sum = 0
-    for (const ev of events) {
+    for (const ev of effectiveEvents) {
       const opt = ev.options?.find(o => o.id === picks[ev.id])
       if (opt?.energy_cost) sum += opt.energy_cost
     }
     return sum
-  }, [picks, events])
+  }, [picks, effectiveEvents])
 
-  const remainingEnergy = ENERGY_BUDGET + walletBalance - totalEnergy
-  const picksLocked = pickCount === 6 && !isLocked
+  const extraFromWallet = Math.min(MAX_WEEKLY_EXTRA, walletBalance)
+  const totalAvailable  = BASE_ENERGY + extraFromWallet
+  const remainingEnergy = totalAvailable - totalEnergy
+  const picksLocked     = pickCount === 6 && !effectiveIsLocked
+
+  const saveAndGoToStore = () => {
+    if (gw?.id) localStorage.setItem(`draftPicks_${gw.id}`, JSON.stringify(picks))
+    if (pickCount >= 4 && !submitting) {
+      const pickList = Object.entries(picks).map(([event_id, event_option_id]) => ({ event_id, event_option_id }))
+      submitGloryPicks(gw.id, pickList).catch(() => {})
+    }
+    navigate('/store')
+  }
 
   const eventsWithCounts = useMemo(() => {
-    if (!community) return events
+    if (!community) return effectiveEvents
     const byId = {}
     for (const ce of community.events) {
       const total = ce.options.reduce((s, o) => s + (o.pick_count || 0), 0)
       byId[ce.id] = { options: ce.options, total_picks: total }
     }
-    return events.map(e => {
+    return effectiveEvents.map(e => {
       const c = byId[e.id]
       if (!c) return e
       return { ...e, options: e.options.map(o => { const co = c.options.find(x => x.id === o.id); return { ...o, pick_count: co?.pick_count ?? 0 } }), total_picks: c.total_picks }
     })
-  }, [events, community])
+  }, [effectiveEvents, community])
 
-  const myPickedEvents = eventsWithCounts.filter(e => picks[e.id])
-  const unpickedEvents = eventsWithCounts.filter(e => !picks[e.id])
+  const displayPicks = (isMockResultsMode && Object.keys(picks).length === 0)
+    ? MOCK_PREV_WEEK_PICKS
+    : picks
+
+  const myPickedEvents = eventsWithCounts.filter(e => displayPicks[e.id])
+  const unpickedEvents = eventsWithCounts.filter(e => !displayPicks[e.id])
 
   const handleSelect = (eventId, optionId) => {
     if (isLocked) return
@@ -830,7 +1030,7 @@ export default function MatchweekPage() {
               className="flex items-center gap-2 bg-green-500/15 hover:bg-green-500/25 border border-green-500/40 text-green-400 text-xs font-bold px-3 py-2 rounded-xl transition-colors active:scale-95"
             >
               <span className="w-2 h-2 rounded-full bg-green-400 animate-pulse" />
-              Live Scores
+              Check Live Scores
             </button>
             <div className="text-right">
               <p className="text-indigo-400 font-black text-2xl leading-none">{lp}</p>
@@ -850,63 +1050,39 @@ export default function MatchweekPage() {
 
         {sprint && (
           <>
-            {/* Week navigation */}
-            <WeekNav
+            {/* Week selector: prev / dots / next */}
+            <WeekSelector
+              selectedWeek={selectedWeek}
               gwCount={gwCount}
               byWeek={byWeek}
-              selectedWeek={selectedWeek}
-              onSelect={setSelectedWeek}
+              currentWeek={currentWeek}
               weekHasPicks={weekHasPicks}
+              onSelect={setSelectedWeek}
             />
 
-            {/* Week header with prev/next */}
-            <div className="flex items-center justify-between gap-3">
-              <button
-                onClick={() => setSelectedWeek(w => Math.max(1, w - 1))}
-                disabled={selectedWeek <= 1 || byWeek[selectedWeek - 1]?.status === 'DRAFT' || !byWeek[selectedWeek - 1]}
-                className="w-9 h-9 rounded-xl bg-white/5 border border-white/8 flex items-center justify-center text-gray-400 disabled:opacity-25 hover:bg-white/10 transition-colors flex-shrink-0"
-              >
-                ←
-              </button>
-              <div className="flex-1 text-center">
-                <p className="text-white font-bold text-base">Gameweek {selectedWeek}</p>
-                {selectedWeek === currentWeek && !isLocked && (
-                  <p className="text-green-400 text-[10px] font-semibold tracking-widest">PICKS OPEN</p>
-                )}
-                {selectedWeek === currentWeek && isLocked && (
-                  <p className="text-yellow-400 text-[10px] font-semibold tracking-widest">LOCKED</p>
-                )}
-                {selectedWeek !== currentWeek && gw && (
-                  <p className={`text-[10px] font-semibold tracking-widest ${
-                    gw.status === 'FINISHED' ? 'text-purple-400' :
-                    gw.status === 'LOCKED'   ? 'text-yellow-400' :
-                    gw.status === 'PUBLISHED' ? 'text-green-400' : 'text-gray-600'
-                  }`}>{gw.status}</p>
-                )}
-              </div>
-              <button
-                onClick={() => setSelectedWeek(w => Math.min(gwCount, w + 1))}
-                disabled={selectedWeek >= gwCount || !byWeek[selectedWeek + 1] || byWeek[selectedWeek + 1]?.status === 'DRAFT'}
-                className="w-9 h-9 rounded-xl bg-white/5 border border-white/8 flex items-center justify-center text-gray-400 disabled:opacity-25 hover:bg-white/10 transition-colors flex-shrink-0"
-              >
-                →
-              </button>
+            {/* Week status badge + lock countdown */}
+            <div className="flex items-center justify-between px-1">
+              <WeekRoleBadge role={weekRole} weekHasPicks={weekHasPicks} weekNum={selectedWeek} />
+              {gw && !gwLoading && gw.lock_time && weekRole !== 'results' && weekRole !== 'unavailable' && (
+                <p className="text-gray-600 text-[11px]">Locks {fmtFull(gw.lock_time)}</p>
+              )}
             </div>
 
-            {/* Lock time row */}
-            {gw && !gwLoading && (
-              <div className="flex items-center justify-between px-1">
-                <p className="text-gray-600 text-[11px]">Locks: {fmtFull(gw.lock_time)}</p>
-                {/* Settled entry results */}
-                {entry?.status === 'completed' && (
-                  <div className={`flex items-center gap-3 rounded-xl px-3 py-1.5 ${
-                    entry.is_perfect_week ? 'bg-yellow-900/20 border border-yellow-500/30' : 'bg-white/5'
-                  }`}>
-                    {entry.is_perfect_week && <span className="text-yellow-400 text-xs">⭐ Perfect</span>}
-                    <span className="text-[11px] text-gray-500">{entry.correct_picks}/6 correct</span>
-                    <span className="text-[11px] text-indigo-400 font-bold">+{entry.league_points} pts</span>
+            {/* Entry results card (settled weeks) */}
+            {!gwLoading && effectiveEntry?.status === 'completed' && (
+              <div className={`flex items-center justify-between rounded-2xl px-4 py-3 ${
+                effectiveEntry.is_perfect_week
+                  ? 'bg-yellow-900/20 border border-yellow-500/30'
+                  : 'bg-white/4 border border-white/8'
+              }`}>
+                <div className="flex items-center gap-2">
+                  {effectiveEntry.is_perfect_week && <span className="text-lg">⭐</span>}
+                  <div>
+                    <p className="text-white font-bold text-sm">{effectiveEntry.correct_picks}/6 correct</p>
+                    {effectiveEntry.is_perfect_week && <p className="text-yellow-400 text-[11px]">Perfect week!</p>}
                   </div>
-                )}
+                </div>
+                <span className="text-indigo-400 font-black text-xl">+{effectiveEntry.league_points} pts</span>
               </div>
             )}
           </>
@@ -914,7 +1090,7 @@ export default function MatchweekPage() {
       </div>
 
       {/* ── Sticky pick counter (only when gameweek is open for picks) ── */}
-      {sprint && !isLocked && !gwLoading && gw && (
+      {sprint && !effectiveIsLocked && !gwLoading && gw && (
         <div className="sticky top-0 z-30 bg-[#0a0d12]/95 backdrop-blur-md border-b border-white/8">
           <div className="max-w-md mx-auto px-4 py-3">
             <div className="flex items-center justify-between mb-2">
@@ -934,16 +1110,27 @@ export default function MatchweekPage() {
               </div>
               <div className="flex items-center gap-3">
                 {totalEnergy > 0 && (
-                  <div className="flex items-center gap-1.5">
-                    <span className={`text-xs font-mono font-bold ${
-                      remainingEnergy <= 10 ? 'text-red-400' :
-                      remainingEnergy <= 20 ? 'text-yellow-400' : 'text-yellow-500'
-                    }`}>⚡{remainingEnergy}</span>
-                    <span className="text-gray-700 text-[10px]">left</span>
+                  <div className="flex flex-col items-end gap-0.5">
+                    <div className="flex items-center gap-1">
+                      <span className={`text-xs font-mono font-bold ${
+                        remainingEnergy <= 0 ? 'text-red-400' :
+                        remainingEnergy <= 5 ? 'text-amber-400' :
+                        remainingEnergy <= 10 ? 'text-yellow-400' : 'text-yellow-500'
+                      }`}>⚡{remainingEnergy}</span>
+                      <span className="text-gray-700 text-[10px]">left</span>
+                    </div>
+                    <span className="text-[9px] text-gray-700">
+                      {BASE_ENERGY} base{extraFromWallet > 0 ? ` +${extraFromWallet} bonus` : ''}
+                    </span>
                   </div>
                 )}
                 {totalEnergy === 0 && (
-                  <span className="text-gray-600 text-[11px]">⚡{ENERGY_BUDGET + walletBalance} energy</span>
+                  <div className="flex flex-col items-end gap-0.5">
+                    <span className="text-gray-600 text-[11px]">⚡{totalAvailable} energy</span>
+                    {extraFromWallet > 0 && (
+                      <span className="text-[9px] text-gray-700">{BASE_ENERGY}+{extraFromWallet} bonus</span>
+                    )}
+                  </div>
                 )}
               </div>
             </div>
@@ -988,18 +1175,79 @@ export default function MatchweekPage() {
               </div>
             )}
 
-            {/* Week not yet set up */}
-            {!gwLoading && !gw && (
-              <div className="bg-[#0d1117] border border-white/8 rounded-2xl p-8 text-center">
-                <p className="text-gray-500 text-sm font-medium">Gameweek {selectedWeek} not yet set up</p>
-                <p className="text-gray-700 text-xs mt-1">Events will appear here once the admin publishes this week</p>
+            {/* Week not available yet (DRAFT or no data) */}
+            {!gwLoading && weekRole === 'unavailable' && (
+              <div className="flex flex-col items-center justify-center py-16 gap-5">
+                <div className="w-16 h-16 rounded-full bg-white/4 border border-white/8 flex items-center justify-center">
+                  <span className="text-3xl">📅</span>
+                </div>
+                <div className="text-center space-y-1.5 px-4">
+                  <p className="text-white font-bold text-base">Week {selectedWeek} picks not available yet</p>
+                  <p className="text-gray-500 text-sm">The schedule for this week hasn't been published. Check back soon.</p>
+                </div>
               </div>
             )}
 
-            {!gwLoading && gw && (
+            {!gwLoading && gw && weekRole !== 'unavailable' && (
               <>
-                {/* Events for open gameweek */}
+                {/* ── Lock-time deadline banner (open weeks only) ── */}
+                {!isLocked && gw?.lock_time && (
+                  (() => {
+                    const countdown = fmtCountdown(gw.lock_time)
+                    const diff = new Date(gw.lock_time) - Date.now()
+                    const isUrgent = diff > 0 && diff < 24 * 3600000
+                    return (
+                      <div className={`flex items-start gap-3 px-4 py-3.5 rounded-2xl border ${
+                        isUrgent
+                          ? 'bg-red-950/25 border-red-500/30'
+                          : 'bg-white/4 border-white/8'
+                      }`}>
+                        <span className="text-xl mt-0.5">{isUrgent ? '⚠️' : '⏰'}</span>
+                        <div className="flex-1 min-w-0">
+                          <p className={`font-bold text-sm ${isUrgent ? 'text-red-300' : 'text-white'}`}>
+                            Pick deadline · {fmtFull(gw.lock_time)}
+                          </p>
+                          <p className={`text-xs mt-0.5 ${isUrgent ? 'text-red-400' : 'text-gray-500'}`}>
+                            {countdown} · Miss this and you lose this week's points
+                          </p>
+                        </div>
+                      </div>
+                    )
+                  })()
+                )}
+
+                {/* ── Energy availability ── */}
                 {!isLocked && (
+                  <div className="flex items-center justify-between px-4 py-3 rounded-2xl bg-yellow-950/20 border border-yellow-500/15">
+                    <div className="flex items-start gap-3">
+                      <span className="text-lg mt-0.5">⚡</span>
+                      <div>
+                        <p className="text-white font-bold text-sm">{remainingEnergy} energy remaining</p>
+                        <div className="flex items-center gap-1.5 mt-1">
+                          <div className="w-24 h-1 rounded-full bg-white/10 overflow-hidden">
+                            <div
+                              className={`h-full rounded-full transition-all ${
+                                remainingEnergy <= 5 ? 'bg-red-500' :
+                                remainingEnergy <= 10 ? 'bg-amber-400' : 'bg-yellow-400'
+                              }`}
+                              style={{ width: `${Math.max(0, Math.min(100, (remainingEnergy / totalAvailable) * 100))}%` }}
+                            />
+                          </div>
+                          <span className="text-gray-600 text-[10px]">{BASE_ENERGY} base{extraFromWallet > 0 ? ` +${extraFromWallet} bonus` : ''}</span>
+                        </div>
+                      </div>
+                    </div>
+                    <button
+                      onClick={saveAndGoToStore}
+                      className="text-yellow-400 text-xs font-bold border border-yellow-500/30 px-3 py-1.5 rounded-xl bg-yellow-950/30 hover:bg-yellow-950/50 transition-colors flex-shrink-0"
+                    >
+                      Buy more →
+                    </button>
+                  </div>
+                )}
+
+                {/* Events for open gameweek */}
+                {!effectiveIsLocked && (
                   submitted && myPickedEvents.length > 0 ? (
                     <>
                       <div className="space-y-2.5">
@@ -1009,12 +1257,12 @@ export default function MatchweekPage() {
                         {[...myPickedEvents]
                           .sort((a, b) => {
                             const PRIO = { likely: 0, live_winning: 1, live_neutral: 2, unlikely: 3, upcoming: 4, won: 5, lost: 6, finished_unknown: 7 }
-                            const as_ = computePickLiveStatus(a, picks[a.id], liveData[a.id])
-                            const bs_ = computePickLiveStatus(b, picks[b.id], liveData[b.id])
+                            const as_ = computePickLiveStatus(a, displayPicks[a.id], liveData[a.id])
+                            const bs_ = computePickLiveStatus(b, displayPicks[b.id], liveData[b.id])
                             return (PRIO[as_] ?? 4) - (PRIO[bs_] ?? 4) || new Date(a.match_time) - new Date(b.match_time)
                           })
                           .map(ev => {
-                            const liveStatus = computePickLiveStatus(ev, picks[ev.id], liveData[ev.id])
+                            const liveStatus = computePickLiveStatus(ev, displayPicks[ev.id], liveData[ev.id])
                             const liveEv = liveData[ev.id]
                             return (
                               <div key={ev.id} className="space-y-1">
@@ -1026,7 +1274,7 @@ export default function MatchweekPage() {
                                     </span>
                                   )}
                                 </div>
-                                <EventCard event={ev} selectedOptionId={picks[ev.id]}
+                                <EventCard event={ev} selectedOptionId={displayPicks[ev.id]}
                                   onSelect={handleSelect} isLocked={false} dimmed={false}
                                   remainingEnergy={remainingEnergy} picksLocked={picksLocked} />
                               </div>
@@ -1035,6 +1283,9 @@ export default function MatchweekPage() {
                       </div>
                       {unpickedEvents.length > 0 && (
                         <div className="space-y-2.5 mt-2">
+                          {remainingEnergy <= 5 && pickCount < 6 && (
+                            <EnergyCTABanner remainingEnergy={remainingEnergy} onSaveAndGo={saveAndGoToStore} />
+                          )}
                           <p className="text-gray-700 text-[11px] font-medium tracking-wider uppercase px-1">
                             Other events
                           </p>
@@ -1049,32 +1300,35 @@ export default function MatchweekPage() {
                   ) : (
                     <div className="space-y-2.5">
                       <p className="text-gray-600 text-[11px] font-medium tracking-wider uppercase px-1">
-                        {events.length} events — choose {pickCount >= 4 ? `${pickCount}/6` : '4–6'}
+                        {effectiveEvents.length} picks — choose {pickCount >= 4 ? `${pickCount}/6` : '4–6'}
                       </p>
                       {eventsWithCounts.map(ev => (
                         <EventCard key={ev.id} event={ev} selectedOptionId={picks[ev.id]}
                           onSelect={handleSelect} isLocked={false} dimmed={false}
                           remainingEnergy={remainingEnergy} picksLocked={picksLocked} />
                       ))}
+                      {remainingEnergy <= 5 && pickCount < 6 && (
+                        <EnergyCTABanner remainingEnergy={remainingEnergy} onSaveAndGo={saveAndGoToStore} />
+                      )}
                     </div>
                   )
                 )}
 
                 {/* Events for locked/finished gameweek */}
-                {isLocked && (
+                {effectiveIsLocked && (
                   <>
                     {myPickedEvents.length > 0 && (
                       <div className="space-y-2.5">
                         <p className="text-gray-400 text-xs font-semibold tracking-wider uppercase px-1">Your picks</p>
                         {[...myPickedEvents]
                           .sort((a, b) => {
-                            const PRIO = { likely: 0, live_winning: 1, live_neutral: 2, unlikely: 3, upcoming: 4, won: 5, lost: 6, finished_unknown: 7 }
-                            const as_ = computePickLiveStatus(a, picks[a.id], liveData[a.id])
-                            const bs_ = computePickLiveStatus(b, picks[b.id], liveData[b.id])
+                            const PRIO = { won: 0, likely: 1, live_winning: 2, live_neutral: 3, upcoming: 4, unlikely: 5, lost: 6, finished_unknown: 7 }
+                            const as_ = computePickLiveStatus(a, displayPicks[a.id], liveData[a.id])
+                            const bs_ = computePickLiveStatus(b, displayPicks[b.id], liveData[b.id])
                             return (PRIO[as_] ?? 4) - (PRIO[bs_] ?? 4) || new Date(a.match_time) - new Date(b.match_time)
                           })
                           .map(ev => {
-                            const liveStatus = computePickLiveStatus(ev, picks[ev.id], liveData[ev.id])
+                            const liveStatus = computePickLiveStatus(ev, displayPicks[ev.id], liveData[ev.id])
                             const liveEv = liveData[ev.id]
                             return (
                               <div key={ev.id} className="space-y-1">
@@ -1086,7 +1340,7 @@ export default function MatchweekPage() {
                                     </span>
                                   )}
                                 </div>
-                                <EventCard event={ev} selectedOptionId={picks[ev.id]}
+                                <EventCard event={ev} selectedOptionId={displayPicks[ev.id]}
                                   onSelect={handleSelect} isLocked={true} dimmed={false} />
                               </div>
                             )

@@ -10,6 +10,7 @@ import ProfilePage            from './pages/ProfilePage'
 import UserPublicProfilePage  from './pages/UserPublicProfilePage'
 import EnergyStorePage        from './pages/EnergyStorePage'
 import ScoresPage             from './pages/ScoresPage'
+import AdminPage              from './pages/AdminPage'
 
 function RequireAuth({ children }) {
   const token = useAuthStore((s) => s.token)
@@ -30,6 +31,8 @@ export default function App() {
       <Route path="/scores"    element={<RequireAuth><ScoresPage /></RequireAuth>} />
       <Route path="/profile"   element={<RequireAuth><ProfilePage /></RequireAuth>} />
       <Route path="/users/:id" element={<RequireAuth><UserPublicProfilePage /></RequireAuth>} />
+
+      <Route path="/admin" element={<AdminPage />} />
 
       <Route path="*" element={<Navigate to="/" replace />} />
     </Routes>

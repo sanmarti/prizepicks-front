@@ -232,7 +232,7 @@ export default function EnergyStorePage() {
         <SuccessToast pack={successPack} onClose={() => setSuccessPack(null)} />
       )}
 
-      <div className="max-w-2xl mx-auto px-4 pt-12 pb-28">
+      <div className="max-w-md mx-auto px-4 pt-12 pb-28">
 
         {/* Header */}
         <div className="mb-6">
