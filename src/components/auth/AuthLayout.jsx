@@ -43,28 +43,56 @@ export function Ball({ uid, size = 80 }) {
   return (
     <svg viewBox="0 0 100 100" width={size} height={size} style={{ display: 'block' }}>
       <defs>
-        <radialGradient id={`rg-${uid}`} cx="35%" cy="28%">
+        {/* 3D sphere gradient — light from top-left */}
+        <radialGradient id={`rg-${uid}`} cx="36%" cy="28%" r="65%">
           <stop offset="0%"   stopColor="#ffffff"/>
-          <stop offset="55%"  stopColor="#e6e6e6"/>
-          <stop offset="100%" stopColor="#aaaaaa"/>
+          <stop offset="45%"  stopColor="#ebebeb"/>
+          <stop offset="100%" stopColor="#7a7a7a"/>
+        </radialGradient>
+        {/* Subtle bottom shadow */}
+        <radialGradient id={`sh-${uid}`} cx="50%" cy="85%" r="45%">
+          <stop offset="0%"   stopColor="rgba(0,0,0,0.18)"/>
+          <stop offset="100%" stopColor="rgba(0,0,0,0)"/>
         </radialGradient>
         <clipPath id={`cp-${uid}`}>
           <circle cx="50" cy="50" r="47"/>
         </clipPath>
       </defs>
+
+      {/* Base sphere */}
       <circle cx="50" cy="50" r="47" fill={`url(#rg-${uid})`}/>
-      <g clipPath={`url(#cp-${uid})`} fill="#111111">
-        <polygon points="50,11 63,21 58,38 42,38 37,21"/>
-        <polygon points="37,21 23,17 15,33 25,47 42,38"/>
-        <polygon points="63,21 77,17 85,33 75,47 58,38"/>
-        <polygon points="25,47 15,61 24,75 40,73 42,56"/>
-        <polygon points="75,47 85,61 76,75 60,73 58,56"/>
-        <polygon points="40,73 24,75 31,90 50,93 50,78"/>
-        <polygon points="60,73 76,75 69,90 50,93 50,78"/>
-        <polygon points="42,56 40,73 50,78 60,73 58,56 50,51"/>
+
+      {/* Black pentagon patches — classic Telstar pattern */}
+      <g clipPath={`url(#cp-${uid})`} fill="#111" stroke="#222" strokeWidth="0.4" strokeLinejoin="round">
+        {/* Top pentagon */}
+        <polygon points="50,8 63,17 58,32 42,32 37,17"/>
+        {/* Upper-left pentagon */}
+        <polygon points="37,17 21,14 12,29 22,43 37,38"/>
+        {/* Upper-right pentagon */}
+        <polygon points="63,17 79,14 88,29 78,43 63,38"/>
+        {/* Left pentagon */}
+        <polygon points="22,43  7,55 13,72 29,76 38,62"/>
+        {/* Right pentagon */}
+        <polygon points="78,43 93,55 87,72 71,76 62,62"/>
+        {/* Lower-left pentagon */}
+        <polygon points="29,76 20,90 38,96 50,87 41,72"/>
+        {/* Lower-right pentagon */}
+        <polygon points="71,76 80,90 62,96 50,87 59,72"/>
+        {/* Bottom center pentagon */}
+        <polygon points="50,87 41,72 50,64 59,72"/>
+        {/* Center hexagon (dark inner edges only — ring of seams) */}
+        <polygon points="42,32 37,38 40,53 50,59 60,53 63,38 58,32" fill="none" stroke="#333" strokeWidth="0.8"/>
       </g>
-      <circle cx="50" cy="50" r="47" fill="none" stroke="rgba(0,0,0,0.12)" strokeWidth="1.5"/>
-      <ellipse cx="33" cy="28" rx="9" ry="5" fill="white" opacity="0.52" transform="rotate(-20 33 28)"/>
+
+      {/* Bottom shadow overlay */}
+      <circle cx="50" cy="50" r="47" fill={`url(#sh-${uid})`}/>
+
+      {/* Sphere outline */}
+      <circle cx="50" cy="50" r="47" fill="none" stroke="rgba(0,0,0,0.18)" strokeWidth="1.2"/>
+
+      {/* Specular highlight */}
+      <ellipse cx="34" cy="26" rx="11" ry="6.5" fill="white" opacity="0.55" transform="rotate(-22 34 26)"/>
+      <ellipse cx="38" cy="29" rx="5" ry="3" fill="white" opacity="0.3" transform="rotate(-22 38 29)"/>
     </svg>
   )
 }
