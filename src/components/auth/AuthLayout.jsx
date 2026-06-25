@@ -134,6 +134,15 @@ const KEYFRAMES = `
   0%,100% { transform: translateY(0px) rotate(0deg); }
   50% { transform: translateY(-22px) rotate(180deg); }
 }
+@keyframes auth-float-b {
+  0%,100% { transform: translateY(0px) rotate(0deg) scale(1); }
+  33% { transform: translateY(-18px) rotate(-15deg) scale(1.04); }
+  66% { transform: translateY(-8px) rotate(10deg) scale(0.97); }
+}
+@keyframes auth-float-c {
+  0%,100% { transform: translateY(0px) rotate(0deg); }
+  50% { transform: translateY(-14px) rotate(25deg); }
+}
 @keyframes auth-glow {
   0%,100% { opacity: 0.22; transform: scale(1); }
   50% { opacity: 0.55; transform: scale(1.14); }
@@ -544,7 +553,7 @@ function HeroPanel({ onTryIt, gwData }) {
         pointerEvents: 'none',
       }}/>
 
-      {/* Floating ball */}
+      {/* Floating ball — SVG Telstar (top-right) */}
       <div style={{
         position: 'absolute', top: '4%', right: '8%',
         animation: 'auth-float-a 8s ease-in-out infinite',
@@ -552,6 +561,30 @@ function HeroPanel({ onTryIt, gwData }) {
         pointerEvents: 'none',
       }}>
         <Ball uid="h1" size={68}/>
+      </div>
+
+      {/* Floating ball — ⚽ generic football emoji (bottom-left) */}
+      <div style={{
+        position: 'absolute', bottom: '22%', left: '6%',
+        animation: 'auth-float-b 11s ease-in-out infinite 1.5s',
+        fontSize: 52,
+        filter: 'drop-shadow(0 8px 20px rgba(0,0,0,0.7)) drop-shadow(0 0 12px rgba(34,197,94,0.2))',
+        pointerEvents: 'none', lineHeight: 1,
+        opacity: 0.85,
+      }}>
+        ⚽
+      </div>
+
+      {/* Floating ball — ⚽ World Cup ball emoji (mid, smaller) */}
+      <div style={{
+        position: 'absolute', top: '55%', right: '5%',
+        animation: 'auth-float-c 13s ease-in-out infinite 3.2s',
+        fontSize: 38,
+        filter: 'drop-shadow(0 6px 18px rgba(0,0,0,0.7)) drop-shadow(0 0 14px rgba(245,158,11,0.35))',
+        pointerEvents: 'none', lineHeight: 1,
+        opacity: 0.75,
+      }}>
+        ⚽
       </div>
 
       {/* Content */}
