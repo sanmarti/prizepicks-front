@@ -4,10 +4,9 @@ import BottomNav from '../components/layout/BottomNav'
 
 const ENERGY_BUDGET = 30
 
-// Themed visual designs for pack cards — cycles by index
+// ── Themed visuals ────────────────────────────────────────────────────────────
 const PACK_THEMES = [
   {
-    // Electric Blue — Spark
     bg: 'from-blue-950 via-cyan-900/60 to-blue-950',
     glow: 'shadow-[0_0_40px_-8px_rgba(56,189,248,0.5)]',
     border: 'border-cyan-500/30',
@@ -16,7 +15,6 @@ const PACK_THEMES = [
     btn: 'bg-cyan-600 hover:bg-cyan-500 shadow-[0_4px_14px_-4px_rgba(6,182,212,0.7)]',
     visual: (
       <div className="relative w-full h-full flex items-center justify-center select-none">
-        {/* Field lines */}
         <div className="absolute inset-0 opacity-10">
           <div className="absolute left-1/2 top-0 bottom-0 w-px bg-white -translate-x-1/2" />
           <div className="absolute left-1/2 top-1/2 w-16 h-16 rounded-full border border-white -translate-x-1/2 -translate-y-1/2" />
@@ -25,14 +23,12 @@ const PACK_THEMES = [
           <span className="text-5xl drop-shadow-[0_0_12px_rgba(56,189,248,0.9)]">⚡</span>
           <span className="text-2xl -mt-2">⚽</span>
         </div>
-        {/* Spark lines */}
         <div className="absolute top-3 right-6 text-cyan-400/50 text-lg font-black rotate-12">⚡</div>
         <div className="absolute bottom-4 left-5 text-cyan-400/30 text-sm rotate-[-20deg]">⚡</div>
       </div>
     ),
   },
   {
-    // Purple Gold — Surge
     bg: 'from-purple-950 via-violet-900/60 to-indigo-950',
     glow: 'shadow-[0_0_40px_-8px_rgba(168,85,247,0.5)]',
     border: 'border-purple-500/30',
@@ -51,12 +47,10 @@ const PACK_THEMES = [
         </div>
         <div className="absolute top-2 left-6 text-purple-400/50 text-lg rotate-[-15deg]">✦</div>
         <div className="absolute bottom-3 right-5 text-yellow-400/50 text-sm">✦</div>
-        <div className="absolute top-4 right-4 text-yellow-400/40 text-xs">⭐</div>
       </div>
     ),
   },
   {
-    // Fire Orange — Overdrive
     bg: 'from-orange-950 via-red-900/60 to-yellow-950',
     glow: 'shadow-[0_0_40px_-8px_rgba(251,146,60,0.5)]',
     border: 'border-orange-500/30',
@@ -80,7 +74,6 @@ const PACK_THEMES = [
     ),
   },
   {
-    // Emerald Green — Champion
     bg: 'from-emerald-950 via-green-900/60 to-teal-950',
     glow: 'shadow-[0_0_40px_-8px_rgba(52,211,153,0.5)]',
     border: 'border-emerald-500/30',
@@ -105,12 +98,146 @@ const PACK_THEMES = [
   },
 ]
 
-function PackCard({ pack, idx, onPurchase, purchasing }) {
+// ── Payment modal ─────────────────────────────────────────────────────────────
+function PaymentModal({ pack, onClose, onPay }) {
+  const [method,     setMethod]     = useState('card')
+  const [processing, setProcessing] = useState(false)
+  const [cardName,   setCardName]   = useState('')
+  const [cardNum,    setCardNum]    = useState('')
+  const [expiry,     setExpiry]     = useState('')
+  const [cvc,        setCvc]        = useState('')
+
+  const isApplePay = typeof window !== 'undefined' && 'ApplePaySession' in window
+
+  function fmtCard(v)   { return v.replace(/\D/g,'').slice(0,16).replace(/(.{4})/g,'$1 ').trim() }
+  function fmtExpiry(v) { const d=v.replace(/\D/g,'').slice(0,4); return d.length>2?d.slice(0,2)+'/'+d.slice(2):d }
+
+  async function submit() {
+    setProcessing(true)
+    try { await onPay() } finally { setProcessing(false) }
+  }
+
+  return (
+    <div
+      className="fixed inset-0 z-50 flex items-end justify-center bg-black/75 backdrop-blur-sm"
+      style={{ animation: 'fadeIn 0.18s ease both' }}
+      onClick={e => e.target === e.currentTarget && onClose()}
+    >
+      <style>{`
+        @keyframes fadeIn { from{opacity:0} to{opacity:1} }
+        @keyframes slideUp { from{transform:translateY(100%)} to{transform:translateY(0)} }
+      `}</style>
+
+      <div className="w-full max-w-md bg-[#0f1219] rounded-t-3xl border border-white/8 border-b-0 px-5 pt-4 pb-10"
+        style={{ animation: 'slideUp 0.3s cubic-bezier(0.32,0.72,0,1) both' }}>
+
+        {/* Handle */}
+        <div className="w-10 h-1 rounded-full bg-white/15 mx-auto mb-5" />
+
+        {/* Pack summary */}
+        <div className="flex items-center gap-4 mb-6 p-4 rounded-2xl bg-white/4 border border-white/8">
+          <div className="w-12 h-12 rounded-xl bg-indigo-500/15 border border-indigo-500/20 flex items-center justify-center text-2xl flex-shrink-0">⚡</div>
+          <div className="flex-1 min-w-0">
+            <p className="text-white font-bold text-sm">{pack.name}</p>
+            <p className="text-gray-500 text-xs mt-0.5">+{pack.energy_amount} energy this week</p>
+          </div>
+          <p className="text-white font-black text-xl flex-shrink-0">€{parseFloat(pack.price_euros).toFixed(2)}</p>
+        </div>
+
+        {/* Method tabs */}
+        <p className="text-gray-600 text-[11px] uppercase tracking-widest font-semibold mb-3">Payment method</p>
+        <div className="grid grid-cols-3 gap-2 mb-5">
+          {isApplePay && (
+            <button onClick={() => setMethod('apple')}
+              className={`py-3 rounded-xl border text-sm font-bold flex items-center justify-center gap-1.5 transition-all ${method==='apple' ? 'bg-white text-black border-white' : 'bg-white/4 border-white/10 text-white/50'}`}>
+              <span className="text-base"></span> Pay
+            </button>
+          )}
+          <button onClick={() => setMethod('google')}
+            className={`py-3 rounded-xl border text-sm font-bold flex items-center justify-center gap-1.5 transition-all ${method==='google' ? 'bg-white text-black border-white' : 'bg-white/4 border-white/10 text-white/50'}`}>
+            <svg width="16" height="16" viewBox="0 0 48 48"><path fill="#4285F4" d="M44.5 20H24v8.5h11.8C34.7 33.9 30.1 37 24 37c-7.2 0-13-5.8-13-13s5.8-13 13-13c3.1 0 5.9 1.1 8.1 2.9l6.4-6.4C34.6 4.1 29.6 2 24 2 11.8 2 2 11.8 2 24s9.8 22 22 22c11 0 21-8 21-22 0-1.3-.2-2.7-.5-4z"/></svg>
+            Pay
+          </button>
+          <button onClick={() => setMethod('card')}
+            className={`py-3 rounded-xl border text-sm font-bold flex items-center justify-center gap-1.5 transition-all ${method==='card' ? 'bg-indigo-600 border-indigo-500 text-white' : 'bg-white/4 border-white/10 text-white/50'}`}>
+            <svg width="15" height="15" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24"><rect x="1" y="4" width="22" height="16" rx="2"/><line x1="1" y1="10" x2="23" y2="10"/></svg>
+            Card
+          </button>
+        </div>
+
+        {/* Card form */}
+        {method === 'card' && (
+          <div className="flex flex-col gap-3 mb-5">
+            <input
+              value={cardName} onChange={e => setCardName(e.target.value)}
+              placeholder="Cardholder name"
+              className="bg-white/5 border border-white/10 rounded-xl px-4 py-3 text-white text-sm placeholder-gray-600 outline-none focus:border-indigo-500/60 transition-colors"
+            />
+            <div className="relative">
+              <input
+                value={cardNum} onChange={e => setCardNum(fmtCard(e.target.value))}
+                placeholder="1234 5678 9012 3456" maxLength={19} inputMode="numeric"
+                className="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-3 text-white text-sm placeholder-gray-600 outline-none focus:border-indigo-500/60 transition-colors tracking-widest"
+              />
+              <div className="absolute right-4 top-1/2 -translate-y-1/2 flex gap-1.5 opacity-40">
+                <svg width="26" height="17" viewBox="0 0 780 500"><rect width="780" height="500" rx="40" fill="#1a1f71"/><circle cx="300" cy="250" r="150" fill="#eb001b"/><circle cx="480" cy="250" r="150" fill="#f79e1b"/><path d="M390 141a150 150 0 0 1 0 218 150 150 0 0 1 0-218z" fill="#ff5f00"/></svg>
+              </div>
+            </div>
+            <div className="flex gap-3">
+              <input
+                value={expiry} onChange={e => setExpiry(fmtExpiry(e.target.value))}
+                placeholder="MM/YY" maxLength={5} inputMode="numeric"
+                className="flex-1 bg-white/5 border border-white/10 rounded-xl px-4 py-3 text-white text-sm placeholder-gray-600 outline-none focus:border-indigo-500/60 transition-colors"
+              />
+              <input
+                value={cvc} onChange={e => setCvc(e.target.value.replace(/\D/g,'').slice(0,4))}
+                placeholder="CVC" maxLength={4} inputMode="numeric"
+                className="flex-1 bg-white/5 border border-white/10 rounded-xl px-4 py-3 text-white text-sm placeholder-gray-600 outline-none focus:border-indigo-500/60 transition-colors"
+              />
+            </div>
+          </div>
+        )}
+
+        {/* Apple/Google info */}
+        {(method === 'apple' || method === 'google') && (
+          <div className="flex items-center gap-3 p-4 rounded-2xl bg-white/3 border border-white/8 mb-5">
+            <span className="text-2xl">{method === 'apple' ? '' : '🔒'}</span>
+            <p className="text-gray-400 text-sm leading-relaxed">
+              {method === 'apple'
+                ? "You'll authenticate with Face ID or Touch ID via Apple Pay to complete the payment."
+                : "You'll be redirected to Google Pay to complete the payment securely."}
+            </p>
+          </div>
+        )}
+
+        {/* Pay button */}
+        <button
+          onClick={submit}
+          disabled={processing}
+          className={`w-full py-4 rounded-2xl font-black text-base transition-all active:scale-[0.98] ${
+            processing
+              ? 'bg-white/8 text-white/30 cursor-not-allowed'
+              : 'bg-gradient-to-r from-indigo-600 to-violet-600 text-white shadow-[0_4px_24px_-4px_rgba(99,102,241,0.55)]'
+          }`}
+        >
+          {processing
+            ? <span className="flex items-center justify-center gap-2"><svg className="animate-spin h-4 w-4" fill="none" viewBox="0 0 24 24"><circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"/><path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z"/></svg> Processing…</span>
+            : `Pay €${parseFloat(pack.price_euros).toFixed(2)}`
+          }
+        </button>
+
+        <p className="text-center text-gray-700 text-[11px] mt-3">🔒 Secure payment · Energy added instantly</p>
+      </div>
+    </div>
+  )
+}
+
+// ── Pack card ─────────────────────────────────────────────────────────────────
+function PackCard({ pack, idx, onBuy }) {
   const theme = PACK_THEMES[idx % PACK_THEMES.length]
   const originalPrice = pack.discount_pct > 0
     ? (parseFloat(pack.price_euros) / (1 - pack.discount_pct / 100)).toFixed(2)
     : null
-  const isBuying = purchasing === pack.id
 
   return (
     <div className={`relative rounded-2xl border overflow-hidden transition-all hover:scale-[1.005] ${theme.border} ${theme.glow} bg-gradient-to-br ${theme.bg}`}>
@@ -121,16 +248,15 @@ function PackCard({ pack, idx, onPurchase, purchasing }) {
       )}
 
       <div className="flex items-stretch">
-        {/* Visual — left column */}
+        {/* Visual */}
         <div className="w-28 flex-shrink-0 relative overflow-hidden">
           {pack.image_url
             ? <img src={pack.image_url} alt={pack.name} className="w-full h-full object-cover" />
             : <div className="w-full h-full">{theme.visual}</div>}
-          {/* Right fade */}
           <div className="absolute top-0 right-0 bottom-0 w-6 bg-gradient-to-r from-transparent to-black/30" />
         </div>
 
-        {/* Content — right column */}
+        {/* Content */}
         <div className="flex-1 p-4 flex flex-col gap-2.5 min-w-0">
           <div>
             <p className="text-white font-bold text-sm leading-tight">{pack.name}</p>
@@ -138,37 +264,19 @@ function PackCard({ pack, idx, onPurchase, purchasing }) {
               <p className="text-gray-500 text-xs mt-0.5 leading-relaxed line-clamp-2">{pack.description}</p>
             )}
           </div>
-
-          {/* Energy pill */}
           <div className={`inline-flex items-center gap-1.5 self-start rounded-lg px-2.5 py-1 border text-xs font-black ${theme.badge}`}>
-            <span>⚡</span>
-            <span>+{pack.energy_amount} energy</span>
+            <span>⚡</span><span>+{pack.energy_amount} energy</span>
           </div>
-
-          {/* Price + purchase */}
           <div className="flex items-center justify-between mt-auto pt-2 border-t border-white/8">
             <div className="leading-none">
-              {originalPrice && (
-                <p className="text-gray-600 text-[11px] line-through">€{originalPrice}</p>
-              )}
+              {originalPrice && <p className="text-gray-600 text-[11px] line-through">€{originalPrice}</p>}
               <p className="text-white font-black text-xl">€{parseFloat(pack.price_euros).toFixed(2)}</p>
             </div>
             <button
-              onClick={() => onPurchase(pack)}
-              disabled={isBuying}
-              className={`flex items-center gap-2 font-bold text-sm px-5 py-2 rounded-xl transition-all active:scale-95 disabled:opacity-60 disabled:cursor-not-allowed text-white ${
-                isBuying ? 'bg-white/10 shadow-none' : theme.btn
-              }`}
+              onClick={() => onBuy(pack)}
+              className={`flex items-center gap-2 font-bold text-sm px-5 py-2 rounded-xl transition-all active:scale-95 text-white ${theme.btn}`}
             >
-              {isBuying ? (
-                <>
-                  <svg className="animate-spin h-4 w-4" fill="none" viewBox="0 0 24 24">
-                    <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"/>
-                    <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z"/>
-                  </svg>
-                  Purchasing…
-                </>
-              ) : 'Purchase'}
+              Purchase
             </button>
           </div>
         </div>
@@ -177,12 +285,9 @@ function PackCard({ pack, idx, onPurchase, purchasing }) {
   )
 }
 
+// ── Success toast ─────────────────────────────────────────────────────────────
 function SuccessToast({ pack, onClose }) {
-  useEffect(() => {
-    const t = setTimeout(onClose, 4000)
-    return () => clearTimeout(t)
-  }, [onClose])
-
+  useEffect(() => { const t = setTimeout(onClose, 4000); return () => clearTimeout(t) }, [onClose])
   return (
     <div className="fixed top-6 left-1/2 -translate-x-1/2 z-50 flex items-center gap-3 bg-green-900/95 border border-green-500/40 backdrop-blur-md px-5 py-3 rounded-2xl shadow-2xl">
       <span className="text-2xl">⚡</span>
@@ -195,12 +300,59 @@ function SuccessToast({ pack, onClose }) {
   )
 }
 
+// ── Wallet card ───────────────────────────────────────────────────────────────
+function WalletCard({ walletBalance }) {
+  if (walletBalance === 0) {
+    return (
+      <div className="rounded-2xl bg-gradient-to-br from-slate-900 to-[#0f1020] border border-white/6 p-5 mb-8">
+        <div className="flex items-start gap-4">
+          <div className="w-12 h-12 rounded-xl bg-white/4 border border-white/8 flex items-center justify-center text-2xl flex-shrink-0 mt-0.5">⚡</div>
+          <div>
+            <p className="text-white font-bold text-sm">No extra energy yet</p>
+            <p className="text-gray-500 text-[13px] mt-1.5 leading-relaxed">
+              You start with ⚡{ENERGY_BUDGET} each week. When you run out, you can't make more picks — buy a pack to keep playing.
+            </p>
+            <div className="flex gap-4 mt-3">
+              <div className="flex items-center gap-1.5 text-xs text-indigo-400 font-semibold">
+                <span>↑</span> More picks per week
+              </div>
+              <div className="flex items-center gap-1.5 text-xs text-purple-400 font-semibold">
+                <span>⚡</span> Back riskier outcomes
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    )
+  }
+
+  return (
+    <div className="rounded-2xl bg-gradient-to-br from-indigo-950/80 to-purple-950/60 border border-indigo-500/20 p-5 mb-8 shadow-[0_0_30px_-10px_rgba(99,102,241,0.4)]">
+      <div className="flex items-center justify-between">
+        <div>
+          <p className="text-gray-500 text-xs uppercase tracking-widest font-semibold">Extra energy</p>
+          <div className="flex items-end gap-2 mt-1">
+            <span className="text-yellow-400 font-black text-4xl leading-none">+{walletBalance}</span>
+            <span className="text-gray-500 text-sm mb-0.5">⚡ purchased</span>
+          </div>
+          <p className="text-xs text-indigo-400 mt-1.5">
+            {ENERGY_BUDGET} base + <span className="text-yellow-400 font-bold">{walletBalance} bonus</span>
+            {' '}= <span className="text-white font-bold">{ENERGY_BUDGET + walletBalance}⚡ total this week</span>
+          </p>
+        </div>
+        <div className="w-14 h-14 rounded-2xl bg-yellow-400/10 border border-yellow-400/20 flex items-center justify-center text-3xl flex-shrink-0">⚡</div>
+      </div>
+    </div>
+  )
+}
+
+// ── Page ──────────────────────────────────────────────────────────────────────
 export default function EnergyStorePage() {
-  const [packs, setPacks]           = useState([])
+  const [packs,         setPacks]         = useState([])
   const [walletBalance, setWalletBalance] = useState(0)
-  const [loading, setLoading]       = useState(true)
-  const [purchasing, setPurchasing] = useState(null)
-  const [successPack, setSuccessPack] = useState(null)
+  const [loading,       setLoading]       = useState(true)
+  const [payingPack,    setPayingPack]    = useState(null)
+  const [successPack,   setSuccessPack]   = useState(null)
 
   const load = useCallback(async () => {
     try {
@@ -214,23 +366,17 @@ export default function EnergyStorePage() {
 
   useEffect(() => { load() }, [load])
 
-  async function handlePurchase(pack) {
-    setPurchasing(pack.id)
-    try {
-      const res = await purchaseEnergyPack(pack.id)
-      setWalletBalance(res.data?.new_balance ?? walletBalance + pack.energy_amount)
-      setSuccessPack(pack)
-    } catch {}
-    finally { setPurchasing(null) }
+  async function handlePay() {
+    const res = await purchaseEnergyPack(payingPack.id)
+    setWalletBalance(res.data?.new_balance ?? walletBalance + payingPack.energy_amount)
+    setSuccessPack(payingPack)
+    setPayingPack(null)
   }
-
-  const totalEnergy = ENERGY_BUDGET + walletBalance
 
   return (
     <div className="min-h-screen bg-[#0a0d12] text-white">
-      {successPack && (
-        <SuccessToast pack={successPack} onClose={() => setSuccessPack(null)} />
-      )}
+      {successPack && <SuccessToast pack={successPack} onClose={() => setSuccessPack(null)} />}
+      {payingPack  && <PaymentModal pack={payingPack} onClose={() => setPayingPack(null)} onPay={handlePay} />}
 
       <div className="max-w-md mx-auto px-4 pt-12 pb-28">
 
@@ -241,36 +387,14 @@ export default function EnergyStorePage() {
           <p className="text-gray-500 text-sm mt-1">Top up your weekly energy to unlock more picks</p>
         </div>
 
-        {/* Wallet card */}
-        <div className="rounded-2xl bg-gradient-to-br from-indigo-950/80 to-purple-950/60 border border-indigo-500/20 p-5 mb-8 shadow-[0_0_30px_-10px_rgba(99,102,241,0.4)]">
-          <div className="flex items-center justify-between">
-            <div>
-              <p className="text-gray-500 text-xs uppercase tracking-widest font-semibold">Total energy this week</p>
-              <div className="flex items-end gap-2 mt-1">
-                <span className="text-yellow-400 font-black text-4xl leading-none">{totalEnergy}</span>
-                <span className="text-gray-500 text-sm mb-0.5">⚡ available</span>
-              </div>
-              {walletBalance > 0 && (
-                <p className="text-xs text-indigo-400 mt-1.5">{ENERGY_BUDGET} base + <span className="text-yellow-400 font-bold">+{walletBalance} from packs</span></p>
-              )}
-              {walletBalance === 0 && (
-                <p className="text-xs text-gray-600 mt-1.5">{ENERGY_BUDGET} base energy — purchase a pack to boost it</p>
-              )}
-            </div>
-            <div className="w-14 h-14 rounded-2xl bg-yellow-400/10 border border-yellow-400/20 flex items-center justify-center text-3xl flex-shrink-0">
-              ⚡
-            </div>
-          </div>
-        </div>
+        <WalletCard walletBalance={walletBalance} />
 
-        {/* Packs grid */}
+        {/* Packs */}
         <p className="text-gray-600 text-xs uppercase tracking-widest font-semibold mb-4">Available packs</p>
 
         {loading ? (
           <div className="flex flex-col gap-3">
-            {[1,2,3,4].map(i => (
-              <div key={i} className="h-64 bg-white/4 border border-white/8 rounded-2xl animate-pulse" />
-            ))}
+            {[1,2,3,4].map(i => <div key={i} className="h-32 bg-white/4 border border-white/8 rounded-2xl animate-pulse" />)}
           </div>
         ) : packs.length === 0 ? (
           <div className="text-center py-20 bg-white/3 border border-white/8 rounded-2xl">
@@ -281,13 +405,7 @@ export default function EnergyStorePage() {
         ) : (
           <div className="flex flex-col gap-3">
             {packs.map((pack, idx) => (
-              <PackCard
-                key={pack.id}
-                pack={pack}
-                idx={idx}
-                onPurchase={handlePurchase}
-                purchasing={purchasing}
-              />
+              <PackCard key={pack.id} pack={pack} idx={idx} onBuy={setPayingPack} />
             ))}
           </div>
         )}
