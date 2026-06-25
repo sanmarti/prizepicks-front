@@ -584,25 +584,28 @@ function HeroPanel({ onTryIt, gwData }) {
           <div style={{ flex: 1, height: 1, background: 'rgba(255,255,255,0.05)' }}/>
         </div>
 
-        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 8, marginBottom: 20 }}>
+        <div style={{ display: 'flex', flexDirection: 'column', gap: 10, marginBottom: 20 }}>
           {STEPS.map(({ num, accent, icon, title, desc }) => (
             <div key={num} style={{
-              display: 'flex', gap: 10, alignItems: 'flex-start',
-              padding: '10px 12px',
-              background: 'rgba(255,255,255,0.02)',
-              border: '1px solid rgba(255,255,255,0.05)',
-              borderLeft: `2px solid ${accent}`,
-              borderRadius: 10,
+              display: 'flex', gap: 14, alignItems: 'flex-start',
+              padding: '14px 16px',
+              background: 'rgba(255,255,255,0.025)',
+              border: '1px solid rgba(255,255,255,0.06)',
+              borderLeft: `3px solid ${accent}`,
+              borderRadius: 12,
             }}>
               <div style={{
-                flexShrink: 0, width: 28, height: 28, borderRadius: 7,
-                background: `${accent}15`, border: `1px solid ${accent}25`,
+                flexShrink: 0, width: 36, height: 36, borderRadius: 9,
+                background: `${accent}18`, border: `1px solid ${accent}30`,
                 display: 'flex', alignItems: 'center', justifyContent: 'center',
-                fontSize: 13, boxShadow: `0 0 8px ${accent}15`,
+                fontSize: 17, boxShadow: `0 0 10px ${accent}20`,
               }}>{icon}</div>
-              <div style={{ minWidth: 0 }}>
-                <div style={{ fontSize: 7, color: accent, fontFamily: "'IBM Plex Mono', monospace", fontWeight: 700, letterSpacing: '0.1em', opacity: 0.7, marginBottom: 2 }}>{num}</div>
-                <div style={{ fontSize: 11, fontFamily: "'Syne', sans-serif", fontWeight: 700, color: 'rgba(255,255,255,0.88)', lineHeight: 1.3 }}>{title}</div>
+              <div style={{ minWidth: 0, flex: 1 }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 4 }}>
+                  <span style={{ fontSize: 11, color: accent, fontFamily: "'IBM Plex Mono', monospace", fontWeight: 700, letterSpacing: '0.12em', opacity: 0.85 }}>{num}</span>
+                  <span style={{ fontSize: 18, fontFamily: "'Syne', sans-serif", fontWeight: 700, color: '#fff', lineHeight: 1.2 }}>{title}</span>
+                </div>
+                <p style={{ fontSize: 14, color: 'rgba(255,255,255,0.5)', fontFamily: "'IBM Plex Mono', monospace", lineHeight: 1.6, margin: 0 }}>{desc}</p>
               </div>
             </div>
           ))}
