@@ -636,15 +636,15 @@ function HeroPanel({ onTryIt, gwData }) {
         <div style={{ marginBottom: 20 }}>
           <h1 style={{
             fontFamily: "'Syne', sans-serif", fontWeight: 700,
-            fontSize: 'clamp(26px, 2.8vw, 38px)', lineHeight: 1.05,
-            letterSpacing: '-0.03em', margin: '0 0 8px', color: '#fff',
+            fontSize: 'clamp(36px, 4vw, 56px)', lineHeight: 1.05,
+            letterSpacing: '-0.03em', margin: '0 0 14px', color: '#fff',
           }}>
             Pick smarter.{' '}
             <span style={{ background: 'linear-gradient(90deg, #22c55e 0%, #a78bfa 60%, #f59e0b 100%)', WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent' }}>
               Rise through the ranks.
             </span>
           </h1>
-          <p style={{ fontSize: 11, color: 'rgba(255,255,255,0.28)', fontFamily: "'IBM Plex Mono', monospace", margin: 0 }}>
+          <p style={{ fontSize: 16, color: 'rgba(255,255,255,0.45)', fontFamily: "'IBM Plex Mono', monospace", margin: 0, lineHeight: 1.6 }}>
             6 picks · ⚡25 energy · 4-week sprints · one shot at glory
           </p>
         </div>
