@@ -1,10 +1,10 @@
 import axios from 'axios'
 import client from './client'
 
+// Public API is a separate Gateway — never fall back to the private main API
 const publicClient = axios.create({
   baseURL:
-    import.meta.env.VITE_PUBLIC_API_URL ??
-    import.meta.env.VITE_API_URL ??
+    import.meta.env.VITE_PUBLIC_API_URL ||
     'https://5gdrajqcvb.execute-api.eu-west-3.amazonaws.com/prod',
 })
 
