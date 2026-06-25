@@ -1,5 +1,6 @@
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { useNavigate } from 'react-router-dom'
+import { getPublicGameweek } from '../../api/competitions'
 
 // ── SVG Icons ─────────────────────────────────────────────────────────────────
 
@@ -150,29 +151,7 @@ const KEYFRAMES = `
 }
 `
 
-// ── Mock data ──────────────────────────────────────────────────────────────────
-
-const MOCK_SPRINT = { name: 'Sprint 3', week: 'Gameweek 9', daysLeft: 8 }
-
-const MOCK_FIXTURES = [
-  { id: 1,  home: 'Arsenal',          away: 'Chelsea',          league: 'Premier League', flag: '🏴󠁧󠁢󠁥󠁮󠁧󠁿', day: 'SAT' },
-  { id: 2,  home: 'Real Madrid',      away: 'Barcelona',        league: 'La Liga',         flag: '🇪🇸', day: 'SAT' },
-  { id: 3,  home: 'Bayern Munich',    away: 'Dortmund',         league: 'Bundesliga',      flag: '🇩🇪', day: 'SAT' },
-  { id: 4,  home: 'Inter Milan',      away: 'AC Milan',         league: 'Serie A',         flag: '🇮🇹', day: 'SAT' },
-  { id: 5,  home: 'PSG',              away: 'Marseille',        league: 'Ligue 1',         flag: '🇫🇷', day: 'SAT' },
-  { id: 6,  home: 'Man City',         away: 'Liverpool',        league: 'Premier League',  flag: '🏴󠁧󠁢󠁥󠁮󠁧󠁿', day: 'SUN' },
-  { id: 7,  home: 'Atlético Madrid',  away: 'Sevilla',          league: 'La Liga',         flag: '🇪🇸', day: 'SUN' },
-  { id: 8,  home: 'Juventus',         away: 'Roma',             league: 'Serie A',         flag: '🇮🇹', day: 'SUN' },
-  { id: 9,  home: 'Tottenham',        away: 'Man United',       league: 'Premier League',  flag: '🏴󠁧󠁢󠁥󠁮󠁧󠁿', day: 'SUN' },
-  { id: 10, home: 'Porto',            away: 'Benfica',          league: 'Liga Portugal',   flag: '🇵🇹', day: 'SUN' },
-  { id: 11, home: 'Ajax',             away: 'PSV',              league: 'Eredivisie',      flag: '🇳🇱', day: 'MON' },
-  { id: 12, home: 'Celtic',           away: 'Rangers',          league: 'Scottish Prem',   flag: '🏴󠁧󠁢󠁳󠁣󠁴󠁿', day: 'MON' },
-  { id: 13, home: 'Napoli',           away: 'Lazio',            league: 'Serie A',         flag: '🇮🇹', day: 'MON' },
-  { id: 14, home: 'B. Leverkusen',    away: 'RB Leipzig',       league: 'Bundesliga',      flag: '🇩🇪', day: 'MON' },
-  { id: 15, home: 'Flamengo',         away: 'Palmeiras',        league: 'Brasileirao',     flag: '🇧🇷', day: 'MON' },
-]
-
-const MAX_PICKS   = 6
+const MAX_PICKS    = 6
 const TOTAL_ENERGY = 25
 
 // ── Game Preview Modal ─────────────────────────────────────────────────────────
