@@ -37,98 +37,111 @@ const ROW = { display: 'flex', gap: 10 }
 function ImagePicker({ value, onChange }) {
   const ref = useRef()
   const [uploading, setUploading] = useState(false)
+  const [urlMode, setUrlMode] = useState(!value?.startsWith('data:') && !!value)
 
   async function handleFile(file) {
     setUploading(true)
     try {
       const base64 = await compressImage(file, 400)
       onChange(base64)
+      setUrlMode(false)
     } finally {
       setUploading(false)
     }
   }
 
   return (
-    <div>
+    <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
       <label style={LBL}>PACK IMAGE</label>
-      <div style={{ display: 'flex', gap: 12, alignItems: 'flex-start' }}>
-        {/* Preview */}
-        <div
-          onClick={() => !uploading && ref.current.click()}
-          style={{
-            width: 80, height: 80, borderRadius: 12, flexShrink: 0,
-            border: '1.5px dashed rgba(99,102,241,0.4)',
-            background: 'rgba(99,102,241,0.06)',
-            overflow: 'hidden', cursor: 'pointer',
-            display: 'flex', alignItems: 'center', justifyContent: 'center',
-            position: 'relative',
-          }}
-          title="Click to upload image from your computer"
-        >
-          {value
-            ? <img src={value} alt="pack" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
-            : <span style={{ fontSize: 28 }}>🖼</span>
-          }
-          {uploading && (
-            <div style={{ position: 'absolute', inset: 0, background: 'rgba(0,0,0,0.6)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-              <svg className="animate-spin" width="24" height="24" fill="none" viewBox="0 0 24 24">
-                <circle cx="12" cy="12" r="10" stroke="rgba(255,255,255,0.25)" strokeWidth="4"/>
-                <path fill="#6366f1" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z"/>
-              </svg>
+
+      {/* Current image preview (if any) */}
+      {value && (
+        <div style={{ position: 'relative', width: '100%', height: 140, borderRadius: 12, overflow: 'hidden', background: '#111' }}>
+          <img src={value} alt="pack preview" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+          <button
+            type="button"
+            onClick={() => { onChange(null); setUrlMode(false) }}
+            style={{
+              position: 'absolute', top: 8, right: 8,
+              background: 'rgba(0,0,0,0.7)', border: '1px solid rgba(255,255,255,0.2)',
+              color: '#f87171', borderRadius: 6, padding: '4px 10px',
+              fontSize: 11, cursor: 'pointer', fontWeight: 600,
+            }}
+          >
+            ✕ Remove
+          </button>
+          {value?.startsWith('data:') && (
+            <div style={{ position: 'absolute', bottom: 8, left: 8, background: 'rgba(0,0,0,0.6)', borderRadius: 4, padding: '2px 8px', fontSize: 10, color: 'rgba(255,255,255,0.5)' }}>
+              Uploaded · ~{Math.round(value.length / 1024)} KB
             </div>
           )}
         </div>
+      )}
 
-        {/* Right side */}
-        <div style={{ flex: 1, display: 'flex', flexDirection: 'column', gap: 6 }}>
-          {/* Upload from computer */}
-          <button
-            type="button"
-            onClick={() => ref.current.click()}
-            disabled={uploading}
-            style={{
-              padding: '8px 14px', borderRadius: 8, border: '1px solid rgba(99,102,241,0.4)',
-              background: 'rgba(99,102,241,0.1)', color: '#818cf8',
-              fontSize: 12, cursor: 'pointer', fontWeight: 600,
-              display: 'flex', alignItems: 'center', gap: 6,
-            }}
-          >
-            <svg width="14" height="14" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
+      {/* Upload button — always visible and prominent */}
+      <button
+        type="button"
+        onClick={() => ref.current.click()}
+        disabled={uploading}
+        style={{
+          width: '100%', padding: '13px 0',
+          border: '1.5px dashed rgba(99,102,241,0.45)',
+          background: uploading ? 'rgba(99,102,241,0.05)' : 'rgba(99,102,241,0.08)',
+          color: '#818cf8', borderRadius: 12,
+          fontSize: 14, fontWeight: 700, cursor: uploading ? 'not-allowed' : 'pointer',
+          display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8,
+          transition: 'background 0.2s',
+        }}
+        onMouseEnter={e => { if (!uploading) e.currentTarget.style.background = 'rgba(99,102,241,0.15)' }}
+        onMouseLeave={e => { if (!uploading) e.currentTarget.style.background = 'rgba(99,102,241,0.08)' }}
+      >
+        {uploading ? (
+          <>
+            <svg style={{ animation: 'spin 1s linear infinite' }} width="16" height="16" fill="none" viewBox="0 0 24 24">
+              <circle cx="12" cy="12" r="10" stroke="rgba(255,255,255,0.2)" strokeWidth="4"/>
+              <path fill="#818cf8" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z"/>
+            </svg>
+            Compressing…
+          </>
+        ) : (
+          <>
+            <svg width="16" height="16" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
               <path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4"/>
               <polyline points="17 8 12 3 7 8"/>
               <line x1="12" y1="3" x2="12" y2="15"/>
             </svg>
-            Upload from computer
-          </button>
+            {value ? 'Replace image from computer' : 'Upload image from computer'}
+          </>
+        )}
+      </button>
 
-          {/* Or paste URL */}
+      {/* URL alternative */}
+      <div>
+        <button
+          type="button"
+          onClick={() => setUrlMode(m => !m)}
+          style={{ background: 'none', border: 'none', color: 'rgba(255,255,255,0.3)', fontSize: 11, cursor: 'pointer', padding: 0, marginBottom: urlMode ? 6 : 0 }}
+        >
+          {urlMode ? '▾ Use URL instead' : '▸ Or paste an image URL instead'}
+        </button>
+        {urlMode && (
           <input
             type="text"
             value={value?.startsWith('data:') ? '' : (value || '')}
             onChange={e => onChange(e.target.value || null)}
-            placeholder="…or paste image URL"
-            style={{ ...INP, padding: '8px 10px', fontSize: 12 }}
+            placeholder="https://example.com/image.jpg"
+            style={{ ...INP, fontSize: 13 }}
             onFocus={e => e.target.style.borderColor = 'rgba(99,102,241,0.6)'}
             onBlur={e => e.target.style.borderColor = 'rgba(255,255,255,0.1)'}
           />
-
-          {/* Clear */}
-          {value && (
-            <button type="button" onClick={() => onChange(null)} style={{ fontSize: 11, color: 'rgba(248,113,113,0.7)', background: 'none', border: 'none', cursor: 'pointer', textAlign: 'left', padding: 0 }}>
-              ✕ Remove image
-            </button>
-          )}
-
-          {value?.startsWith('data:') && (
-            <p style={{ fontSize: 10, color: 'rgba(255,255,255,0.25)', margin: 0 }}>
-              Image uploaded from computer (~{Math.round(value.length / 1024)}KB)
-            </p>
-          )}
-        </div>
+        )}
       </div>
+
       <input ref={ref} type="file" accept="image/*" style={{ display: 'none' }}
         onChange={e => { if (e.target.files[0]) handleFile(e.target.files[0]); e.target.value = '' }}
       />
+
+      <style>{`@keyframes spin { from { transform: rotate(0deg) } to { transform: rotate(360deg) } }`}</style>
     </div>
   )
 }
@@ -139,6 +152,9 @@ const EMPTY = { name: '', description: '', image_url: null, energy_amount: 10, p
 function PackForm({ initial, onSave, onCancel, saving }) {
   const [form, setForm] = useState(initial ?? EMPTY)
   const set = (k, v) => setForm(f => ({ ...f, [k]: v }))
+
+  // Reset when switching between packs
+  useEffect(() => { setForm(initial ?? EMPTY) }, [initial])
 
   return (
     <form
