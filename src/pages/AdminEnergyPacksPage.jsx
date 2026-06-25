@@ -31,7 +31,6 @@ const EMPTY = {
 function PackForm({ initial, onSave, onCancel, saving }) {
   const [form,      setForm]      = useState(initial ?? EMPTY)
   const [uploading, setUploading] = useState(false)
-  const inputId = 'pack-img-upload'
 
   useEffect(() => { setForm(initial ?? EMPTY) }, [initial])
 
@@ -87,7 +86,7 @@ function PackForm({ initial, onSave, onCancel, saving }) {
 
         {/* Preview */}
         {form.image_url && (
-          <div style={{ position: 'relative', width: '100%', height: 160, borderRadius: 12, overflow: 'hidden', background: '#111', marginBottom: 4 }}>
+          <div style={{ position: 'relative', width: '100%', height: 160, borderRadius: 12, overflow: 'hidden', background: '#111' }}>
             <img src={form.image_url} alt="preview"
               style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
             <button type="button" onClick={() => set('image_url', null)}
@@ -97,48 +96,45 @@ function PackForm({ initial, onSave, onCancel, saving }) {
           </div>
         )}
 
-        {/* Upload — using label+input so it always works */}
-        <label htmlFor={inputId} style={{
+        {/* Upload button — label wraps input directly (most reliable pattern) */}
+        <label style={{
           display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 10,
-          width: '100%', padding: '14px 0',
-          border: '2px dashed rgba(99,102,241,0.5)',
-          borderRadius: 12,
-          background: uploading ? 'rgba(99,102,241,0.04)' : 'rgba(99,102,241,0.08)',
-          color: uploading ? 'rgba(129,140,248,0.5)' : '#818cf8',
-          fontSize: 14, fontWeight: 700,
-          cursor: uploading ? 'not-allowed' : 'pointer',
-          boxSizing: 'border-box',
-          transition: 'background 0.2s',
-          userSelect: 'none',
+          width: '100%', padding: '13px 0',
+          borderRadius: 12, cursor: uploading ? 'wait' : 'pointer',
+          background: uploading ? '#4f46e5' : '#6366f1',
+          color: '#fff', fontSize: 14, fontWeight: 700,
+          boxSizing: 'border-box', userSelect: 'none',
+          boxShadow: '0 2px 12px rgba(99,102,241,0.4)',
+          transition: 'background 0.15s',
         }}>
-          {uploading ? '⏳ Compressing…' : (
-            <>
-              <svg width="18" height="18" fill="none" stroke="currentColor" strokeWidth="2.5"
-                strokeLinecap="round" strokeLinejoin="round" viewBox="0 0 24 24">
-                <path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4"/>
-                <polyline points="17 8 12 3 7 8"/>
-                <line x1="12" y1="3" x2="12" y2="15"/>
-              </svg>
-              {form.image_url ? 'Replace image from computer' : 'Upload image from computer'}
-            </>
-          )}
+          {uploading
+            ? '⏳ Compressing image…'
+            : <>
+                <svg width="17" height="17" fill="none" stroke="currentColor" strokeWidth="2.5"
+                  strokeLinecap="round" strokeLinejoin="round" viewBox="0 0 24 24">
+                  <path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4"/>
+                  <polyline points="17 8 12 3 7 8"/>
+                  <line x1="12" y1="3" x2="12" y2="15"/>
+                </svg>
+                {form.image_url ? '📁 Replace image from computer' : '📁 Upload image from computer'}
+              </>
+          }
+          <input
+            type="file"
+            accept="image/*"
+            disabled={uploading}
+            onChange={handleImageFile}
+            style={{ display: 'none' }}
+          />
         </label>
-        <input
-          id={inputId}
-          type="file"
-          accept="image/*"
-          disabled={uploading}
-          onChange={handleImageFile}
-          style={{ display: 'none' }}
-        />
 
-        {/* URL alternative */}
+        {/* URL fallback */}
         <input
-          type="url"
+          type="text"
           value={form.image_url?.startsWith('data:') ? '' : (form.image_url || '')}
           onChange={e => set('image_url', e.target.value || null)}
           placeholder="Or paste an image URL (https://…)"
-          style={{ ...s.inp, fontSize: 12, marginTop: 6, color: 'rgba(255,255,255,0.6)' }}
+          style={{ ...s.inp, fontSize: 12, color: 'rgba(255,255,255,0.5)' }}
         />
       </div>
 
