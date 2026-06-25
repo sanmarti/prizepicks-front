@@ -157,6 +157,40 @@ const KEYFRAMES = `
 }
 `
 
+const STEPS = [
+  {
+    num: '01',
+    icon: '🏆',
+    title: 'Join a League',
+    desc: 'Enter a private or public league with your friends. Each league runs across multiple gameweeks.',
+  },
+  {
+    num: '02',
+    icon: '⚽',
+    title: 'Make Your Picks',
+    desc: 'Before each gameweek locks, predict match outcomes: Home Win, Draw, or Away Win.',
+  },
+  {
+    num: '03',
+    icon: '⚡',
+    title: 'Earn Energy',
+    desc: 'Correct picks earn Energy points. Use energy to boost your position or unlock bonuses.',
+  },
+  {
+    num: '04',
+    icon: '📈',
+    title: 'Climb Divisions',
+    desc: 'Each sprint lasts several weeks. Top performers get promoted — bottom ones are relegated.',
+  },
+]
+
+const FEATURES = [
+  { icon: '🔴', label: 'Live Scores', color: '#22c55e' },
+  { icon: '⚡', label: 'Energy System', color: '#a78bfa' },
+  { icon: '🏅', label: '6 to Glory', color: '#f59e0b' },
+  { icon: '📊', label: 'Match Stats', color: '#38bdf8' },
+]
+
 // ── Left Hero Panel ────────────────────────────────────────────────────────────
 
 function HeroPanel() {
@@ -168,6 +202,7 @@ function HeroPanel() {
         position: 'relative',
         overflow: 'hidden',
         flexDirection: 'column',
+        justifyContent: 'flex-start',
         background: 'linear-gradient(165deg, #071a0d 0%, #041009 45%, #050912 100%)',
       }}
     >
@@ -175,98 +210,136 @@ function HeroPanel() {
 
       {/* Glow orbs */}
       <div style={{
-        position: 'absolute', top: '16%', left: '18%',
-        width: 360, height: 360, borderRadius: '50%',
-        background: 'radial-gradient(circle, rgba(34,197,94,0.18) 0%, transparent 68%)',
+        position: 'absolute', top: '8%', right: '8%',
+        width: 280, height: 280, borderRadius: '50%',
+        background: 'radial-gradient(circle, rgba(34,197,94,0.14) 0%, transparent 68%)',
         animation: 'auth-glow 5s ease-in-out infinite',
         pointerEvents: 'none',
       }}/>
       <div style={{
-        position: 'absolute', bottom: '22%', right: '10%',
-        width: 220, height: 220, borderRadius: '50%',
-        background: 'radial-gradient(circle, rgba(124,110,245,0.24) 0%, transparent 68%)',
+        position: 'absolute', bottom: '10%', left: '5%',
+        width: 200, height: 200, borderRadius: '50%',
+        background: 'radial-gradient(circle, rgba(124,110,245,0.18) 0%, transparent 68%)',
         animation: 'auth-glow 4s ease-in-out infinite 1.6s',
         pointerEvents: 'none',
       }}/>
 
-      {/* Floating balls */}
+      {/* Floating ball — top right */}
       <div style={{
-        position: 'absolute', top: '9%', right: '12%',
+        position: 'absolute', top: '6%', right: '9%',
         animation: 'auth-float-a 7s ease-in-out infinite',
         filter: 'drop-shadow(0 14px 32px rgba(0,0,0,0.75))',
+        pointerEvents: 'none',
       }}>
-        <Ball uid="h1" size={105}/>
-      </div>
-      <div style={{
-        position: 'absolute', top: '46%', left: '6%',
-        animation: 'auth-float-b 9s ease-in-out infinite 1s',
-        filter: 'drop-shadow(0 8px 20px rgba(0,0,0,0.65))',
-      }}>
-        <Ball uid="h2" size={60}/>
-      </div>
-      <div style={{
-        position: 'absolute', bottom: '30%', right: '7%',
-        animation: 'auth-float-c 11s ease-in-out infinite 2.2s',
-        filter: 'drop-shadow(0 5px 14px rgba(0,0,0,0.55))',
-      }}>
-        <Ball uid="h3" size={38}/>
+        <Ball uid="h1" size={72}/>
       </div>
 
-      {/* Bottom content */}
+      {/* Scrollable content */}
       <div style={{
-        position: 'absolute', bottom: 0, left: 0, right: 0,
-        padding: '0 52px 52px',
-        background: 'linear-gradient(to top, rgba(4,9,8,0.97) 0%, rgba(4,9,8,0.68) 55%, transparent 100%)',
+        position: 'relative', zIndex: 1,
+        display: 'flex', flexDirection: 'column',
+        height: '100%', padding: '44px 48px 44px 52px',
+        overflowY: 'auto',
         animation: 'auth-fade-up 0.9s ease both 0.2s',
       }}>
-        {/* Live badge */}
-        <div style={{
-          display: 'inline-flex', alignItems: 'center', gap: 8,
-          background: 'rgba(34,197,94,0.1)',
-          border: '1px solid rgba(34,197,94,0.22)',
-          borderRadius: 99, padding: '5px 14px', marginBottom: 22,
-        }}>
+        {/* Brand */}
+        <div style={{ display: 'flex', alignItems: 'center', gap: 12, marginBottom: 36 }}>
+          <Ball uid="hbrand" size={28}/>
           <span style={{
-            width: 6, height: 6, borderRadius: '50%', background: '#22c55e',
-            display: 'block', boxShadow: '0 0 6px #22c55e',
-          }}/>
-          <span style={{
-            color: '#22c55e', fontSize: 10, letterSpacing: '0.12em',
-            fontFamily: "'IBM Plex Mono', monospace",
+            fontFamily: "'Syne', sans-serif", fontWeight: 700,
+            fontSize: 18, letterSpacing: '0.14em',
+            background: 'linear-gradient(135deg, #7c6ef5 0%, #a78bfa 100%)',
+            WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent',
+          }}>PRIZEPICKS</span>
+          <div style={{
+            display: 'flex', alignItems: 'center', gap: 6,
+            background: 'rgba(34,197,94,0.1)',
+            border: '1px solid rgba(34,197,94,0.22)',
+            borderRadius: 99, padding: '3px 10px', marginLeft: 4,
           }}>
-            SEASON 2025/26 ACTIVE
-          </span>
+            <span style={{
+              width: 5, height: 5, borderRadius: '50%', background: '#22c55e',
+              display: 'block', boxShadow: '0 0 5px #22c55e',
+            }}/>
+            <span style={{
+              color: '#22c55e', fontSize: 9, letterSpacing: '0.12em',
+              fontFamily: "'IBM Plex Mono', monospace",
+            }}>LIVE</span>
+          </div>
         </div>
 
+        {/* Headline */}
         <h1 style={{
           fontFamily: "'Syne', sans-serif", fontWeight: 700,
-          fontSize: 'clamp(46px, 4.5vw, 62px)', lineHeight: 0.95,
+          fontSize: 'clamp(28px, 3vw, 40px)', lineHeight: 1.1,
           letterSpacing: '-0.02em', color: 'rgba(255,255,255,0.92)',
-          marginBottom: 16,
+          marginBottom: 10,
         }}>
-          PRIZE<br/>PICKS
+          The football<br/>fantasy league<br/>that never sleeps.
         </h1>
         <p style={{
-          fontSize: 14, color: 'rgba(255,255,255,0.35)',
-          letterSpacing: '0.04em', marginBottom: 38, lineHeight: 1.65,
+          fontSize: 13, color: 'rgba(255,255,255,0.32)',
+          letterSpacing: '0.02em', marginBottom: 40, lineHeight: 1.7,
           fontFamily: "'IBM Plex Mono', monospace",
         }}>
-          Pick your outcomes. Beat your rivals.<br/>Earn energy. Win the league.
+          Pick outcomes. Earn energy. Climb divisions.<br/>All in real time.
         </p>
 
-        {/* Stats */}
-        <div style={{ display: 'flex', gap: 40 }}>
-          {[['12K+', 'LEAGUES'], ['89K+', 'PICKS'], ['3.2K+', 'PLAYERS']].map(([v, l]) => (
-            <div key={l}>
+        {/* How it works */}
+        <p style={{
+          fontSize: 9, letterSpacing: '0.16em', color: 'rgba(255,255,255,0.22)',
+          fontFamily: "'IBM Plex Mono', monospace", marginBottom: 18, fontWeight: 600,
+        }}>HOW IT WORKS</p>
+
+        <div style={{ display: 'flex', flexDirection: 'column', gap: 20, marginBottom: 40 }}>
+          {STEPS.map(({ num, icon, title, desc }) => (
+            <div key={num} style={{ display: 'flex', gap: 16, alignItems: 'flex-start' }}>
+              {/* Step number */}
               <div style={{
-                fontFamily: "'Syne', sans-serif", fontWeight: 700,
-                fontSize: 24, color: '#fff', letterSpacing: '-0.01em',
-              }}>{v}</div>
-              <div style={{
-                fontSize: 9, color: 'rgba(255,255,255,0.26)',
-                letterSpacing: '0.1em', marginTop: 3,
-                fontFamily: "'IBM Plex Mono', monospace",
-              }}>{l}</div>
+                flexShrink: 0, width: 36, height: 36,
+                borderRadius: 10,
+                background: 'rgba(124,110,245,0.1)',
+                border: '1px solid rgba(124,110,245,0.2)',
+                display: 'flex', alignItems: 'center', justifyContent: 'center',
+                fontSize: 16,
+              }}>{icon}</div>
+              <div>
+                <div style={{
+                  display: 'flex', alignItems: 'center', gap: 8, marginBottom: 3,
+                }}>
+                  <span style={{
+                    fontSize: 9, color: 'rgba(124,110,245,0.5)',
+                    fontFamily: "'IBM Plex Mono', monospace", letterSpacing: '0.1em',
+                  }}>{num}</span>
+                  <span style={{
+                    fontFamily: "'Syne', sans-serif", fontWeight: 700,
+                    fontSize: 13, color: 'rgba(255,255,255,0.88)',
+                  }}>{title}</span>
+                </div>
+                <p style={{
+                  fontSize: 12, color: 'rgba(255,255,255,0.3)',
+                  lineHeight: 1.6, fontFamily: "'IBM Plex Mono', monospace",
+                  margin: 0,
+                }}>{desc}</p>
+              </div>
+            </div>
+          ))}
+        </div>
+
+        {/* Feature chips */}
+        <div style={{ display: 'flex', flexWrap: 'wrap', gap: 8 }}>
+          {FEATURES.map(({ icon, label, color }) => (
+            <div key={label} style={{
+              display: 'inline-flex', alignItems: 'center', gap: 6,
+              background: 'rgba(255,255,255,0.04)',
+              border: '1px solid rgba(255,255,255,0.08)',
+              borderRadius: 99, padding: '6px 12px',
+            }}>
+              <span style={{ fontSize: 12 }}>{icon}</span>
+              <span style={{
+                fontSize: 10, color: 'rgba(255,255,255,0.45)',
+                fontFamily: "'IBM Plex Mono', monospace", letterSpacing: '0.06em',
+              }}>{label}</span>
             </div>
           ))}
         </div>
@@ -274,9 +347,9 @@ function HeroPanel() {
 
       {/* Right fade edge */}
       <div style={{
-        position: 'absolute', top: 0, right: 0, bottom: 0, width: 90,
-        background: 'linear-gradient(to right, transparent, rgba(6,10,16,0.85))',
-        pointerEvents: 'none',
+        position: 'absolute', top: 0, right: 0, bottom: 0, width: 80,
+        background: 'linear-gradient(to right, transparent, rgba(6,10,16,0.88))',
+        pointerEvents: 'none', zIndex: 2,
       }}/>
     </div>
   )
