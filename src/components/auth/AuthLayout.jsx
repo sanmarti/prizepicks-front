@@ -778,9 +778,21 @@ export default function AuthLayout({ heading, subheading, children }) {
   const navigate = useNavigate()
 
   useEffect(() => {
-    getPublicGameweek()
-      .then(r => r.data && setGwData(r.data))
-      .catch(() => {})
+    function fetchGw() {
+      getPublicGameweek()
+        .then(r => r.data && setGwData(r.data))
+        .catch(() => {})
+    }
+    fetchGw()
+    // Refresh every 30 minutes in case the gameweek rolls over
+    const interval = setInterval(fetchGw, 30 * 60 * 1000)
+    // Also refresh when the user comes back to the tab
+    const onVisible = () => { if (document.visibilityState === 'visible') fetchGw() }
+    document.addEventListener('visibilitychange', onVisible)
+    return () => {
+      clearInterval(interval)
+      document.removeEventListener('visibilitychange', onVisible)
+    }
   }, [])
 
   return (
