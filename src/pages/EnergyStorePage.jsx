@@ -139,7 +139,7 @@ function PaymentModal({ pack, onClose, onPay }) {
           <div className="w-12 h-12 rounded-xl bg-indigo-500/15 border border-indigo-500/20 flex items-center justify-center text-2xl flex-shrink-0">⚡</div>
           <div className="flex-1 min-w-0">
             <p className="text-white font-bold text-sm">{pack.name}</p>
-            <p className="text-gray-500 text-xs mt-0.5">+{pack.energy_amount} energy this week</p>
+            <p className="text-gray-500 text-xs mt-0.5">+{pack.energy_amount} energy added to wallet</p>
           </div>
           <p className="text-white font-black text-xl flex-shrink-0">€{parseFloat(pack.price_euros).toFixed(2)}</p>
         </div>
@@ -310,11 +310,11 @@ function WalletCard({ walletBalance }) {
           <div>
             <p className="text-white font-bold text-sm">No extra energy yet</p>
             <p className="text-gray-500 text-[13px] mt-1.5 leading-relaxed">
-              You start with ⚡{ENERGY_BUDGET} each week. When you run out, you can't make more picks — buy a pack to keep playing.
+              Your wallet is empty. Buy a pack to add bonus energy — it carries over and you can spend it on top of your base ⚡{ENERGY_BUDGET}.
             </p>
             <div className="flex gap-4 mt-3">
               <div className="flex items-center gap-1.5 text-xs text-indigo-400 font-semibold">
-                <span>↑</span> More picks per week
+                <span>↑</span> More picks available
               </div>
               <div className="flex items-center gap-1.5 text-xs text-purple-400 font-semibold">
                 <span>⚡</span> Back riskier outcomes
@@ -333,11 +333,10 @@ function WalletCard({ walletBalance }) {
           <p className="text-gray-500 text-xs uppercase tracking-widest font-semibold">Extra energy</p>
           <div className="flex items-end gap-2 mt-1">
             <span className="text-yellow-400 font-black text-4xl leading-none">+{walletBalance}</span>
-            <span className="text-gray-500 text-sm mb-0.5">⚡ purchased</span>
+            <span className="text-gray-500 text-sm mb-0.5">⚡ in wallet</span>
           </div>
           <p className="text-xs text-indigo-400 mt-1.5">
-            {ENERGY_BUDGET} base + <span className="text-yellow-400 font-bold">{walletBalance} bonus</span>
-            {' '}= <span className="text-white font-bold">{ENERGY_BUDGET + walletBalance}⚡ total this week</span>
+            Bonus energy stored in your wallet — spent on top of your base ⚡{ENERGY_BUDGET}
           </p>
         </div>
         <div className="w-14 h-14 rounded-2xl bg-yellow-400/10 border border-yellow-400/20 flex items-center justify-center text-3xl flex-shrink-0">⚡</div>
@@ -384,7 +383,7 @@ export default function EnergyStorePage() {
         <div className="mb-6">
           <p className="text-indigo-400 text-[13px] font-bold tracking-wide uppercase">6 to Glory</p>
           <h1 className="text-white font-black text-2xl mt-0.5">Energy Store</h1>
-          <p className="text-gray-500 text-sm mt-1">Top up your weekly energy to unlock more picks</p>
+          <p className="text-gray-500 text-sm mt-1">Add bonus energy to your wallet and unlock more picks</p>
         </div>
 
         <WalletCard walletBalance={walletBalance} />
