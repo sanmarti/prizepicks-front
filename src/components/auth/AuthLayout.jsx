@@ -530,114 +530,79 @@ function HeroPanel({ onTryIt, gwData }) {
       <div style={{
         position: 'relative', zIndex: 2,
         display: 'flex', flexDirection: 'column',
-        height: '100%', padding: '40px 50px 40px 52px',
+        height: '100%', padding: '32px 48px 28px 52px',
         overflowY: 'auto',
         animation: 'auth-fade-up 0.8s ease both 0.15s',
       }}>
         {/* Brand */}
-        <div style={{ marginBottom: 32 }}>
-          <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 6 }}>
-            <div style={{
-              background: 'linear-gradient(135deg, #22c55e 0%, #16a34a 100%)',
-              borderRadius: 8, width: 28, height: 28,
-              display: 'flex', alignItems: 'center', justifyContent: 'center',
-              fontSize: 14, boxShadow: '0 0 16px rgba(34,197,94,0.4)',
-            }}>⚽</div>
-            <div>
-              <span style={{
-                fontFamily: "'Syne', sans-serif", fontWeight: 700, fontSize: 20, letterSpacing: '0.02em',
-                background: 'linear-gradient(90deg, #fff 0%, rgba(255,255,255,0.7) 100%)',
+        <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 20 }}>
+          <div style={{
+            background: 'linear-gradient(135deg, #22c55e 0%, #16a34a 100%)',
+            borderRadius: 8, width: 26, height: 26,
+            display: 'flex', alignItems: 'center', justifyContent: 'center',
+            fontSize: 13, boxShadow: '0 0 14px rgba(34,197,94,0.4)',
+          }}>⚽</div>
+          <div>
+            {['6', 'TO', 'GLORY'].map((t, i) => (
+              <span key={t} style={{
+                fontFamily: "'Syne', sans-serif", fontWeight: 700, fontSize: 19, letterSpacing: '0.02em',
+                background: [
+                  'linear-gradient(90deg, #fff, rgba(255,255,255,0.7))',
+                  'linear-gradient(90deg, #22c55e, #a78bfa)',
+                  'linear-gradient(90deg, #a78bfa, #fff)',
+                ][i],
                 WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent',
-              }}>6</span>
-              <span style={{
-                fontFamily: "'Syne', sans-serif", fontWeight: 700, fontSize: 20, letterSpacing: '0.02em',
-                background: 'linear-gradient(90deg, #22c55e, #a78bfa)',
-                WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent',
-              }}>TO</span>
-              <span style={{
-                fontFamily: "'Syne', sans-serif", fontWeight: 700, fontSize: 20, letterSpacing: '0.02em',
-                background: 'linear-gradient(90deg, #a78bfa 0%, #fff 100%)',
-                WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent',
-              }}>GLORY</span>
-            </div>
-            <div style={{
-              display: 'flex', alignItems: 'center', gap: 5,
-              background: 'rgba(34,197,94,0.08)',
-              border: '1px solid rgba(34,197,94,0.25)',
-              borderRadius: 99, padding: '3px 9px',
-            }}>
-              <span style={{
-                width: 5, height: 5, borderRadius: '50%', background: '#22c55e',
-                display: 'block', animation: 'auth-pulse-ring 1.4s ease-out infinite',
-                boxShadow: '0 0 6px #22c55e',
-              }}/>
-              <span style={{
-                color: '#22c55e', fontSize: 9, letterSpacing: '0.14em',
-                fontFamily: "'IBM Plex Mono', monospace", fontWeight: 600,
-              }}>SEASON LIVE</span>
-            </div>
+              }}>{t}</span>
+            ))}
+          </div>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 5, background: 'rgba(34,197,94,0.08)', border: '1px solid rgba(34,197,94,0.25)', borderRadius: 99, padding: '3px 9px' }}>
+            <span style={{ width: 5, height: 5, borderRadius: '50%', background: '#22c55e', display: 'block', animation: 'auth-pulse-ring 1.4s ease-out infinite', boxShadow: '0 0 6px #22c55e' }}/>
+            <span style={{ color: '#22c55e', fontSize: 9, letterSpacing: '0.14em', fontFamily: "'IBM Plex Mono', monospace", fontWeight: 600 }}>SEASON LIVE</span>
           </div>
         </div>
 
         {/* Headline */}
-        <div style={{ marginBottom: 32 }}>
+        <div style={{ marginBottom: 20 }}>
           <h1 style={{
             fontFamily: "'Syne', sans-serif", fontWeight: 700,
-            fontSize: 'clamp(28px, 3vw, 42px)', lineHeight: 1.05,
-            letterSpacing: '-0.03em', margin: '0 0 12px', color: '#fff',
+            fontSize: 'clamp(26px, 2.8vw, 38px)', lineHeight: 1.05,
+            letterSpacing: '-0.03em', margin: '0 0 8px', color: '#fff',
           }}>
-            Pick smarter.<br/>
-            <span style={{
-              background: 'linear-gradient(90deg, #22c55e 0%, #a78bfa 60%, #f59e0b 100%)',
-              WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent',
-            }}>Rise through<br/>the ranks.</span>
+            Pick smarter.{' '}
+            <span style={{ background: 'linear-gradient(90deg, #22c55e 0%, #a78bfa 60%, #f59e0b 100%)', WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent' }}>
+              Rise through the ranks.
+            </span>
           </h1>
-          <p style={{
-            fontSize: 12, color: 'rgba(255,255,255,0.28)',
-            lineHeight: 1.75, fontFamily: "'IBM Plex Mono', monospace", margin: 0,
-          }}>6 picks. 25 energy. 4 weeks per sprint.<br/>One shot at glory.</p>
+          <p style={{ fontSize: 11, color: 'rgba(255,255,255,0.28)', fontFamily: "'IBM Plex Mono', monospace", margin: 0 }}>
+            6 picks · ⚡25 energy · 4-week sprints · one shot at glory
+          </p>
         </div>
 
-        {/* HOW TO PLAY */}
-        <div style={{ display: 'flex', alignItems: 'center', gap: 12, marginBottom: 18 }}>
-          <span style={{
-            fontSize: 9, letterSpacing: '0.2em', color: 'rgba(255,255,255,0.2)',
-            fontFamily: "'IBM Plex Mono', monospace", fontWeight: 700,
-          }}>HOW TO PLAY</span>
-          <div style={{ flex: 1, height: 1, background: 'rgba(255,255,255,0.06)' }}/>
+        {/* HOW TO PLAY — compact 2×2 grid */}
+        <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 10 }}>
+          <span style={{ fontSize: 8, letterSpacing: '0.2em', color: 'rgba(255,255,255,0.18)', fontFamily: "'IBM Plex Mono', monospace", fontWeight: 700 }}>HOW TO PLAY</span>
+          <div style={{ flex: 1, height: 1, background: 'rgba(255,255,255,0.05)' }}/>
         </div>
 
-        <div style={{ display: 'flex', flexDirection: 'column', gap: 10, marginBottom: 28 }}>
+        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 8, marginBottom: 20 }}>
           {STEPS.map(({ num, accent, icon, title, desc }) => (
             <div key={num} style={{
-              display: 'flex', gap: 12, alignItems: 'flex-start',
-              padding: '12px 14px',
+              display: 'flex', gap: 10, alignItems: 'flex-start',
+              padding: '10px 12px',
               background: 'rgba(255,255,255,0.02)',
               border: '1px solid rgba(255,255,255,0.05)',
               borderLeft: `2px solid ${accent}`,
-              borderRadius: 12,
+              borderRadius: 10,
             }}>
               <div style={{
-                flexShrink: 0, width: 32, height: 32, borderRadius: 8,
-                background: `${accent}15`, border: `1px solid ${accent}28`,
+                flexShrink: 0, width: 28, height: 28, borderRadius: 7,
+                background: `${accent}15`, border: `1px solid ${accent}25`,
                 display: 'flex', alignItems: 'center', justifyContent: 'center',
-                fontSize: 14, boxShadow: `0 0 10px ${accent}18`,
+                fontSize: 13, boxShadow: `0 0 8px ${accent}15`,
               }}>{icon}</div>
-              <div style={{ flex: 1, minWidth: 0 }}>
-                <div style={{ display: 'flex', alignItems: 'center', gap: 7, marginBottom: 4 }}>
-                  <span style={{
-                    fontFamily: "'IBM Plex Mono', monospace", fontSize: 10, fontWeight: 700,
-                    letterSpacing: '0.14em', color: accent, opacity: 0.8,
-                  }}>{num}</span>
-                  <span style={{
-                    fontFamily: "'Syne', sans-serif", fontWeight: 700,
-                    fontSize: 15, color: 'rgba(255,255,255,0.95)',
-                  }}>{title}</span>
-                </div>
-                <p style={{
-                  fontSize: 13, color: 'rgba(255,255,255,0.45)',
-                  lineHeight: 1.6, fontFamily: "'IBM Plex Mono', monospace", margin: 0,
-                }}>{desc}</p>
+              <div style={{ minWidth: 0 }}>
+                <div style={{ fontSize: 7, color: accent, fontFamily: "'IBM Plex Mono', monospace", fontWeight: 700, letterSpacing: '0.1em', opacity: 0.7, marginBottom: 2 }}>{num}</div>
+                <div style={{ fontSize: 11, fontFamily: "'Syne', sans-serif", fontWeight: 700, color: 'rgba(255,255,255,0.88)', lineHeight: 1.3 }}>{title}</div>
               </div>
             </div>
           ))}
@@ -647,11 +612,11 @@ function HeroPanel({ onTryIt, gwData }) {
         <div style={{
           background: 'linear-gradient(135deg, rgba(124,110,245,0.08) 0%, rgba(34,197,94,0.06) 100%)',
           border: '1px solid rgba(124,110,245,0.2)',
-          borderRadius: 16, padding: '16px 18px', marginBottom: 12,
+          borderRadius: 14, padding: '12px 14px', marginBottom: 10,
         }}>
           {gwData && (
             <>
-              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 12 }}>
+              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 8 }}>
                 <div>
                   <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 3 }}>
                     <span style={{ fontSize: 9, letterSpacing: '0.14em', color: '#a78bfa', fontFamily: "'IBM Plex Mono', monospace", fontWeight: 700 }}>
@@ -678,16 +643,16 @@ function HeroPanel({ onTryIt, gwData }) {
               </div>
 
               {/* Mini event preview */}
-              <div style={{ display: 'flex', flexDirection: 'column', gap: 5, marginBottom: 14 }}>
+              <div style={{ display: 'flex', flexDirection: 'column', gap: 4, marginBottom: 10 }}>
                 {(gwData.events ?? []).slice(0, 3).map(ev => {
                   const parts = (ev.fixture_name || '').split(' vs ')
                   const home  = parts[0] || ev.home_team || '?'
                   const away  = parts[1] || ev.away_team || '?'
                   return (
-                    <div key={ev.id} style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', fontSize: 11, padding: '5px 10px', background: 'rgba(255,255,255,0.03)', borderRadius: 8 }}>
-                      <span style={{ fontWeight: 600, color: 'rgba(255,255,255,0.7)', fontFamily: "'Syne', sans-serif", overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', maxWidth: '42%' }}>{home}</span>
-                      <span style={{ fontSize: 9, color: 'rgba(255,255,255,0.2)', fontFamily: "'IBM Plex Mono', monospace" }}>vs</span>
-                      <span style={{ fontWeight: 600, color: 'rgba(255,255,255,0.7)', fontFamily: "'Syne', sans-serif", overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', maxWidth: '42%', textAlign: 'right' }}>{away}</span>
+                    <div key={ev.id} style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', fontSize: 10, padding: '4px 8px', background: 'rgba(255,255,255,0.03)', borderRadius: 7 }}>
+                      <span style={{ fontWeight: 600, color: 'rgba(255,255,255,0.65)', fontFamily: "'Syne', sans-serif", overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', maxWidth: '42%' }}>{home}</span>
+                      <span style={{ fontSize: 8, color: 'rgba(255,255,255,0.18)', fontFamily: "'IBM Plex Mono', monospace" }}>vs</span>
+                      <span style={{ fontWeight: 600, color: 'rgba(255,255,255,0.65)', fontFamily: "'Syne', sans-serif", overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', maxWidth: '42%', textAlign: 'right' }}>{away}</span>
                     </div>
                   )
                 })}
