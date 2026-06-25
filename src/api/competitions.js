@@ -2,7 +2,10 @@ import axios from 'axios'
 import client from './client'
 
 const publicClient = axios.create({
-  baseURL: import.meta.env.VITE_PUBLIC_API_URL ?? import.meta.env.VITE_API_URL,
+  baseURL:
+    import.meta.env.VITE_PUBLIC_API_URL ??
+    import.meta.env.VITE_API_URL ??
+    'https://5gdrajqcvb.execute-api.eu-west-3.amazonaws.com/prod',
 })
 
 export const getCompetitions    = ()     => publicClient.get('/competitions')

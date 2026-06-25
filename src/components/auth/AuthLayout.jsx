@@ -131,17 +131,24 @@ function Pitch() {
 
 const KEYFRAMES = `
 @keyframes auth-float-a {
-  0%,100% { transform: translateY(0px) rotate(0deg); }
-  50% { transform: translateY(-22px) rotate(180deg); }
+  0%   { transform: translate(0px, 0px) rotate(0deg); }
+  25%  { transform: translate(18px, -38px) rotate(90deg); }
+  50%  { transform: translate(-12px, -55px) rotate(200deg); }
+  75%  { transform: translate(22px, -30px) rotate(300deg); }
+  100% { transform: translate(0px, 0px) rotate(360deg); }
 }
 @keyframes auth-float-b {
-  0%,100% { transform: translateY(0px) rotate(0deg) scale(1); }
-  33% { transform: translateY(-18px) rotate(-15deg) scale(1.04); }
-  66% { transform: translateY(-8px) rotate(10deg) scale(0.97); }
+  0%   { transform: translate(0px, 0px) rotate(0deg) scale(1); }
+  20%  { transform: translate(-22px, -28px) rotate(-20deg) scale(1.06); }
+  45%  { transform: translate(16px, -48px) rotate(15deg) scale(0.95); }
+  70%  { transform: translate(-10px, -20px) rotate(-10deg) scale(1.03); }
+  100% { transform: translate(0px, 0px) rotate(0deg) scale(1); }
 }
 @keyframes auth-float-c {
-  0%,100% { transform: translateY(0px) rotate(0deg); }
-  50% { transform: translateY(-14px) rotate(25deg); }
+  0%   { transform: translate(0px, 0px) rotate(0deg); }
+  30%  { transform: translate(24px, -32px) rotate(30deg); }
+  60%  { transform: translate(-8px, -50px) rotate(-20deg); }
+  100% { transform: translate(0px, 0px) rotate(0deg); }
 }
 @keyframes auth-glow {
   0%,100% { opacity: 0.22; transform: scale(1); }
@@ -555,36 +562,36 @@ function HeroPanel({ onTryIt, gwData }) {
         pointerEvents: 'none',
       }}/>
 
-      {/* Floating ball — SVG Telstar (top-right) */}
+      {/* Ball 1 — SVG Telstar (balón oficial del Mundial, top-right) */}
       <div style={{
-        position: 'absolute', top: '4%', right: '8%',
-        animation: 'auth-float-a 8s ease-in-out infinite',
-        filter: 'drop-shadow(0 0 18px rgba(34,197,94,0.3)) drop-shadow(0 12px 28px rgba(0,0,0,0.8))',
+        position: 'absolute', top: '6%', right: '10%',
+        animation: 'auth-float-a 9s ease-in-out infinite',
+        filter: 'drop-shadow(0 0 20px rgba(34,197,94,0.35)) drop-shadow(0 14px 30px rgba(0,0,0,0.85))',
         pointerEvents: 'none',
       }}>
-        <Ball uid="h1" size={68}/>
+        <Ball uid="h1" size={72}/>
       </div>
 
-      {/* Floating ball — ⚽ generic football emoji (bottom-left) */}
+      {/* Ball 2 — ⚽ emoji genérico (center-left, grande) */}
       <div style={{
-        position: 'absolute', bottom: '22%', left: '6%',
-        animation: 'auth-float-b 11s ease-in-out infinite 1.5s',
-        fontSize: 52,
-        filter: 'drop-shadow(0 8px 20px rgba(0,0,0,0.7)) drop-shadow(0 0 12px rgba(34,197,94,0.2))',
+        position: 'absolute', top: '30%', left: '4%',
+        animation: 'auth-float-b 12s ease-in-out infinite 1.8s',
+        fontSize: 58,
+        filter: 'drop-shadow(0 10px 24px rgba(0,0,0,0.75)) drop-shadow(0 0 14px rgba(34,197,94,0.2))',
         pointerEvents: 'none', lineHeight: 1,
-        opacity: 0.85,
+        opacity: 0.9,
       }}>
         ⚽
       </div>
 
-      {/* Floating ball — ⚽ World Cup ball emoji (mid, smaller) */}
+      {/* Ball 3 — ⚽ emoji (bottom-right, mediano) */}
       <div style={{
-        position: 'absolute', top: '55%', right: '5%',
-        animation: 'auth-float-c 13s ease-in-out infinite 3.2s',
-        fontSize: 38,
-        filter: 'drop-shadow(0 6px 18px rgba(0,0,0,0.7)) drop-shadow(0 0 14px rgba(245,158,11,0.35))',
+        position: 'absolute', bottom: '12%', right: '7%',
+        animation: 'auth-float-c 14s ease-in-out infinite 3.5s',
+        fontSize: 44,
+        filter: 'drop-shadow(0 8px 20px rgba(0,0,0,0.7)) drop-shadow(0 0 12px rgba(124,110,245,0.3))',
         pointerEvents: 'none', lineHeight: 1,
-        opacity: 0.75,
+        opacity: 0.8,
       }}>
         ⚽
       </div>
