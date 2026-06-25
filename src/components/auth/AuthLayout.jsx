@@ -562,14 +562,15 @@ function HeroPanel({ onTryIt, gwData }) {
         pointerEvents: 'none',
       }}/>
 
-      {/* Ball 1 — SVG Telstar (balón oficial del Mundial, top-right) */}
+      {/* Ball 1 — ⚽ emoji (top-right, grande) */}
       <div style={{
         position: 'absolute', top: '6%', right: '10%',
         animation: 'auth-float-a 9s ease-in-out infinite',
+        fontSize: 72,
         filter: 'drop-shadow(0 0 20px rgba(34,197,94,0.35)) drop-shadow(0 14px 30px rgba(0,0,0,0.85))',
-        pointerEvents: 'none',
+        pointerEvents: 'none', lineHeight: 1,
       }}>
-        <Ball uid="h1" size={72}/>
+        ⚽
       </div>
 
       {/* Ball 2 — ⚽ emoji genérico (center-left, grande) */}
