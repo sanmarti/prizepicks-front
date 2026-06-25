@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { listAdminPacks, createAdminPack, updateAdminPack, deleteAdminPack } from '../api/adminPacks'
 
@@ -192,8 +192,11 @@ function PackForm({ initial, onSave, onCancel, saving }) {
 }
 
 // ── Pack row ──────────────────────────────────────────────────────────────────
-function PackRow({ pack, onEdit, onDelete }) {
-  const [deleting, setDeleting] = useState(false)
+function PackRow({ pack, onEdit, onDelete, onImageChange }) {
+  const [deleting,    setDeleting]    = useState(false)
+  const [imgHover,    setImgHover]    = useState(false)
+  const [uploadingImg, setUploadingImg] = useState(false)
+  const fileRef = useRef(null)
 
   async function handleDelete() {
     if (!confirm(`Delete "${pack.name}"?`)) return
@@ -201,12 +204,51 @@ function PackRow({ pack, onEdit, onDelete }) {
     try { await onDelete(pack.id) } finally { setDeleting(false) }
   }
 
+  async function handleQuickImage(e) {
+    const file = e.target.files[0]
+    if (!file) return
+    setUploadingImg(true)
+    try {
+      const b64 = await compressImage(file)
+      await updateAdminPack(pack.id, { ...pack, image_url: b64 })
+      onImageChange()
+    } catch {
+      alert('Image upload failed — try a smaller file.')
+    } finally {
+      setUploadingImg(false)
+      e.target.value = ''
+    }
+  }
+
   return (
     <div style={{ display: 'flex', alignItems: 'center', gap: 14, padding: '14px 16px', background: 'rgba(255,255,255,0.03)', border: '1px solid rgba(255,255,255,0.07)', borderRadius: 14 }}>
-      <div style={{ width: 56, height: 56, borderRadius: 10, overflow: 'hidden', flexShrink: 0, background: 'rgba(99,102,241,0.1)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+      {/* Thumbnail — click to upload image */}
+      <div
+        role="button"
+        title="Click to upload pack image"
+        onClick={() => !uploadingImg && fileRef.current?.click()}
+        onMouseEnter={() => setImgHover(true)}
+        onMouseLeave={() => setImgHover(false)}
+        style={{ width: 56, height: 56, borderRadius: 10, overflow: 'hidden', flexShrink: 0, background: 'rgba(99,102,241,0.1)', display: 'flex', alignItems: 'center', justifyContent: 'center', position: 'relative', cursor: 'pointer', transition: 'box-shadow 0.15s', boxShadow: imgHover ? '0 0 0 2px #6366f1' : 'none' }}>
         {pack.image_url
           ? <img src={pack.image_url} alt={pack.name} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
           : <span style={{ fontSize: 24 }}>⚡</span>}
+        {/* Hover / uploading overlay */}
+        {(imgHover || uploadingImg) && (
+          <div style={{ position: 'absolute', inset: 0, background: 'rgba(0,0,0,0.62)', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', gap: 2 }}>
+            {uploadingImg
+              ? <span style={{ fontSize: 18 }}>⏳</span>
+              : <>
+                  <svg width="16" height="16" fill="none" stroke="#fff" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round" viewBox="0 0 24 24">
+                    <path d="M23 19a2 2 0 01-2 2H3a2 2 0 01-2-2V8a2 2 0 012-2h4l2-3h6l2 3h4a2 2 0 012 2z"/>
+                    <circle cx="12" cy="13" r="4"/>
+                  </svg>
+                  <span style={{ fontSize: 8, color: '#fff', letterSpacing: '0.06em', fontWeight: 700, fontFamily: 'system-ui' }}>PHOTO</span>
+                </>
+            }
+          </div>
+        )}
+        <input ref={fileRef} type="file" accept="image/*" style={{ display: 'none' }} onChange={handleQuickImage} />
       </div>
 
       <div style={{ flex: 1, minWidth: 0 }}>
@@ -331,6 +373,7 @@ export default function AdminEnergyPacksPage() {
               <PackRow key={pack.id} pack={pack}
                 onEdit={p => { setEditing(p); setMsg(null); window.scrollTo(0, 0) }}
                 onDelete={handleDelete}
+                onImageChange={load}
               />
             ))}
           </div>
