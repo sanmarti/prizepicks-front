@@ -624,18 +624,18 @@ function HeroPanel({ onTryIt, gwData }) {
                 fontSize: 14, boxShadow: `0 0 10px ${accent}18`,
               }}>{icon}</div>
               <div style={{ flex: 1, minWidth: 0 }}>
-                <div style={{ display: 'flex', alignItems: 'center', gap: 7, marginBottom: 3 }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: 7, marginBottom: 4 }}>
                   <span style={{
-                    fontFamily: "'IBM Plex Mono', monospace", fontSize: 8, fontWeight: 700,
-                    letterSpacing: '0.14em', color: accent, opacity: 0.7,
+                    fontFamily: "'IBM Plex Mono', monospace", fontSize: 10, fontWeight: 700,
+                    letterSpacing: '0.14em', color: accent, opacity: 0.8,
                   }}>{num}</span>
                   <span style={{
                     fontFamily: "'Syne', sans-serif", fontWeight: 700,
-                    fontSize: 12, color: 'rgba(255,255,255,0.9)',
+                    fontSize: 15, color: 'rgba(255,255,255,0.95)',
                   }}>{title}</span>
                 </div>
                 <p style={{
-                  fontSize: 11, color: 'rgba(255,255,255,0.26)',
+                  fontSize: 13, color: 'rgba(255,255,255,0.45)',
                   lineHeight: 1.6, fontFamily: "'IBM Plex Mono', monospace", margin: 0,
                 }}>{desc}</p>
               </div>
@@ -644,76 +644,77 @@ function HeroPanel({ onTryIt, gwData }) {
         </div>
 
         {/* ── Current Sprint card + CTA ── */}
-        {gwData ? (
-          <div style={{
-            background: 'linear-gradient(135deg, rgba(124,110,245,0.08) 0%, rgba(34,197,94,0.06) 100%)',
-            border: '1px solid rgba(124,110,245,0.2)',
-            borderRadius: 16, padding: '16px 18px', marginBottom: 12,
-          }}>
-            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 12 }}>
-              <div>
-                <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 3 }}>
-                  <span style={{ fontSize: 9, letterSpacing: '0.14em', color: '#a78bfa', fontFamily: "'IBM Plex Mono', monospace", fontWeight: 700 }}>
-                    {gwData.sprint.name}
-                  </span>
-                  <span style={{ background: 'rgba(34,197,94,0.12)', border: '1px solid rgba(34,197,94,0.25)', borderRadius: 99, padding: '1px 7px', fontSize: 8, color: '#22c55e', letterSpacing: '0.1em', fontFamily: "'IBM Plex Mono', monospace" }}>
-                    {gwData.sprint.status === 'live' ? 'LIVE' : 'ACTIVE'}
-                  </span>
+        <div style={{
+          background: 'linear-gradient(135deg, rgba(124,110,245,0.08) 0%, rgba(34,197,94,0.06) 100%)',
+          border: '1px solid rgba(124,110,245,0.2)',
+          borderRadius: 16, padding: '16px 18px', marginBottom: 12,
+        }}>
+          {gwData && (
+            <>
+              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 12 }}>
+                <div>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 3 }}>
+                    <span style={{ fontSize: 9, letterSpacing: '0.14em', color: '#a78bfa', fontFamily: "'IBM Plex Mono', monospace", fontWeight: 700 }}>
+                      {gwData.sprint.name}
+                    </span>
+                    <span style={{ background: 'rgba(34,197,94,0.12)', border: '1px solid rgba(34,197,94,0.25)', borderRadius: 99, padding: '1px 7px', fontSize: 8, color: '#22c55e', letterSpacing: '0.1em', fontFamily: "'IBM Plex Mono', monospace" }}>
+                      {gwData.sprint.status === 'live' ? 'LIVE' : 'ACTIVE'}
+                    </span>
+                  </div>
+                  <div style={{ fontFamily: "'Syne', sans-serif", fontWeight: 700, fontSize: 15, color: '#fff' }}>
+                    Gameweek {gwData.gameweek.sprint_week}
+                  </div>
                 </div>
-                <div style={{ fontFamily: "'Syne', sans-serif", fontWeight: 700, fontSize: 15, color: '#fff' }}>
-                  Gameweek {gwData.gameweek.sprint_week}
-                </div>
+                {gwData.gameweek.days_left !== null && (
+                  <div style={{ textAlign: 'right' }}>
+                    <div style={{ fontFamily: "'Syne', sans-serif", fontWeight: 700, fontSize: 22, color: gwData.gameweek.days_left <= 1 ? '#f87171' : '#f59e0b', textShadow: `0 0 20px ${gwData.gameweek.days_left <= 1 ? 'rgba(248,113,113,0.5)' : 'rgba(245,158,11,0.5)'}` }}>
+                      {gwData.gameweek.days_left}
+                    </div>
+                    <div style={{ fontSize: 8, color: 'rgba(255,255,255,0.25)', letterSpacing: '0.12em', fontFamily: "'IBM Plex Mono', monospace" }}>
+                      DAYS LEFT
+                    </div>
+                  </div>
+                )}
               </div>
-              {gwData.gameweek.days_left !== null && (
-                <div style={{ textAlign: 'right' }}>
-                  <div style={{ fontFamily: "'Syne', sans-serif", fontWeight: 700, fontSize: 22, color: gwData.gameweek.days_left <= 1 ? '#f87171' : '#f59e0b', textShadow: `0 0 20px ${gwData.gameweek.days_left <= 1 ? 'rgba(248,113,113,0.5)' : 'rgba(245,158,11,0.5)'}` }}>
-                    {gwData.gameweek.days_left}
-                  </div>
-                  <div style={{ fontSize: 8, color: 'rgba(255,255,255,0.25)', letterSpacing: '0.12em', fontFamily: "'IBM Plex Mono', monospace" }}>
-                    DAYS LEFT
-                  </div>
-                </div>
-              )}
-            </div>
 
-            {/* Mini event preview */}
-            <div style={{ display: 'flex', flexDirection: 'column', gap: 5, marginBottom: 14 }}>
-              {(gwData.events ?? []).slice(0, 3).map(ev => {
-                const parts = (ev.fixture_name || '').split(' vs ')
-                const home  = parts[0] || ev.home_team || '?'
-                const away  = parts[1] || ev.away_team || '?'
-                return (
-                  <div key={ev.id} style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', fontSize: 11, padding: '5px 10px', background: 'rgba(255,255,255,0.03)', borderRadius: 8 }}>
-                    <span style={{ fontWeight: 600, color: 'rgba(255,255,255,0.7)', fontFamily: "'Syne', sans-serif", overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', maxWidth: '42%' }}>{home}</span>
-                    <span style={{ fontSize: 9, color: 'rgba(255,255,255,0.2)', fontFamily: "'IBM Plex Mono', monospace" }}>vs</span>
-                    <span style={{ fontWeight: 600, color: 'rgba(255,255,255,0.7)', fontFamily: "'Syne', sans-serif", overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', maxWidth: '42%', textAlign: 'right' }}>{away}</span>
+              {/* Mini event preview */}
+              <div style={{ display: 'flex', flexDirection: 'column', gap: 5, marginBottom: 14 }}>
+                {(gwData.events ?? []).slice(0, 3).map(ev => {
+                  const parts = (ev.fixture_name || '').split(' vs ')
+                  const home  = parts[0] || ev.home_team || '?'
+                  const away  = parts[1] || ev.away_team || '?'
+                  return (
+                    <div key={ev.id} style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', fontSize: 11, padding: '5px 10px', background: 'rgba(255,255,255,0.03)', borderRadius: 8 }}>
+                      <span style={{ fontWeight: 600, color: 'rgba(255,255,255,0.7)', fontFamily: "'Syne', sans-serif", overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', maxWidth: '42%' }}>{home}</span>
+                      <span style={{ fontSize: 9, color: 'rgba(255,255,255,0.2)', fontFamily: "'IBM Plex Mono', monospace" }}>vs</span>
+                      <span style={{ fontWeight: 600, color: 'rgba(255,255,255,0.7)', fontFamily: "'Syne', sans-serif", overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', maxWidth: '42%', textAlign: 'right' }}>{away}</span>
+                    </div>
+                  )
+                })}
+                {(gwData.events ?? []).length > 3 && (
+                  <div style={{ textAlign: 'center', fontSize: 9, color: 'rgba(255,255,255,0.2)', fontFamily: "'IBM Plex Mono', monospace", padding: '4px 0' }}>
+                    + {gwData.events.length - 3} more fixtures
                   </div>
-                )
-              })}
-              {(gwData.events ?? []).length > 3 && (
-                <div style={{ textAlign: 'center', fontSize: 9, color: 'rgba(255,255,255,0.2)', fontFamily: "'IBM Plex Mono', monospace", padding: '4px 0' }}>
-                  + {gwData.events.length - 3} more fixtures
-                </div>
-              )}
-            </div>
+                )}
+              </div>
+            </>
+          )}
 
-            <button onClick={onTryIt} style={{
-              width: '100%', padding: '12px 0', borderRadius: 12, border: 'none',
-              cursor: 'pointer', fontFamily: "'Syne', sans-serif", fontWeight: 700,
-              fontSize: 13, letterSpacing: '0.06em', color: '#fff',
-              background: 'linear-gradient(90deg, #7c6ef5 0%, #a78bfa 50%, #7c6ef5 100%)',
-              backgroundSize: '200% auto', animation: 'auth-shimmer 3s linear infinite',
-              boxShadow: '0 4px 20px rgba(124,110,245,0.35)', transition: 'transform 0.15s, box-shadow 0.15s',
-            }}
-              onMouseEnter={e => { e.currentTarget.style.transform = 'translateY(-1px)'; e.currentTarget.style.boxShadow = '0 6px 28px rgba(124,110,245,0.5)' }}
-              onMouseLeave={e => { e.currentTarget.style.transform = 'translateY(0)'; e.currentTarget.style.boxShadow = '0 4px 20px rgba(124,110,245,0.35)' }}
-            >
-              ⚡ Try this gameweek →
-            </button>
-          </div>
-        ) : (
-          <div style={{ height: 40 }} />
-        )}
+          {/* Button always visible */}
+          <button onClick={onTryIt} style={{
+            width: '100%', padding: '12px 0', borderRadius: 12, border: 'none',
+            cursor: 'pointer', fontFamily: "'Syne', sans-serif", fontWeight: 700,
+            fontSize: 13, letterSpacing: '0.06em', color: '#fff',
+            background: 'linear-gradient(90deg, #7c6ef5 0%, #a78bfa 50%, #7c6ef5 100%)',
+            backgroundSize: '200% auto', animation: 'auth-shimmer 3s linear infinite',
+            boxShadow: '0 4px 20px rgba(124,110,245,0.35)', transition: 'transform 0.15s, box-shadow 0.15s',
+          }}
+            onMouseEnter={e => { e.currentTarget.style.transform = 'translateY(-1px)'; e.currentTarget.style.boxShadow = '0 6px 28px rgba(124,110,245,0.5)' }}
+            onMouseLeave={e => { e.currentTarget.style.transform = 'translateY(0)'; e.currentTarget.style.boxShadow = '0 4px 20px rgba(124,110,245,0.35)' }}
+          >
+            ⚡ Try this gameweek →
+          </button>
+        </div>
 
         <p style={{ textAlign: 'center', fontSize: 9, color: 'rgba(255,255,255,0.15)', fontFamily: "'IBM Plex Mono', monospace", letterSpacing: '0.08em' }}>
           Demo mode — sign up to play for real
