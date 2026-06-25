@@ -2,7 +2,7 @@ import { useState, useEffect, useCallback } from 'react'
 import { getEnergyPacks, purchaseEnergyPack } from '../api/glory'
 import BottomNav from '../components/layout/BottomNav'
 
-const ENERGY_BUDGET = 30
+const ENERGY_BUDGET = 25
 
 // ── Themed visuals ────────────────────────────────────────────────────────────
 const PACK_THEMES = [
