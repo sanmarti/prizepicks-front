@@ -125,27 +125,34 @@ function Pitch() {
 const KEYFRAMES = `
 @keyframes auth-float-a {
   0%,100% { transform: translateY(0px) rotate(0deg); }
-  50% { transform: translateY(-26px) rotate(180deg); }
-}
-@keyframes auth-float-b {
-  0%,100% { transform: translateY(0px) rotate(20deg); }
-  50% { transform: translateY(-18px) rotate(210deg); }
-}
-@keyframes auth-float-c {
-  0%,100% { transform: translateY(0px) rotate(-10deg); }
-  40% { transform: translateY(-34px) rotate(115deg); }
+  50% { transform: translateY(-22px) rotate(180deg); }
 }
 @keyframes auth-glow {
-  0%,100% { opacity: 0.18; transform: scale(1); }
-  50% { opacity: 0.42; transform: scale(1.12); }
+  0%,100% { opacity: 0.22; transform: scale(1); }
+  50% { opacity: 0.55; transform: scale(1.14); }
 }
 @keyframes auth-fade-up {
-  from { opacity: 0; transform: translateY(18px); }
+  from { opacity: 0; transform: translateY(20px); }
   to   { opacity: 1; transform: translateY(0); }
 }
 @keyframes auth-shimmer {
   0%   { background-position: 200% center; }
   100% { background-position: -200% center; }
+}
+@keyframes auth-scan {
+  0%   { transform: translateY(-100%); opacity: 0; }
+  10%  { opacity: 1; }
+  90%  { opacity: 1; }
+  100% { transform: translateY(100vh); opacity: 0; }
+}
+@keyframes auth-pulse-ring {
+  0%   { transform: scale(0.85); opacity: 0.7; }
+  70%  { transform: scale(1.15); opacity: 0; }
+  100% { transform: scale(1.15); opacity: 0; }
+}
+@keyframes auth-number-glow {
+  0%,100% { text-shadow: 0 0 12px currentColor; }
+  50% { text-shadow: 0 0 28px currentColor, 0 0 60px currentColor; }
 }
 
 /* Layout breakpoint */
@@ -160,35 +167,32 @@ const KEYFRAMES = `
 const STEPS = [
   {
     num: '01',
-    icon: '🏆',
-    title: 'Join a League',
-    desc: 'Enter a private or public league with your friends. Each league runs across multiple gameweeks.',
+    accent: '#22c55e',
+    icon: '⚽',
+    title: 'Pick 6 from 15',
+    desc: 'Every week, choose 6 match predictions from 15 of the best fixtures in world football.',
   },
   {
     num: '02',
-    icon: '⚽',
-    title: 'Make Your Picks',
-    desc: 'Before each gameweek locks, predict match outcomes: Home Win, Draw, or Away Win.',
+    accent: '#a78bfa',
+    icon: '⚡',
+    title: 'Manage Your Energy',
+    desc: 'You get 25 free energy units each week. Spend them wisely across your 6 predictions.',
   },
   {
     num: '03',
-    icon: '⚡',
-    title: 'Earn Energy',
-    desc: 'Correct picks earn Energy points. Use energy to boost your position or unlock bonuses.',
+    accent: '#f59e0b',
+    icon: '🎯',
+    title: 'Earn Points & Boosts',
+    desc: 'Every correct pick earns points and unlocks boosts. Stack them to dominate the leaderboard.',
   },
   {
     num: '04',
-    icon: '📈',
+    accent: '#38bdf8',
+    icon: '🏆',
     title: 'Climb Divisions',
-    desc: 'Each sprint lasts several weeks. Top performers get promoted — bottom ones are relegated.',
+    desc: 'Sprints last 4 weeks. Top performers get promoted — bottom ones are relegated. Reach the top.',
   },
-]
-
-const FEATURES = [
-  { icon: '🔴', label: 'Live Scores', color: '#22c55e' },
-  { icon: '⚡', label: 'Energy System', color: '#a78bfa' },
-  { icon: '🏅', label: '6 to Glory', color: '#f59e0b' },
-  { icon: '📊', label: 'Match Stats', color: '#38bdf8' },
 ]
 
 // ── Left Hero Panel ────────────────────────────────────────────────────────────
@@ -202,123 +206,181 @@ function HeroPanel() {
         position: 'relative',
         overflow: 'hidden',
         flexDirection: 'column',
-        justifyContent: 'flex-start',
-        background: 'linear-gradient(165deg, #071a0d 0%, #041009 45%, #050912 100%)',
+        background: 'linear-gradient(160deg, #05080f 0%, #070c14 60%, #040810 100%)',
       }}
     >
-      <Pitch/>
+      {/* Grid texture */}
+      <div style={{
+        position: 'absolute', inset: 0, pointerEvents: 'none',
+        backgroundImage: `
+          linear-gradient(rgba(124,110,245,0.04) 1px, transparent 1px),
+          linear-gradient(90deg, rgba(124,110,245,0.04) 1px, transparent 1px)
+        `,
+        backgroundSize: '40px 40px',
+      }}/>
+
+      {/* Scan line */}
+      <div style={{
+        position: 'absolute', left: 0, right: 0, height: 2, zIndex: 1,
+        background: 'linear-gradient(90deg, transparent, rgba(34,197,94,0.4), transparent)',
+        animation: 'auth-scan 6s linear infinite',
+        pointerEvents: 'none',
+      }}/>
 
       {/* Glow orbs */}
       <div style={{
-        position: 'absolute', top: '8%', right: '8%',
-        width: 280, height: 280, borderRadius: '50%',
-        background: 'radial-gradient(circle, rgba(34,197,94,0.14) 0%, transparent 68%)',
+        position: 'absolute', top: '5%', left: '20%',
+        width: 320, height: 320, borderRadius: '50%',
+        background: 'radial-gradient(circle, rgba(34,197,94,0.12) 0%, transparent 65%)',
         animation: 'auth-glow 5s ease-in-out infinite',
         pointerEvents: 'none',
       }}/>
       <div style={{
-        position: 'absolute', bottom: '10%', left: '5%',
-        width: 200, height: 200, borderRadius: '50%',
-        background: 'radial-gradient(circle, rgba(124,110,245,0.18) 0%, transparent 68%)',
-        animation: 'auth-glow 4s ease-in-out infinite 1.6s',
+        position: 'absolute', bottom: '8%', right: '5%',
+        width: 260, height: 260, borderRadius: '50%',
+        background: 'radial-gradient(circle, rgba(124,110,245,0.14) 0%, transparent 65%)',
+        animation: 'auth-glow 4s ease-in-out infinite 1.8s',
         pointerEvents: 'none',
       }}/>
 
-      {/* Floating ball — top right */}
+      {/* Floating ball */}
       <div style={{
-        position: 'absolute', top: '6%', right: '9%',
-        animation: 'auth-float-a 7s ease-in-out infinite',
-        filter: 'drop-shadow(0 14px 32px rgba(0,0,0,0.75))',
+        position: 'absolute', top: '4%', right: '8%',
+        animation: 'auth-float-a 8s ease-in-out infinite',
+        filter: 'drop-shadow(0 0 18px rgba(34,197,94,0.3)) drop-shadow(0 12px 28px rgba(0,0,0,0.8))',
         pointerEvents: 'none',
       }}>
-        <Ball uid="h1" size={72}/>
+        <Ball uid="h1" size={68}/>
       </div>
 
-      {/* Scrollable content */}
+      {/* Content */}
       <div style={{
-        position: 'relative', zIndex: 1,
+        position: 'relative', zIndex: 2,
         display: 'flex', flexDirection: 'column',
-        height: '100%', padding: '44px 48px 44px 52px',
+        height: '100%', padding: '40px 50px 40px 52px',
         overflowY: 'auto',
-        animation: 'auth-fade-up 0.9s ease both 0.2s',
+        animation: 'auth-fade-up 0.8s ease both 0.15s',
       }}>
         {/* Brand */}
-        <div style={{ display: 'flex', alignItems: 'center', gap: 12, marginBottom: 36 }}>
-          <Ball uid="hbrand" size={28}/>
-          <span style={{
-            fontFamily: "'Syne', sans-serif", fontWeight: 700,
-            fontSize: 18, letterSpacing: '0.14em',
-            background: 'linear-gradient(135deg, #7c6ef5 0%, #a78bfa 100%)',
-            WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent',
-          }}>PRIZEPICKS</span>
-          <div style={{
-            display: 'flex', alignItems: 'center', gap: 6,
-            background: 'rgba(34,197,94,0.1)',
-            border: '1px solid rgba(34,197,94,0.22)',
-            borderRadius: 99, padding: '3px 10px', marginLeft: 4,
-          }}>
-            <span style={{
-              width: 5, height: 5, borderRadius: '50%', background: '#22c55e',
-              display: 'block', boxShadow: '0 0 5px #22c55e',
-            }}/>
-            <span style={{
-              color: '#22c55e', fontSize: 9, letterSpacing: '0.12em',
-              fontFamily: "'IBM Plex Mono', monospace",
-            }}>LIVE</span>
+        <div style={{ marginBottom: 32 }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 6 }}>
+            <div style={{
+              background: 'linear-gradient(135deg, #22c55e 0%, #16a34a 100%)',
+              borderRadius: 8, width: 28, height: 28,
+              display: 'flex', alignItems: 'center', justifyContent: 'center',
+              fontSize: 14, boxShadow: '0 0 16px rgba(34,197,94,0.4)',
+            }}>⚽</div>
+            <div>
+              <span style={{
+                fontFamily: "'Syne', sans-serif", fontWeight: 700,
+                fontSize: 20, letterSpacing: '0.02em',
+                background: 'linear-gradient(90deg, #fff 0%, rgba(255,255,255,0.7) 100%)',
+                WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent',
+              }}>6</span>
+              <span style={{
+                fontFamily: "'Syne', sans-serif", fontWeight: 700,
+                fontSize: 20, letterSpacing: '0.02em',
+                background: 'linear-gradient(90deg, #22c55e, #a78bfa)',
+                WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent',
+              }}>TO</span>
+              <span style={{
+                fontFamily: "'Syne', sans-serif", fontWeight: 700,
+                fontSize: 20, letterSpacing: '0.02em',
+                background: 'linear-gradient(90deg, #a78bfa 0%, #fff 100%)',
+                WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent',
+              }}>GLORY</span>
+            </div>
+            <div style={{
+              display: 'flex', alignItems: 'center', gap: 5,
+              background: 'rgba(34,197,94,0.08)',
+              border: '1px solid rgba(34,197,94,0.25)',
+              borderRadius: 99, padding: '3px 9px',
+            }}>
+              <span style={{
+                width: 5, height: 5, borderRadius: '50%', background: '#22c55e',
+                display: 'block', animation: 'auth-pulse-ring 1.4s ease-out infinite',
+                boxShadow: '0 0 6px #22c55e',
+              }}/>
+              <span style={{
+                color: '#22c55e', fontSize: 9, letterSpacing: '0.14em',
+                fontFamily: "'IBM Plex Mono', monospace", fontWeight: 600,
+              }}>SEASON LIVE</span>
+            </div>
           </div>
         </div>
 
         {/* Headline */}
-        <h1 style={{
-          fontFamily: "'Syne', sans-serif", fontWeight: 700,
-          fontSize: 'clamp(28px, 3vw, 40px)', lineHeight: 1.1,
-          letterSpacing: '-0.02em', color: 'rgba(255,255,255,0.92)',
-          marginBottom: 10,
-        }}>
-          The football<br/>fantasy league<br/>that never sleeps.
-        </h1>
-        <p style={{
-          fontSize: 13, color: 'rgba(255,255,255,0.32)',
-          letterSpacing: '0.02em', marginBottom: 40, lineHeight: 1.7,
-          fontFamily: "'IBM Plex Mono', monospace",
-        }}>
-          Pick outcomes. Earn energy. Climb divisions.<br/>All in real time.
-        </p>
+        <div style={{ marginBottom: 36 }}>
+          <h1 style={{
+            fontFamily: "'Syne', sans-serif", fontWeight: 700,
+            fontSize: 'clamp(30px, 3.2vw, 46px)', lineHeight: 1.05,
+            letterSpacing: '-0.03em', margin: '0 0 12px',
+            color: '#fff',
+          }}>
+            Pick smarter.<br/>
+            <span style={{
+              background: 'linear-gradient(90deg, #22c55e 0%, #a78bfa 60%, #f59e0b 100%)',
+              WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent',
+            }}>Rise through<br/>the ranks.</span>
+          </h1>
+          <p style={{
+            fontSize: 12, color: 'rgba(255,255,255,0.28)',
+            lineHeight: 1.75, fontFamily: "'IBM Plex Mono', monospace",
+            margin: 0,
+          }}>
+            6 picks. 25 energy. 4 weeks per sprint.<br/>One shot at glory.
+          </p>
+        </div>
 
-        {/* How it works */}
-        <p style={{
-          fontSize: 9, letterSpacing: '0.16em', color: 'rgba(255,255,255,0.22)',
-          fontFamily: "'IBM Plex Mono', monospace", marginBottom: 18, fontWeight: 600,
-        }}>HOW IT WORKS</p>
+        {/* HOW TO PLAY label */}
+        <div style={{ display: 'flex', alignItems: 'center', gap: 12, marginBottom: 22 }}>
+          <span style={{
+            fontSize: 9, letterSpacing: '0.2em', color: 'rgba(255,255,255,0.2)',
+            fontFamily: "'IBM Plex Mono', monospace", fontWeight: 700,
+          }}>HOW TO PLAY</span>
+          <div style={{ flex: 1, height: 1, background: 'rgba(255,255,255,0.06)' }}/>
+        </div>
 
-        <div style={{ display: 'flex', flexDirection: 'column', gap: 20, marginBottom: 40 }}>
-          {STEPS.map(({ num, icon, title, desc }) => (
-            <div key={num} style={{ display: 'flex', gap: 16, alignItems: 'flex-start' }}>
-              {/* Step number */}
+        {/* Steps */}
+        <div style={{ display: 'flex', flexDirection: 'column', gap: 16, marginBottom: 36 }}>
+          {STEPS.map(({ num, accent, icon, title, desc }) => (
+            <div key={num} style={{
+              display: 'flex', gap: 14, alignItems: 'flex-start',
+              padding: '14px 16px',
+              background: 'rgba(255,255,255,0.02)',
+              border: `1px solid rgba(255,255,255,0.05)`,
+              borderLeft: `2px solid ${accent}`,
+              borderRadius: 12,
+              transition: 'background 0.2s',
+            }}>
+              {/* Icon badge */}
               <div style={{
-                flexShrink: 0, width: 36, height: 36,
-                borderRadius: 10,
-                background: 'rgba(124,110,245,0.1)',
-                border: '1px solid rgba(124,110,245,0.2)',
+                flexShrink: 0, width: 34, height: 34,
+                borderRadius: 9,
+                background: `rgba(${accent === '#22c55e' ? '34,197,94' : accent === '#a78bfa' ? '167,139,250' : accent === '#f59e0b' ? '245,158,11' : '56,189,248'},0.12)`,
+                border: `1px solid ${accent}28`,
                 display: 'flex', alignItems: 'center', justifyContent: 'center',
-                fontSize: 16,
+                fontSize: 15,
+                boxShadow: `0 0 12px ${accent}20`,
               }}>{icon}</div>
-              <div>
-                <div style={{
-                  display: 'flex', alignItems: 'center', gap: 8, marginBottom: 3,
-                }}>
+
+              <div style={{ flex: 1, minWidth: 0 }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 4 }}>
                   <span style={{
-                    fontSize: 9, color: 'rgba(124,110,245,0.5)',
-                    fontFamily: "'IBM Plex Mono', monospace", letterSpacing: '0.1em',
+                    fontFamily: "'IBM Plex Mono', monospace",
+                    fontSize: 8, fontWeight: 700, letterSpacing: '0.14em',
+                    color: accent, opacity: 0.7,
+                    animation: 'auth-number-glow 3s ease-in-out infinite',
                   }}>{num}</span>
                   <span style={{
                     fontFamily: "'Syne', sans-serif", fontWeight: 700,
-                    fontSize: 13, color: 'rgba(255,255,255,0.88)',
+                    fontSize: 13, color: 'rgba(255,255,255,0.9)',
+                    letterSpacing: '-0.01em',
                   }}>{title}</span>
                 </div>
                 <p style={{
-                  fontSize: 12, color: 'rgba(255,255,255,0.3)',
-                  lineHeight: 1.6, fontFamily: "'IBM Plex Mono', monospace",
+                  fontSize: 11.5, color: 'rgba(255,255,255,0.28)',
+                  lineHeight: 1.65, fontFamily: "'IBM Plex Mono', monospace",
                   margin: 0,
                 }}>{desc}</p>
               </div>
@@ -326,30 +388,38 @@ function HeroPanel() {
           ))}
         </div>
 
-        {/* Feature chips */}
-        <div style={{ display: 'flex', flexWrap: 'wrap', gap: 8 }}>
-          {FEATURES.map(({ icon, label, color }) => (
-            <div key={label} style={{
-              display: 'inline-flex', alignItems: 'center', gap: 6,
-              background: 'rgba(255,255,255,0.04)',
-              border: '1px solid rgba(255,255,255,0.08)',
-              borderRadius: 99, padding: '6px 12px',
+        {/* Bottom stat row */}
+        <div style={{
+          display: 'flex', gap: 0,
+          background: 'rgba(255,255,255,0.03)',
+          border: '1px solid rgba(255,255,255,0.06)',
+          borderRadius: 14, overflow: 'hidden',
+        }}>
+          {[['6', 'PICKS / WEEK', '#22c55e'], ['25', 'ENERGY UNITS', '#a78bfa'], ['4', 'WEEKS / SPRINT', '#f59e0b']].map(([v, l, c], i) => (
+            <div key={l} style={{
+              flex: 1, padding: '14px 0', textAlign: 'center',
+              borderLeft: i > 0 ? '1px solid rgba(255,255,255,0.05)' : 'none',
             }}>
-              <span style={{ fontSize: 12 }}>{icon}</span>
-              <span style={{
-                fontSize: 10, color: 'rgba(255,255,255,0.45)',
-                fontFamily: "'IBM Plex Mono', monospace", letterSpacing: '0.06em',
-              }}>{label}</span>
+              <div style={{
+                fontFamily: "'Syne', sans-serif", fontWeight: 700,
+                fontSize: 22, color: c, letterSpacing: '-0.02em',
+                textShadow: `0 0 20px ${c}60`,
+              }}>{v}</div>
+              <div style={{
+                fontSize: 8, color: 'rgba(255,255,255,0.22)',
+                letterSpacing: '0.12em', marginTop: 3,
+                fontFamily: "'IBM Plex Mono', monospace",
+              }}>{l}</div>
             </div>
           ))}
         </div>
       </div>
 
-      {/* Right fade edge */}
+      {/* Right edge fade */}
       <div style={{
-        position: 'absolute', top: 0, right: 0, bottom: 0, width: 80,
-        background: 'linear-gradient(to right, transparent, rgba(6,10,16,0.88))',
-        pointerEvents: 'none', zIndex: 2,
+        position: 'absolute', top: 0, right: 0, bottom: 0, width: 70,
+        background: 'linear-gradient(to right, transparent, rgba(5,8,15,0.9))',
+        pointerEvents: 'none', zIndex: 3,
       }}/>
     </div>
   )
@@ -392,22 +462,27 @@ export default function AuthLayout({ heading, subheading, children }) {
             {/* Mobile-only logo */}
             <div className="auth-mobile-logo" style={{
               textAlign: 'center', marginBottom: 28,
-              flexDirection: 'column', alignItems: 'center', gap: 8,
+              flexDirection: 'column', alignItems: 'center', gap: 6,
             }}>
-              <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
-                <Ball uid="mob" size={30}/>
+              <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                <div style={{
+                  background: 'linear-gradient(135deg, #22c55e 0%, #16a34a 100%)',
+                  borderRadius: 7, width: 26, height: 26,
+                  display: 'flex', alignItems: 'center', justifyContent: 'center',
+                  fontSize: 13, boxShadow: '0 0 12px rgba(34,197,94,0.4)',
+                }}>⚽</div>
                 <span style={{
-                  fontFamily: "'Syne', sans-serif", fontWeight: 700, fontSize: 22,
-                  letterSpacing: '0.12em',
-                  background: 'linear-gradient(135deg, #7c6ef5 0%, #a78bfa 100%)',
+                  fontFamily: "'Syne', sans-serif", fontWeight: 700, fontSize: 20,
+                  letterSpacing: '0.04em',
+                  background: 'linear-gradient(90deg, #22c55e, #a78bfa, #fff)',
                   WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent',
-                }}>PRIZEPICKS</span>
+                }}>6TOGLORY</span>
               </div>
               <p style={{
-                fontSize: 11, color: 'rgba(255,255,255,0.28)',
-                letterSpacing: '0.06em', fontFamily: "'IBM Plex Mono', monospace",
+                fontSize: 10, color: 'rgba(255,255,255,0.22)',
+                letterSpacing: '0.1em', fontFamily: "'IBM Plex Mono', monospace",
               }}>
-                Football fantasy leagues
+                PICK · EARN · CLIMB
               </p>
             </div>
 
