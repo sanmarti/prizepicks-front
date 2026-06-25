@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from 'react'
+import { useEffect, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { listAdminPacks, createAdminPack, updateAdminPack, deleteAdminPack } from '../api/adminPacks'
 
@@ -193,10 +193,8 @@ function PackForm({ initial, onSave, onCancel, saving }) {
 
 // ── Pack row ──────────────────────────────────────────────────────────────────
 function PackRow({ pack, onEdit, onDelete, onImageChange }) {
-  const [deleting,    setDeleting]    = useState(false)
-  const [imgHover,    setImgHover]    = useState(false)
+  const [deleting,     setDeleting]     = useState(false)
   const [uploadingImg, setUploadingImg] = useState(false)
-  const fileRef = useRef(null)
 
   async function handleDelete() {
     if (!confirm(`Delete "${pack.name}"?`)) return
@@ -222,33 +220,11 @@ function PackRow({ pack, onEdit, onDelete, onImageChange }) {
 
   return (
     <div style={{ display: 'flex', alignItems: 'center', gap: 14, padding: '14px 16px', background: 'rgba(255,255,255,0.03)', border: '1px solid rgba(255,255,255,0.07)', borderRadius: 14 }}>
-      {/* Thumbnail — click to upload image */}
-      <div
-        role="button"
-        title="Click to upload pack image"
-        onClick={() => !uploadingImg && fileRef.current?.click()}
-        onMouseEnter={() => setImgHover(true)}
-        onMouseLeave={() => setImgHover(false)}
-        style={{ width: 56, height: 56, borderRadius: 10, overflow: 'hidden', flexShrink: 0, background: 'rgba(99,102,241,0.1)', display: 'flex', alignItems: 'center', justifyContent: 'center', position: 'relative', cursor: 'pointer', transition: 'box-shadow 0.15s', boxShadow: imgHover ? '0 0 0 2px #6366f1' : 'none' }}>
+      {/* Thumbnail */}
+      <div style={{ width: 56, height: 56, borderRadius: 10, overflow: 'hidden', flexShrink: 0, background: 'rgba(99,102,241,0.1)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
         {pack.image_url
           ? <img src={pack.image_url} alt={pack.name} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
           : <span style={{ fontSize: 24 }}>⚡</span>}
-        {/* Hover / uploading overlay */}
-        {(imgHover || uploadingImg) && (
-          <div style={{ position: 'absolute', inset: 0, background: 'rgba(0,0,0,0.62)', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', gap: 2 }}>
-            {uploadingImg
-              ? <span style={{ fontSize: 18 }}>⏳</span>
-              : <>
-                  <svg width="16" height="16" fill="none" stroke="#fff" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round" viewBox="0 0 24 24">
-                    <path d="M23 19a2 2 0 01-2 2H3a2 2 0 01-2-2V8a2 2 0 012-2h4l2-3h6l2 3h4a2 2 0 012 2z"/>
-                    <circle cx="12" cy="13" r="4"/>
-                  </svg>
-                  <span style={{ fontSize: 8, color: '#fff', letterSpacing: '0.06em', fontWeight: 700, fontFamily: 'system-ui' }}>PHOTO</span>
-                </>
-            }
-          </div>
-        )}
-        <input ref={fileRef} type="file" accept="image/*" style={{ display: 'none' }} onChange={handleQuickImage} />
       </div>
 
       <div style={{ flex: 1, minWidth: 0 }}>
@@ -265,6 +241,11 @@ function PackRow({ pack, onEdit, onDelete, onImageChange }) {
       </div>
 
       <div style={{ display: 'flex', gap: 8, flexShrink: 0 }}>
+        {/* Photo upload — label wraps input, always opens file picker */}
+        <label style={{ padding: '7px 14px', borderRadius: 8, border: '1px solid rgba(34,197,94,0.35)', background: uploadingImg ? 'rgba(34,197,94,0.2)' : 'rgba(34,197,94,0.08)', color: '#86efac', fontSize: 12, cursor: uploadingImg ? 'wait' : 'pointer', fontWeight: 600, userSelect: 'none', display: 'inline-flex', alignItems: 'center', gap: 5 }}>
+          {uploadingImg ? '⏳' : '📷'} Foto
+          <input type="file" accept="image/*" disabled={uploadingImg} style={{ display: 'none' }} onChange={handleQuickImage} />
+        </label>
         <button onClick={() => onEdit(pack)} style={{ padding: '7px 14px', borderRadius: 8, border: '1px solid rgba(99,102,241,0.35)', background: 'rgba(99,102,241,0.1)', color: '#a5b4fc', fontSize: 12, cursor: 'pointer', fontWeight: 600 }}>Edit</button>
         <button onClick={handleDelete} disabled={deleting} style={{ padding: '7px 14px', borderRadius: 8, border: '1px solid rgba(248,113,113,0.2)', background: 'rgba(248,113,113,0.06)', color: '#f87171', fontSize: 12, cursor: 'pointer', fontWeight: 600 }}>
           {deleting ? '…' : 'Delete'}
