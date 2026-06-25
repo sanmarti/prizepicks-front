@@ -182,9 +182,11 @@ const KEYFRAMES = `
 /* Layout breakpoint */
 .auth-hero { display: none !important; }
 .auth-mobile-logo { display: flex !important; }
+.auth-mobile-steps { display: block !important; }
 @media (min-width: 900px) {
   .auth-hero { display: flex !important; }
   .auth-mobile-logo { display: none !important; }
+  .auth-mobile-steps { display: none !important; }
 }
 `
 
@@ -784,7 +786,7 @@ export default function AuthLayout({ heading, subheading, children }) {
         <div style={{
           flex: 1, display: 'flex', flexDirection: 'column',
           alignItems: 'center', justifyContent: 'center',
-          padding: '40px 24px', position: 'relative', overflow: 'hidden',
+          padding: '40px 24px', position: 'relative', overflowY: 'auto',
         }}>
           <div style={{
             position: 'absolute', top: -100, right: -100, width: 340, height: 340,
@@ -851,6 +853,84 @@ export default function AuthLayout({ heading, subheading, children }) {
               color: 'rgba(255,255,255,0.14)', letterSpacing: '0.08em',
               fontFamily: "'IBM Plex Mono', monospace",
             }}>FREE TO PLAY · NO CREDIT CARD REQUIRED</p>
+
+            {/* ── Mobile-only: How to play + Try gameweek ── */}
+            <div className="auth-mobile-steps" style={{ marginTop: 40 }}>
+
+              {/* Divider */}
+              <div style={{ display: 'flex', alignItems: 'center', gap: 12, marginBottom: 24 }}>
+                <div style={{ flex: 1, height: 1, background: 'rgba(255,255,255,0.07)' }}/>
+                <span style={{ fontSize: 9, letterSpacing: '0.2em', color: 'rgba(255,255,255,0.2)', fontFamily: "'IBM Plex Mono', monospace", fontWeight: 700 }}>HOW TO PLAY</span>
+                <div style={{ flex: 1, height: 1, background: 'rgba(255,255,255,0.07)' }}/>
+              </div>
+
+              {/* Steps */}
+              <div style={{ display: 'flex', flexDirection: 'column', gap: 10, marginBottom: 28 }}>
+                {STEPS.map(({ num, accent, icon, title, desc }) => (
+                  <div key={num} style={{
+                    display: 'flex', gap: 14, alignItems: 'flex-start',
+                    padding: '14px 16px',
+                    background: 'rgba(255,255,255,0.025)',
+                    border: '1px solid rgba(255,255,255,0.06)',
+                    borderLeft: `3px solid ${accent}`,
+                    borderRadius: 12,
+                  }}>
+                    <div style={{
+                      flexShrink: 0, width: 36, height: 36, borderRadius: 9,
+                      background: `${accent}18`, border: `1px solid ${accent}30`,
+                      display: 'flex', alignItems: 'center', justifyContent: 'center',
+                      fontSize: 17, boxShadow: `0 0 10px ${accent}20`,
+                    }}>{icon}</div>
+                    <div style={{ minWidth: 0, flex: 1 }}>
+                      <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 4 }}>
+                        <span style={{ fontSize: 11, color: accent, fontFamily: "'IBM Plex Mono', monospace", fontWeight: 700, letterSpacing: '0.12em', opacity: 0.85 }}>{num}</span>
+                        <span style={{ fontSize: 18, fontFamily: "'Syne', sans-serif", fontWeight: 700, color: '#fff', lineHeight: 1.2 }}>{title}</span>
+                      </div>
+                      <p style={{ fontSize: 14, color: 'rgba(255,255,255,0.5)', fontFamily: "'IBM Plex Mono', monospace", lineHeight: 1.6, margin: 0 }}>{desc}</p>
+                    </div>
+                  </div>
+                ))}
+              </div>
+
+              {/* Try this gameweek button */}
+              <div style={{
+                background: 'linear-gradient(135deg, rgba(124,110,245,0.08) 0%, rgba(34,197,94,0.06) 100%)',
+                border: '1px solid rgba(124,110,245,0.2)',
+                borderRadius: 16, padding: '16px 18px', marginBottom: 40,
+              }}>
+                {gwData && (
+                  <div style={{ marginBottom: 14 }}>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 6 }}>
+                      <span style={{ fontSize: 9, letterSpacing: '0.14em', color: '#a78bfa', fontFamily: "'IBM Plex Mono', monospace", fontWeight: 700 }}>
+                        {gwData.sprint?.name}
+                      </span>
+                      <span style={{ background: 'rgba(34,197,94,0.12)', border: '1px solid rgba(34,197,94,0.25)', borderRadius: 99, padding: '1px 7px', fontSize: 8, color: '#22c55e', letterSpacing: '0.1em', fontFamily: "'IBM Plex Mono', monospace" }}>
+                        LIVE
+                      </span>
+                    </div>
+                    <div style={{ fontFamily: "'Syne', sans-serif", fontWeight: 700, fontSize: 15, color: '#fff' }}>
+                      Gameweek {gwData.gameweek?.sprint_week}
+                    </div>
+                  </div>
+                )}
+                <button
+                  onClick={() => setShowPreview(true)}
+                  style={{
+                    width: '100%', padding: '13px 0', borderRadius: 12, border: 'none',
+                    cursor: 'pointer', fontFamily: "'Syne', sans-serif", fontWeight: 700,
+                    fontSize: 14, letterSpacing: '0.06em', color: '#fff',
+                    background: 'linear-gradient(90deg, #7c6ef5 0%, #a78bfa 50%, #7c6ef5 100%)',
+                    backgroundSize: '200% auto', animation: 'auth-shimmer 3s linear infinite',
+                    boxShadow: '0 4px 20px rgba(124,110,245,0.35)',
+                  }}
+                >
+                  ⚡ Try this gameweek →
+                </button>
+              </div>
+
+            </div>
+            {/* end mobile steps */}
+
           </div>
         </div>
       </div>
