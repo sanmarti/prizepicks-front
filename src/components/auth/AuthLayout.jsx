@@ -716,26 +716,6 @@ function HeroPanel({ onTryIt, gwData }) {
                 )}
               </div>
 
-              {/* Mini event preview */}
-              <div style={{ display: 'flex', flexDirection: 'column', gap: 4, marginBottom: 10 }}>
-                {(gwData.events ?? []).slice(0, 3).map(ev => {
-                  const parts = (ev.fixture_name || '').split(' vs ')
-                  const home  = parts[0] || ev.home_team || '?'
-                  const away  = parts[1] || ev.away_team || '?'
-                  return (
-                    <div key={ev.id} style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', fontSize: 10, padding: '4px 8px', background: 'rgba(255,255,255,0.03)', borderRadius: 7 }}>
-                      <span style={{ fontWeight: 600, color: 'rgba(255,255,255,0.65)', fontFamily: "'Syne', sans-serif", overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', maxWidth: '42%' }}>{home}</span>
-                      <span style={{ fontSize: 8, color: 'rgba(255,255,255,0.18)', fontFamily: "'IBM Plex Mono', monospace" }}>vs</span>
-                      <span style={{ fontWeight: 600, color: 'rgba(255,255,255,0.65)', fontFamily: "'Syne', sans-serif", overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', maxWidth: '42%', textAlign: 'right' }}>{away}</span>
-                    </div>
-                  )
-                })}
-                {(gwData.events ?? []).length > 3 && (
-                  <div style={{ textAlign: 'center', fontSize: 9, color: 'rgba(255,255,255,0.2)', fontFamily: "'IBM Plex Mono', monospace", padding: '4px 0' }}>
-                    + {gwData.events.length - 3} more fixtures
-                  </div>
-                )}
-              </div>
             </>
           )}
 
