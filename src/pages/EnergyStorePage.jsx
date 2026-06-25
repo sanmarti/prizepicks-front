@@ -302,46 +302,88 @@ function SuccessToast({ pack, onClose }) {
 
 // ── Wallet card ───────────────────────────────────────────────────────────────
 function WalletCard({ walletBalance }) {
-  if (walletBalance === 0) {
-    return (
-      <div className="rounded-2xl bg-gradient-to-br from-slate-900 to-[#0f1020] border border-white/6 p-5 mb-8">
-        <div className="flex items-start gap-4">
-          <div className="w-12 h-12 rounded-xl bg-white/4 border border-white/8 flex items-center justify-center text-2xl flex-shrink-0 mt-0.5">⚡</div>
-          <div>
-            <p className="text-white font-bold text-sm">No extra energy yet</p>
-            <p className="text-gray-500 text-[13px] mt-1.5 leading-relaxed">
-              Your wallet is empty. Buy a pack to add bonus energy — it carries over and you can spend it on top of your base ⚡{ENERGY_BUDGET}.
-            </p>
-            <div className="flex gap-2 mt-4 flex-wrap">
-              <div className="flex items-center gap-2 bg-indigo-500/10 border border-indigo-500/20 rounded-xl px-3 py-2">
-                <span className="text-base">🎯</span>
-                <span className="text-xs text-indigo-300 font-semibold">More picks per gameweek</span>
-              </div>
-              <div className="flex items-center gap-2 bg-emerald-500/10 border border-emerald-500/20 rounded-xl px-3 py-2">
-                <span className="text-base">🛡️</span>
-                <span className="text-xs text-emerald-300 font-semibold">Back safer outcomes</span>
-              </div>
-            </div>
-          </div>
-        </div>
-      </div>
-    )
-  }
+  const filled = walletBalance > 0
 
   return (
-    <div className="rounded-2xl bg-gradient-to-br from-indigo-950/80 to-purple-950/60 border border-indigo-500/20 p-5 mb-8 shadow-[0_0_30px_-10px_rgba(99,102,241,0.4)]">
-      <div className="flex items-center justify-between">
-        <div>
-          <p className="text-gray-500 text-xs uppercase tracking-widest font-semibold">Extra energy</p>
-          <div className="flex items-end gap-2 mt-1">
-            <span className="text-yellow-400 font-black text-4xl leading-none">+{walletBalance}</span>
-            <span className="text-gray-500 text-sm mb-0.5">⚡ in wallet</span>
+    <div className="relative rounded-3xl overflow-hidden mb-8">
+      {/* Background */}
+      <div className={`absolute inset-0 ${filled
+        ? 'bg-gradient-to-br from-violet-950 via-indigo-950 to-[#0a0d18]'
+        : 'bg-gradient-to-br from-[#0e0e18] via-[#0a0c16] to-[#080910]'
+      }`} />
+
+      {/* Glow blob */}
+      <div className={`absolute -top-10 -right-10 w-52 h-52 rounded-full blur-3xl ${filled
+        ? 'bg-yellow-500/20'
+        : 'bg-indigo-600/10'
+      }`} />
+
+      {/* Scan line */}
+      <div className="absolute inset-0 opacity-[0.03]"
+        style={{ backgroundImage: 'repeating-linear-gradient(0deg, transparent, transparent 2px, white 2px, white 3px)', backgroundSize: '100% 3px' }} />
+
+      <div className={`relative border rounded-3xl p-5 ${filled ? 'border-violet-500/25' : 'border-white/6'}`}>
+
+        {/* Top row */}
+        <div className="flex items-start justify-between mb-4">
+          <div>
+            <p className={`text-[10px] font-black uppercase tracking-[0.2em] ${filled ? 'text-violet-400' : 'text-gray-600'}`}>
+              {filled ? 'Bonus wallet' : 'Wallet empty'}
+            </p>
+            <div className="flex items-end gap-2 mt-1">
+              <span className={`font-black leading-none ${filled ? 'text-5xl text-yellow-400 drop-shadow-[0_0_16px_rgba(250,204,21,0.6)]' : 'text-4xl text-gray-700'}`}>
+                {filled ? `+${walletBalance}` : '0'}
+              </span>
+              <span className={`text-sm mb-1 ${filled ? 'text-yellow-400/60' : 'text-gray-700'}`}>⚡</span>
+            </div>
           </div>
-          <p className="text-xs text-indigo-400 mt-1.5">
-            Bonus energy stored in your wallet — spent on top of your base ⚡{ENERGY_BUDGET}
+
+          {/* Energy cell visual */}
+          <div className={`relative flex flex-col justify-end gap-[3px] p-2 rounded-xl border ${filled ? 'bg-yellow-400/8 border-yellow-400/20' : 'bg-white/3 border-white/8'}`}
+            style={{ width: 36, height: 52 }}>
+            {[1,2,3,4].map(i => (
+              <div key={i} className={`w-full rounded-sm transition-all ${
+                filled && i <= Math.ceil((walletBalance / 50) * 4)
+                  ? 'bg-yellow-400 shadow-[0_0_6px_rgba(250,204,21,0.8)]'
+                  : 'bg-white/8'
+              }`} style={{ height: 8 }} />
+            ))}
+            <div className={`absolute -top-1.5 left-1/2 -translate-x-1/2 w-2.5 h-1.5 rounded-t-sm ${filled ? 'bg-yellow-400/60' : 'bg-white/15'}`} />
+          </div>
+        </div>
+
+        {/* Energy bar */}
+        <div className="mb-4">
+          <div className="h-2 rounded-full bg-white/6 overflow-hidden">
+            <div
+              className={`h-full rounded-full transition-all duration-700 ${filled ? 'bg-gradient-to-r from-yellow-500 to-amber-400 shadow-[0_0_8px_rgba(250,204,21,0.5)]' : 'bg-indigo-600/30'}`}
+              style={{ width: filled ? `${Math.min((walletBalance / 100) * 100, 100)}%` : '0%' }}
+            />
+          </div>
+          <p className={`text-[11px] mt-1.5 ${filled ? 'text-gray-400' : 'text-gray-600'}`}>
+            {filled
+              ? `⚡${walletBalance} bonus on top of your ⚡${ENERGY_BUDGET} base`
+              : `Base ⚡${ENERGY_BUDGET} · buy a pack to add bonus energy`}
           </p>
         </div>
-        <div className="w-14 h-14 rounded-2xl bg-yellow-400/10 border border-yellow-400/20 flex items-center justify-center text-3xl flex-shrink-0">⚡</div>
+
+        {/* Perks */}
+        <div className="flex gap-2 flex-wrap">
+          <div className={`flex items-center gap-1.5 rounded-xl px-3 py-1.5 border ${filled ? 'bg-violet-500/12 border-violet-500/25 text-violet-300' : 'bg-indigo-500/8 border-indigo-500/15 text-indigo-500'}`}>
+            <span className="text-sm">🎯</span>
+            <span className="text-xs font-semibold">More picks</span>
+          </div>
+          <div className={`flex items-center gap-1.5 rounded-xl px-3 py-1.5 border ${filled ? 'bg-emerald-500/12 border-emerald-500/25 text-emerald-300' : 'bg-emerald-500/8 border-emerald-500/15 text-emerald-600'}`}>
+            <span className="text-sm">🛡️</span>
+            <span className="text-xs font-semibold">Back safer outcomes</span>
+          </div>
+          {filled && (
+            <div className="flex items-center gap-1.5 rounded-xl px-3 py-1.5 border bg-yellow-400/8 border-yellow-400/20 text-yellow-400">
+              <span className="text-sm">🔓</span>
+              <span className="text-xs font-semibold">Unlocked</span>
+            </div>
+          )}
+        </div>
       </div>
     </div>
   )
