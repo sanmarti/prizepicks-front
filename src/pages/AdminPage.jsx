@@ -1,4 +1,5 @@
 import { useState, useMemo } from 'react'
+import { useNavigate } from 'react-router-dom'
 
 // ── Fixed sprint calendar ─────────────────────────────────────────────────────
 // Each sprint is 4 × Mon–Sun weeks. Dates are definitive — no manual input.
@@ -246,6 +247,7 @@ function SprintStatusPill({ status }) {
 
 // ── Main ──────────────────────────────────────────────────────────────────────
 export default function AdminPage() {
+  const navigate = useNavigate()
   const [activeTab,      setActiveTab]      = useState('sprints')
   const [selectedSprint, setSelectedSprint] = useState(() => {
     // Default to the live sprint, or next upcoming one
@@ -311,7 +313,25 @@ export default function AdminPage() {
         </div>
       </div>
 
-      <div className="max-w-md mx-auto px-4 pt-5 space-y-5">
+      <div className="max-w-md mx-auto px-4 pt-4">
+        <button
+          onClick={() => navigate('/admin/energy-packs')}
+          className="w-full flex items-center gap-4 p-4 rounded-2xl border border-indigo-500/20 bg-indigo-950/30 hover:bg-indigo-950/50 transition-colors text-left mb-5"
+        >
+          <div className="w-11 h-11 rounded-xl bg-indigo-500/15 border border-indigo-500/20 flex items-center justify-center text-xl flex-shrink-0">
+            ⚡
+          </div>
+          <div className="flex-1 min-w-0">
+            <p className="text-white font-bold text-sm">Energy Packs</p>
+            <p className="text-gray-500 text-xs mt-0.5">Create packs · upload images from your computer · set prices</p>
+          </div>
+          <svg width="16" height="16" fill="none" stroke="rgba(255,255,255,0.3)" strokeWidth="2" viewBox="0 0 24 24" className="flex-shrink-0">
+            <polyline points="9 18 15 12 9 6"/>
+          </svg>
+        </button>
+      </div>
+
+      <div className="max-w-md mx-auto px-4 pt-0 space-y-5">
 
         {/* ── LIFECYCLE RULES TAB ─────────────────────────────────────────── */}
         {activeTab === 'rules' && (
