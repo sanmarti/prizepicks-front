@@ -233,6 +233,22 @@ function GamePreviewModal({ onClose, onSignUp, onLogin, gwData }) {
     return { home: parts[0] || ev.home_team || '?', away: parts[1] || ev.away_team || '?' }
   }
 
+  function sortedOptions(opts, home, away) {
+    const rank = (opt) => {
+      const lbl = (opt.label || '').toLowerCase()
+      if (lbl.includes('draw') || lbl === 'x') return 1
+      const h = (home || '').toLowerCase()
+      const a = (away || '').toLowerCase()
+      // Match first word of team name to handle "Ecuador Win" → "Ecuador"
+      const firstWord = (s) => s.split(' ')[0]
+      if (h && lbl.includes(firstWord(h))) return 0
+      if (a && lbl.includes(firstWord(a))) return 2
+      // Fallback: assume DB order is home/draw/away already
+      return 3
+    }
+    return [...opts].sort((a, b) => rank(a) - rank(b))
+  }
+
   // Group events by day
   const days = []
   const dayMap = {}
@@ -352,7 +368,7 @@ function GamePreviewModal({ onClose, onSignUp, onLogin, gwData }) {
                     marginBottom: 6,
                     background: isSel ? 'rgba(124,110,245,0.07)' : 'rgba(255,255,255,0.02)',
                     border: `1px solid ${isSel ? 'rgba(124,110,245,0.25)' : 'rgba(255,255,255,0.05)'}`,
-                    borderRadius: 12, padding: '10px 12px', transition: 'all 0.15s',
+                    borderRadius: 14, padding: '12px 14px', transition: 'all 0.15s',
                     opacity: locked ? 0.35 : 1,
                   }}>
                     <div style={{ fontSize: 9, color: 'rgba(255,255,255,0.22)', fontFamily: "'IBM Plex Mono', monospace", marginBottom: 7 }}>
@@ -369,29 +385,33 @@ function GamePreviewModal({ onClose, onSignUp, onLogin, gwData }) {
                         <img src={ev.away_logo || ev.fixture_away_logo} alt="" style={{ width: 18, height: 18, objectFit: 'contain', flexShrink: 0 }} onError={e => { e.target.style.display='none' }}/>
                       )}
                     </div>
-                    <div style={{ display: 'flex', gap: 6 }}>
-                      {opts.map(opt => {
-                        const isOptSel     = sel?.optionId === opt.id
-                        const prevCost     = sel?.energyCost ?? 0
-                        const wouldExceed  = !isOptSel && (energyUsed - prevCost + opt.energy_cost) > TOTAL_ENERGY
-                        const btnDisabled  = locked || (!isOptSel && wouldExceed)
+                    <div style={{ display: 'flex', gap: 8 }}>
+                      {sortedOptions(opts, home, away).map(opt => {
+                        const isOptSel    = sel?.optionId === opt.id
+                        const prevCost    = sel?.energyCost ?? 0
+                        const wouldExceed = !isOptSel && (energyUsed - prevCost + opt.energy_cost) > TOTAL_ENERGY
+                        const btnDisabled = locked || (!isOptSel && wouldExceed)
                         return (
                           <button key={opt.id}
                             onClick={() => !btnDisabled && selectOption(ev.id, opt.id, opt.label, opt.energy_cost)}
-                            title={`${opt.label} · ⚡${opt.energy_cost}`}
                             style={{
-                              flex: 1, padding: '7px 4px', borderRadius: 8,
+                              flex: 1, padding: '11px 6px 10px', borderRadius: 10,
                               cursor: btnDisabled ? 'not-allowed' : 'pointer',
-                              transition: 'all 0.12s', opacity: btnDisabled ? 0.3 : 1,
-                              border: isOptSel ? '1px solid rgba(124,110,245,0.7)' : '1px solid rgba(255,255,255,0.08)',
-                              background: isOptSel ? 'linear-gradient(135deg, #7c6ef5, #a78bfa)' : 'rgba(255,255,255,0.04)',
-                              boxShadow: isOptSel ? '0 0 10px rgba(124,110,245,0.4)' : 'none',
-                              display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 2,
+                              transition: 'all 0.12s', opacity: btnDisabled ? 0.28 : 1,
+                              border: isOptSel ? '1.5px solid rgba(124,110,245,0.8)' : '1px solid rgba(255,255,255,0.1)',
+                              background: isOptSel ? 'linear-gradient(135deg, #7c6ef5, #a78bfa)' : 'rgba(255,255,255,0.05)',
+                              boxShadow: isOptSel ? '0 0 14px rgba(124,110,245,0.45)' : 'none',
+                              display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 5,
                             }}>
-                            <span style={{ fontSize: 10, fontFamily: "'Syne', sans-serif", fontWeight: 700, color: isOptSel ? '#fff' : 'rgba(255,255,255,0.55)', lineHeight: 1.2, textAlign: 'center' }}>
+                            <span style={{ fontSize: 13, fontFamily: "'Syne', sans-serif", fontWeight: 700, color: isOptSel ? '#fff' : 'rgba(255,255,255,0.7)', lineHeight: 1.2, textAlign: 'center' }}>
                               {opt.label}
                             </span>
-                            <span style={{ fontSize: 8, fontFamily: "'IBM Plex Mono', monospace", color: isOptSel ? 'rgba(255,255,255,0.7)' : 'rgba(255,255,255,0.25)' }}>
+                            <span style={{
+                              fontSize: 11, fontFamily: "'IBM Plex Mono', monospace", fontWeight: 600,
+                              color: isOptSel ? 'rgba(255,255,255,0.9)' : 'rgba(255,255,255,0.35)',
+                              background: isOptSel ? 'rgba(255,255,255,0.15)' : 'rgba(255,255,255,0.06)',
+                              borderRadius: 99, padding: '2px 7px',
+                            }}>
                               ⚡{opt.energy_cost}
                             </span>
                           </button>
