@@ -312,12 +312,14 @@ function WalletCard({ walletBalance }) {
             <p className="text-gray-500 text-[13px] mt-1.5 leading-relaxed">
               Your wallet is empty. Buy a pack to add bonus energy — it carries over and you can spend it on top of your base ⚡{ENERGY_BUDGET}.
             </p>
-            <div className="flex gap-4 mt-3">
-              <div className="flex items-center gap-1.5 text-xs text-indigo-400 font-semibold">
-                <span>↑</span> More picks available
+            <div className="flex gap-2 mt-4 flex-wrap">
+              <div className="flex items-center gap-2 bg-indigo-500/10 border border-indigo-500/20 rounded-xl px-3 py-2">
+                <span className="text-base">🎯</span>
+                <span className="text-xs text-indigo-300 font-semibold">More picks per gameweek</span>
               </div>
-              <div className="flex items-center gap-1.5 text-xs text-purple-400 font-semibold">
-                <span>⚡</span> Back riskier outcomes
+              <div className="flex items-center gap-2 bg-emerald-500/10 border border-emerald-500/20 rounded-xl px-3 py-2">
+                <span className="text-base">🛡️</span>
+                <span className="text-xs text-emerald-300 font-semibold">Back safer outcomes</span>
               </div>
             </div>
           </div>
