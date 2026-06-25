@@ -155,198 +155,202 @@ const MAX_PICKS    = 6
 const TOTAL_ENERGY = 25
 
 // ── Game Preview Modal ─────────────────────────────────────────────────────────
+// picks: { eventId: { optionId, label, energyCost } }
 
-function GamePreviewModal({ onClose, onSignUp, onLogin }) {
-  const [picks, setPicks]       = useState({}) // { fixtureId: 'H'|'D'|'A' }
+function GamePreviewModal({ onClose, onSignUp, onLogin, gwData }) {
+  const [picks, setPicks]         = useState({})
   const [submitted, setSubmitted] = useState(false)
 
-  const pickCount = Object.keys(picks).length
-  const energyPerPick = pickCount > 0 ? Math.floor(TOTAL_ENERGY / pickCount) : 0
-  const energyUsed    = energyPerPick * pickCount
-  const canSubmit     = pickCount === MAX_PICKS
+  const events     = gwData?.events ?? []
+  const pickCount  = Object.keys(picks).length
+  const energyUsed = Object.values(picks).reduce((s, p) => s + (p.energyCost ?? 0), 0)
+  const energyLeft = TOTAL_ENERGY - energyUsed
+  const canSubmit  = pickCount === MAX_PICKS && energyUsed <= TOTAL_ENERGY
 
-  function togglePick(id, outcome) {
+  function selectOption(eventId, optionId, label, energyCost) {
     setPicks(prev => {
-      const next = { ...prev }
-      if (next[id] === outcome) {
-        delete next[id]
-      } else if (Object.keys(next).length < MAX_PICKS || next[id]) {
-        next[id] = outcome
+      const next    = { ...prev }
+      const prevCost = next[eventId]?.energyCost ?? 0
+      if (next[eventId]?.optionId === optionId) {
+        delete next[eventId]
+      } else if (next[eventId] || Object.keys(next).length < MAX_PICKS) {
+        if ((energyUsed - prevCost + energyCost) <= TOTAL_ENERGY) {
+          next[eventId] = { optionId, label, energyCost }
+        }
       }
       return next
     })
   }
 
-  const days = [...new Set(MOCK_FIXTURES.map(f => f.day))]
+  function getTeams(ev) {
+    const parts = (ev.fixture_name || '').split(' vs ')
+    return { home: parts[0] || ev.home_team || '?', away: parts[1] || ev.away_team || '?' }
+  }
+
+  // Group events by day
+  const days = []
+  const dayMap = {}
+  for (const ev of events) {
+    const d = ev.match_time
+      ? new Date(ev.match_time).toLocaleDateString('en-GB', { weekday: 'short', day: 'numeric', month: 'short' }).toUpperCase()
+      : 'TBD'
+    if (!dayMap[d]) { dayMap[d] = []; days.push(d) }
+    dayMap[d].push(ev)
+  }
+
+  const atMax        = pickCount >= MAX_PICKS
+  const energyPct    = (energyUsed / TOTAL_ENERGY) * 100
+  const energyColor  = energyLeft < 3 ? '#f87171' : energyLeft < 8 ? '#f59e0b' : '#a78bfa'
 
   return (
     <div style={{
       position: 'fixed', inset: 0, zIndex: 100,
-      background: 'rgba(0,0,0,0.82)',
-      backdropFilter: 'blur(8px)',
-      display: 'flex', alignItems: 'center', justifyContent: 'center',
-      padding: '16px',
+      background: 'rgba(0,0,0,0.85)', backdropFilter: 'blur(8px)',
+      display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '16px',
     }} onClick={e => { if (e.target === e.currentTarget) onClose() }}>
 
       <div style={{
-        width: '100%', maxWidth: 560,
-        maxHeight: '92dvh',
+        width: '100%', maxWidth: 560, maxHeight: '92dvh',
         background: 'linear-gradient(160deg, #0a0e1a 0%, #070b14 100%)',
-        border: '1px solid rgba(124,110,245,0.18)',
-        borderRadius: 24,
-        display: 'flex', flexDirection: 'column',
-        overflow: 'hidden',
+        border: '1px solid rgba(124,110,245,0.18)', borderRadius: 24,
+        display: 'flex', flexDirection: 'column', overflow: 'hidden',
         boxShadow: '0 40px 100px rgba(0,0,0,0.7), 0 0 0 1px rgba(255,255,255,0.04)',
         animation: 'modal-in 0.28s cubic-bezier(0.34,1.56,0.64,1) both',
         position: 'relative',
       }}>
 
-        {/* ── Header ── */}
+        {/* Header */}
         <div style={{
-          padding: '20px 24px 16px',
+          padding: '18px 20px 14px', flexShrink: 0,
           borderBottom: '1px solid rgba(255,255,255,0.06)',
           background: 'rgba(255,255,255,0.02)',
-          flexShrink: 0,
         }}>
-          <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', marginBottom: 14 }}>
+          <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', marginBottom: 12 }}>
             <div>
               <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 4 }}>
-                <span style={{
-                  fontSize: 9, letterSpacing: '0.18em', color: '#a78bfa',
-                  fontFamily: "'IBM Plex Mono', monospace", fontWeight: 700,
-                }}>{MOCK_SPRINT.name}</span>
-                <span style={{ color: 'rgba(255,255,255,0.1)', fontSize: 10 }}>·</span>
-                <span style={{
-                  fontSize: 9, letterSpacing: '0.14em', color: 'rgba(255,255,255,0.3)',
-                  fontFamily: "'IBM Plex Mono', monospace",
-                }}>{MOCK_SPRINT.week}</span>
+                <span style={{ fontSize: 9, letterSpacing: '0.18em', color: '#a78bfa', fontFamily: "'IBM Plex Mono', monospace", fontWeight: 700 }}>
+                  {gwData?.sprint?.name ?? 'Sprint'}
+                </span>
+                <span style={{ color: 'rgba(255,255,255,0.12)' }}>·</span>
+                <span style={{ fontSize: 9, letterSpacing: '0.14em', color: 'rgba(255,255,255,0.3)', fontFamily: "'IBM Plex Mono', monospace" }}>
+                  Week {gwData?.gameweek?.sprint_week ?? '—'}
+                </span>
+                {gwData?.gameweek?.status === 'LOCKED' && (
+                  <span style={{ fontSize: 8, color: '#f59e0b', letterSpacing: '0.1em', fontFamily: "'IBM Plex Mono', monospace", background: 'rgba(245,158,11,0.1)', border: '1px solid rgba(245,158,11,0.25)', borderRadius: 99, padding: '1px 7px' }}>LOCKED</span>
+                )}
               </div>
-              <h2 style={{
-                fontFamily: "'Syne', sans-serif", fontWeight: 700,
-                fontSize: 18, color: '#fff', margin: 0, letterSpacing: '-0.01em',
-              }}>Select your 6 picks</h2>
-              <p style={{
-                fontSize: 11, color: 'rgba(255,255,255,0.25)',
-                fontFamily: "'IBM Plex Mono', monospace", margin: '4px 0 0',
-              }}>Pick 1 outcome per match — Home win, Draw, or Away win</p>
+              <h2 style={{ fontFamily: "'Syne', sans-serif", fontWeight: 700, fontSize: 17, color: '#fff', margin: 0 }}>
+                Pick 6 outcomes — spend your energy wisely
+              </h2>
             </div>
             <button onClick={onClose} style={{
               background: 'rgba(255,255,255,0.05)', border: '1px solid rgba(255,255,255,0.08)',
-              borderRadius: 99, width: 30, height: 30, cursor: 'pointer',
-              color: 'rgba(255,255,255,0.4)', fontSize: 14,
+              borderRadius: 99, width: 28, height: 28, cursor: 'pointer',
+              color: 'rgba(255,255,255,0.4)', fontSize: 13, flexShrink: 0,
               display: 'flex', alignItems: 'center', justifyContent: 'center',
-              flexShrink: 0,
             }}>✕</button>
           </div>
 
-          {/* Energy + pick bar */}
-          <div style={{ display: 'flex', gap: 12, alignItems: 'center' }}>
-            {/* Pick counter */}
-            <div style={{
-              display: 'flex', gap: 4,
-            }}>
+          {/* Pick dots + energy bar */}
+          <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+            <div style={{ display: 'flex', gap: 4 }}>
               {Array.from({ length: MAX_PICKS }).map((_, i) => (
                 <div key={i} style={{
-                  width: 20, height: 20, borderRadius: 6,
-                  background: i < pickCount ? 'rgba(124,110,245,0.8)' : 'rgba(255,255,255,0.06)',
-                  border: `1px solid ${i < pickCount ? 'rgba(124,110,245,0.5)' : 'rgba(255,255,255,0.08)'}`,
+                  width: 18, height: 18, borderRadius: 5,
+                  background: i < pickCount ? 'rgba(124,110,245,0.85)' : 'rgba(255,255,255,0.06)',
+                  border: `1px solid ${i < pickCount ? 'rgba(124,110,245,0.6)' : 'rgba(255,255,255,0.08)'}`,
                   display: 'flex', alignItems: 'center', justifyContent: 'center',
-                  fontSize: 9, color: i < pickCount ? '#fff' : 'rgba(255,255,255,0.2)',
-                  transition: 'all 0.15s',
-                  boxShadow: i < pickCount ? '0 0 8px rgba(124,110,245,0.4)' : 'none',
+                  fontSize: 8, color: '#fff', transition: 'all 0.15s',
+                  boxShadow: i < pickCount ? '0 0 6px rgba(124,110,245,0.4)' : 'none',
                 }}>{i < pickCount ? '✓' : ''}</div>
               ))}
             </div>
-            <span style={{
-              fontSize: 10, color: 'rgba(255,255,255,0.25)',
-              fontFamily: "'IBM Plex Mono', monospace",
-            }}>{pickCount}/{MAX_PICKS} picks</span>
-            <div style={{ flex: 1 }}/>
-            {/* Energy */}
-            <div style={{ textAlign: 'right' }}>
-              <span style={{
-                fontSize: 10, color: '#a78bfa',
-                fontFamily: "'IBM Plex Mono', monospace",
-              }}>⚡ {energyUsed}/{TOTAL_ENERGY} energy</span>
-              {pickCount > 0 && (
-                <span style={{
-                  fontSize: 9, color: 'rgba(255,255,255,0.2)',
-                  fontFamily: "'IBM Plex Mono', monospace",
-                  display: 'block',
-                }}>{energyPerPick} per pick</span>
-              )}
+            <span style={{ fontSize: 10, color: 'rgba(255,255,255,0.25)', fontFamily: "'IBM Plex Mono', monospace", flexShrink: 0 }}>
+              {pickCount}/{MAX_PICKS}
+            </span>
+            <div style={{ flex: 1 }}>
+              <div style={{ height: 5, borderRadius: 99, background: 'rgba(255,255,255,0.06)', overflow: 'hidden' }}>
+                <div style={{
+                  height: '100%', borderRadius: 99, background: energyColor,
+                  width: `${Math.min(energyPct, 100)}%`, transition: 'width 0.2s, background 0.2s',
+                  boxShadow: `0 0 8px ${energyColor}80`,
+                }}/>
+              </div>
             </div>
+            <span style={{ fontSize: 10, color: energyColor, fontFamily: "'IBM Plex Mono', monospace", flexShrink: 0, transition: 'color 0.2s' }}>
+              ⚡ {energyLeft} left
+            </span>
           </div>
         </div>
 
-        {/* ── Fixture list ── */}
-        <div style={{ flex: 1, overflowY: 'auto', padding: '8px 16px 16px' }}>
+        {/* Event list */}
+        <div style={{ flex: 1, overflowY: 'auto', padding: '6px 14px 14px' }}>
+          {events.length === 0 && (
+            <p style={{ textAlign: 'center', padding: '40px 0', color: 'rgba(255,255,255,0.2)', fontSize: 12, fontFamily: "'IBM Plex Mono', monospace" }}>
+              Loading fixtures…
+            </p>
+          )}
           {days.map(day => (
-            <div key={day} style={{ marginBottom: 8 }}>
-              <div style={{
-                fontSize: 9, letterSpacing: '0.16em', color: 'rgba(255,255,255,0.2)',
-                fontFamily: "'IBM Plex Mono', monospace", padding: '10px 8px 6px',
-                fontWeight: 700,
-              }}>{day}</div>
-              {MOCK_FIXTURES.filter(f => f.day === day).map(fix => {
-                const sel = picks[fix.id]
-                const atMax = pickCount >= MAX_PICKS && !sel
+            <div key={day}>
+              <div style={{ fontSize: 9, letterSpacing: '0.16em', color: 'rgba(255,255,255,0.2)', fontFamily: "'IBM Plex Mono', monospace", padding: '10px 6px 5px', fontWeight: 700 }}>
+                {day}
+              </div>
+              {dayMap[day].map(ev => {
+                const sel    = picks[ev.id]
+                const isSel  = !!sel
+                const locked = atMax && !isSel
+                const { home, away } = getTeams(ev)
+                const opts   = ev.options ?? []
                 return (
-                  <div key={fix.id} style={{
+                  <div key={ev.id} style={{
                     marginBottom: 6,
-                    background: sel ? 'rgba(124,110,245,0.07)' : 'rgba(255,255,255,0.02)',
-                    border: `1px solid ${sel ? 'rgba(124,110,245,0.25)' : 'rgba(255,255,255,0.05)'}`,
-                    borderRadius: 12,
-                    padding: '10px 12px',
-                    transition: 'all 0.15s',
-                    opacity: atMax ? 0.4 : 1,
+                    background: isSel ? 'rgba(124,110,245,0.07)' : 'rgba(255,255,255,0.02)',
+                    border: `1px solid ${isSel ? 'rgba(124,110,245,0.25)' : 'rgba(255,255,255,0.05)'}`,
+                    borderRadius: 12, padding: '10px 12px', transition: 'all 0.15s',
+                    opacity: locked ? 0.35 : 1,
                   }}>
-                    {/* League row */}
-                    <div style={{
-                      fontSize: 9, color: 'rgba(255,255,255,0.22)',
-                      fontFamily: "'IBM Plex Mono', monospace", marginBottom: 8,
-                      display: 'flex', alignItems: 'center', gap: 5,
-                    }}>
-                      <span>{fix.flag}</span>
-                      <span>{fix.league}</span>
+                    <div style={{ fontSize: 9, color: 'rgba(255,255,255,0.22)', fontFamily: "'IBM Plex Mono', monospace", marginBottom: 7 }}>
+                      {ev.competition || ev.event_type}
                     </div>
-                    {/* Match row */}
-                    <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-                      {/* Teams */}
-                      <div style={{ flex: 1, minWidth: 0 }}>
-                        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 8 }}>
-                          <span style={{
-                            fontSize: 12, fontFamily: "'Syne', sans-serif", fontWeight: 700,
-                            color: sel === 'H' ? '#fff' : 'rgba(255,255,255,0.7)', truncate: true,
-                          }}>{fix.home}</span>
-                          <span style={{ fontSize: 10, color: 'rgba(255,255,255,0.2)', fontFamily: "'IBM Plex Mono', monospace", flexShrink: 0 }}>vs</span>
-                          <span style={{
-                            fontSize: 12, fontFamily: "'Syne', sans-serif", fontWeight: 700,
-                            color: sel === 'A' ? '#fff' : 'rgba(255,255,255,0.7)', textAlign: 'right',
-                          }}>{fix.away}</span>
-                        </div>
-                      </div>
-                      {/* Pick buttons */}
-                      <div style={{ display: 'flex', gap: 4, flexShrink: 0 }}>
-                        {[['H', fix.home.split(' ')[0]], ['D', 'X'], ['A', fix.away.split(' ')[0]]].map(([out, label]) => (
-                          <button key={out} onClick={() => !atMax && togglePick(fix.id, out)}
-                            disabled={atMax && sel !== out}
+                    <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 8 }}>
+                      {(ev.home_logo || ev.fixture_home_logo) && (
+                        <img src={ev.home_logo || ev.fixture_home_logo} alt="" style={{ width: 18, height: 18, objectFit: 'contain', flexShrink: 0 }} onError={e => { e.target.style.display='none' }}/>
+                      )}
+                      <span style={{ flex: 1, fontSize: 12, fontFamily: "'Syne', sans-serif", fontWeight: 700, color: 'rgba(255,255,255,0.8)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{home}</span>
+                      <span style={{ fontSize: 9, color: 'rgba(255,255,255,0.2)', fontFamily: "'IBM Plex Mono', monospace", flexShrink: 0 }}>vs</span>
+                      <span style={{ flex: 1, textAlign: 'right', fontSize: 12, fontFamily: "'Syne', sans-serif", fontWeight: 700, color: 'rgba(255,255,255,0.8)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{away}</span>
+                      {(ev.away_logo || ev.fixture_away_logo) && (
+                        <img src={ev.away_logo || ev.fixture_away_logo} alt="" style={{ width: 18, height: 18, objectFit: 'contain', flexShrink: 0 }} onError={e => { e.target.style.display='none' }}/>
+                      )}
+                    </div>
+                    <div style={{ display: 'flex', gap: 6 }}>
+                      {opts.map(opt => {
+                        const isOptSel     = sel?.optionId === opt.id
+                        const prevCost     = sel?.energyCost ?? 0
+                        const wouldExceed  = !isOptSel && (energyUsed - prevCost + opt.energy_cost) > TOTAL_ENERGY
+                        const btnDisabled  = locked || (!isOptSel && wouldExceed)
+                        return (
+                          <button key={opt.id}
+                            onClick={() => !btnDisabled && selectOption(ev.id, opt.id, opt.label, opt.energy_cost)}
+                            title={`${opt.label} · ⚡${opt.energy_cost}`}
                             style={{
-                              width: 36, height: 28, borderRadius: 7,
-                              fontSize: 10, fontFamily: "'IBM Plex Mono', monospace", fontWeight: 700,
-                              cursor: atMax && sel !== out ? 'not-allowed' : 'pointer',
-                              transition: 'all 0.12s',
-                              border: sel === out
-                                ? '1px solid rgba(124,110,245,0.7)'
-                                : '1px solid rgba(255,255,255,0.08)',
-                              background: sel === out
-                                ? 'linear-gradient(135deg, #7c6ef5, #a78bfa)'
-                                : 'rgba(255,255,255,0.04)',
-                              color: sel === out ? '#fff' : 'rgba(255,255,255,0.4)',
-                              boxShadow: sel === out ? '0 0 10px rgba(124,110,245,0.4)' : 'none',
-                            }}>{out}</button>
-                        ))}
-                      </div>
+                              flex: 1, padding: '7px 4px', borderRadius: 8,
+                              cursor: btnDisabled ? 'not-allowed' : 'pointer',
+                              transition: 'all 0.12s', opacity: btnDisabled ? 0.3 : 1,
+                              border: isOptSel ? '1px solid rgba(124,110,245,0.7)' : '1px solid rgba(255,255,255,0.08)',
+                              background: isOptSel ? 'linear-gradient(135deg, #7c6ef5, #a78bfa)' : 'rgba(255,255,255,0.04)',
+                              boxShadow: isOptSel ? '0 0 10px rgba(124,110,245,0.4)' : 'none',
+                              display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 2,
+                            }}>
+                            <span style={{ fontSize: 10, fontFamily: "'Syne', sans-serif", fontWeight: 700, color: isOptSel ? '#fff' : 'rgba(255,255,255,0.55)', lineHeight: 1.2, textAlign: 'center' }}>
+                              {opt.label}
+                            </span>
+                            <span style={{ fontSize: 8, fontFamily: "'IBM Plex Mono', monospace", color: isOptSel ? 'rgba(255,255,255,0.7)' : 'rgba(255,255,255,0.25)' }}>
+                              ⚡{opt.energy_cost}
+                            </span>
+                          </button>
+                        )
+                      })}
                     </div>
                   </div>
                 )
@@ -355,126 +359,86 @@ function GamePreviewModal({ onClose, onSignUp, onLogin }) {
           ))}
         </div>
 
-        {/* ── Footer ── */}
-        <div style={{
-          padding: '14px 20px 20px',
-          borderTop: '1px solid rgba(255,255,255,0.06)',
-          background: 'rgba(0,0,0,0.3)',
-          flexShrink: 0,
-        }}>
-          {!canSubmit && (
-            <p style={{
-              textAlign: 'center', fontSize: 11, color: 'rgba(255,255,255,0.25)',
-              fontFamily: "'IBM Plex Mono', monospace", marginBottom: 10,
-            }}>Select {MAX_PICKS - pickCount} more pick{MAX_PICKS - pickCount !== 1 ? 's' : ''} to continue</p>
+        {/* Footer */}
+        <div style={{ padding: '12px 18px 18px', borderTop: '1px solid rgba(255,255,255,0.06)', background: 'rgba(0,0,0,0.3)', flexShrink: 0 }}>
+          {pickCount < MAX_PICKS && (
+            <p style={{ textAlign: 'center', fontSize: 10, color: 'rgba(255,255,255,0.2)', fontFamily: "'IBM Plex Mono', monospace", marginBottom: 8 }}>
+              Select {MAX_PICKS - pickCount} more pick{MAX_PICKS - pickCount !== 1 ? 's' : ''} to continue
+            </p>
           )}
-          <button
-            onClick={() => canSubmit && setSubmitted(true)}
-            disabled={!canSubmit}
-            style={{
-              width: '100%', padding: '14px 0', borderRadius: 14,
-              border: 'none', cursor: canSubmit ? 'pointer' : 'not-allowed',
-              fontFamily: "'Syne', sans-serif", fontWeight: 700,
-              fontSize: 14, letterSpacing: '0.08em', color: '#fff',
-              background: canSubmit
-                ? 'linear-gradient(90deg, #7c6ef5 0%, #a78bfa 50%, #7c6ef5 100%)'
-                : 'rgba(255,255,255,0.06)',
-              backgroundSize: '200% auto',
-              animation: canSubmit ? 'auth-shimmer 3s linear infinite' : 'none',
-              opacity: canSubmit ? 1 : 0.5,
-              boxShadow: canSubmit ? '0 4px 24px rgba(124,110,245,0.35)' : 'none',
-              transition: 'all 0.2s',
-            }}
-          >
-            {canSubmit ? 'Submit my picks →' : `${MAX_PICKS - pickCount} picks remaining`}
+          <button onClick={() => canSubmit && setSubmitted(true)} disabled={!canSubmit} style={{
+            width: '100%', padding: '13px 0', borderRadius: 14, border: 'none',
+            cursor: canSubmit ? 'pointer' : 'not-allowed',
+            fontFamily: "'Syne', sans-serif", fontWeight: 700, fontSize: 14, letterSpacing: '0.08em', color: '#fff',
+            background: canSubmit ? 'linear-gradient(90deg, #7c6ef5 0%, #a78bfa 50%, #7c6ef5 100%)' : 'rgba(255,255,255,0.06)',
+            backgroundSize: '200% auto', animation: canSubmit ? 'auth-shimmer 3s linear infinite' : 'none',
+            opacity: canSubmit ? 1 : 0.5, boxShadow: canSubmit ? '0 4px 24px rgba(124,110,245,0.35)' : 'none',
+            transition: 'opacity 0.2s, box-shadow 0.2s',
+          }}>
+            {canSubmit ? `Submit ${MAX_PICKS} picks · ⚡${energyUsed} used →` : `${MAX_PICKS - pickCount} picks remaining`}
           </button>
         </div>
 
-        {/* ── Auth prompt overlay (after submit) ── */}
+        {/* Auth overlay after submit */}
         {submitted && (
           <div style={{
             position: 'absolute', inset: 0, borderRadius: 24,
             background: 'linear-gradient(160deg, rgba(7,5,20,0.97) 0%, rgba(10,8,25,0.97) 100%)',
             backdropFilter: 'blur(4px)',
-            display: 'flex', flexDirection: 'column',
-            alignItems: 'center', justifyContent: 'center',
-            padding: '40px 32px',
-            animation: 'auth-slide-up 0.35s cubic-bezier(0.34,1.3,0.64,1) both',
+            display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center',
+            padding: '32px 28px', animation: 'auth-slide-up 0.35s cubic-bezier(0.34,1.3,0.64,1) both',
           }}>
-            {/* Trophy animation */}
             <div style={{
-              width: 72, height: 72, borderRadius: 20,
+              width: 68, height: 68, borderRadius: 18,
               background: 'linear-gradient(135deg, rgba(124,110,245,0.2), rgba(167,139,250,0.1))',
               border: '1px solid rgba(124,110,245,0.3)',
               display: 'flex', alignItems: 'center', justifyContent: 'center',
-              fontSize: 32, marginBottom: 20,
-              boxShadow: '0 0 40px rgba(124,110,245,0.2)',
+              fontSize: 30, marginBottom: 18, boxShadow: '0 0 40px rgba(124,110,245,0.2)',
             }}>🏆</div>
 
-            <h2 style={{
-              fontFamily: "'Syne', sans-serif", fontWeight: 700,
-              fontSize: 22, color: '#fff', textAlign: 'center',
-              margin: '0 0 8px', letterSpacing: '-0.02em',
-            }}>Your picks are locked in!</h2>
-            <p style={{
-              fontSize: 12, color: 'rgba(255,255,255,0.35)',
-              fontFamily: "'IBM Plex Mono', monospace",
-              textAlign: 'center', lineHeight: 1.7, margin: '0 0 8px',
-            }}>
-              You picked {pickCount} matches with {TOTAL_ENERGY} energy.<br/>
-              Create a free account to enter a real league and compete.
+            <h2 style={{ fontFamily: "'Syne', sans-serif", fontWeight: 700, fontSize: 20, color: '#fff', textAlign: 'center', margin: '0 0 8px', letterSpacing: '-0.02em' }}>
+              Your picks are ready!
+            </h2>
+            <p style={{ fontSize: 11, color: 'rgba(255,255,255,0.3)', fontFamily: "'IBM Plex Mono', monospace", textAlign: 'center', lineHeight: 1.7, margin: '0 0 16px' }}>
+              {pickCount} picks · ⚡{energyUsed} energy spent<br/>
+              Sign up to compete for real and track your results.
             </p>
 
-            {/* Picks summary */}
-            <div style={{
-              width: '100%', maxWidth: 360, marginBottom: 28,
-              background: 'rgba(255,255,255,0.03)',
-              border: '1px solid rgba(255,255,255,0.06)',
-              borderRadius: 14, padding: '12px 16px',
-              display: 'flex', flexDirection: 'column', gap: 6,
-            }}>
-              {Object.entries(picks).map(([id, out]) => {
-                const fix = MOCK_FIXTURES.find(f => f.id === Number(id))
-                const label = out === 'H' ? fix.home : out === 'A' ? fix.away : 'Draw'
-                const color = out === 'H' ? '#22c55e' : out === 'A' ? '#f59e0b' : '#38bdf8'
+            <div style={{ width: '100%', maxWidth: 360, marginBottom: 20, background: 'rgba(255,255,255,0.03)', border: '1px solid rgba(255,255,255,0.06)', borderRadius: 12, padding: '10px 14px', display: 'flex', flexDirection: 'column', gap: 5, maxHeight: 160, overflowY: 'auto' }}>
+              {Object.entries(picks).map(([evId, pick]) => {
+                const ev = events.find(e => e.id === evId)
+                if (!ev) return null
+                const { home, away } = getTeams(ev)
                 return (
-                  <div key={id} style={{
-                    display: 'flex', alignItems: 'center', justifyContent: 'space-between',
-                    fontSize: 11,
-                  }}>
-                    <span style={{ color: 'rgba(255,255,255,0.4)', fontFamily: "'IBM Plex Mono', monospace" }}>
-                      {fix.home} vs {fix.away}
+                  <div key={evId} style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 8 }}>
+                    <span style={{ fontSize: 10, color: 'rgba(255,255,255,0.35)', fontFamily: "'IBM Plex Mono', monospace", flex: 1, minWidth: 0, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                      {home} vs {away}
                     </span>
-                    <span style={{ color, fontFamily: "'Syne', sans-serif", fontWeight: 700, fontSize: 10 }}>
-                      {label}
+                    <span style={{ display: 'flex', alignItems: 'center', gap: 5, flexShrink: 0 }}>
+                      <span style={{ fontSize: 9, color: '#a78bfa', fontFamily: "'IBM Plex Mono', monospace" }}>⚡{pick.energyCost}</span>
+                      <span style={{ fontSize: 10, color: '#22c55e', fontFamily: "'Syne', sans-serif", fontWeight: 700 }}>{pick.label}</span>
                     </span>
                   </div>
                 )
               })}
             </div>
 
-            {/* CTA buttons */}
-            <div style={{ display: 'flex', flexDirection: 'column', gap: 10, width: '100%', maxWidth: 320 }}>
+            <div style={{ display: 'flex', flexDirection: 'column', gap: 9, width: '100%', maxWidth: 320 }}>
               <button onClick={onSignUp} style={{
-                padding: '14px 0', borderRadius: 14, border: 'none', cursor: 'pointer',
-                fontFamily: "'Syne', sans-serif", fontWeight: 700,
-                fontSize: 14, letterSpacing: '0.06em', color: '#fff',
+                padding: '13px 0', borderRadius: 13, border: 'none', cursor: 'pointer',
+                fontFamily: "'Syne', sans-serif", fontWeight: 700, fontSize: 14, letterSpacing: '0.06em', color: '#fff',
                 background: 'linear-gradient(90deg, #22c55e 0%, #16a34a 100%)',
                 boxShadow: '0 4px 20px rgba(34,197,94,0.3)',
               }}>Create free account →</button>
               <button onClick={onLogin} style={{
-                padding: '12px 0', borderRadius: 14, cursor: 'pointer',
-                fontFamily: "'IBM Plex Mono', monospace", fontWeight: 600,
-                fontSize: 12, letterSpacing: '0.06em', color: 'rgba(255,255,255,0.5)',
-                background: 'rgba(255,255,255,0.04)',
-                border: '1px solid rgba(255,255,255,0.08)',
+                padding: '11px 0', borderRadius: 13, cursor: 'pointer',
+                fontFamily: "'IBM Plex Mono', monospace", fontWeight: 600, fontSize: 12, letterSpacing: '0.06em', color: 'rgba(255,255,255,0.45)',
+                background: 'rgba(255,255,255,0.04)', border: '1px solid rgba(255,255,255,0.08)',
               }}>Already have an account? Sign in</button>
             </div>
-
-            <p style={{
-              fontSize: 10, color: 'rgba(255,255,255,0.15)',
-              fontFamily: "'IBM Plex Mono', monospace", marginTop: 16, textAlign: 'center',
-            }}>No credit card required · Free forever</p>
+            <p style={{ fontSize: 9, color: 'rgba(255,255,255,0.12)', fontFamily: "'IBM Plex Mono', monospace", marginTop: 14, textAlign: 'center' }}>
+              No credit card · Free forever
+            </p>
           </div>
         )}
       </div>
@@ -509,7 +473,7 @@ const STEPS = [
 
 // ── Left Hero Panel ────────────────────────────────────────────────────────────
 
-function HeroPanel({ onTryIt }) {
+function HeroPanel({ onTryIt, gwData }) {
   return (
     <div className="auth-hero" style={{
       flex: '0 0 52%',
@@ -680,89 +644,80 @@ function HeroPanel({ onTryIt }) {
         </div>
 
         {/* ── Current Sprint card + CTA ── */}
-        <div style={{
-          background: 'linear-gradient(135deg, rgba(124,110,245,0.08) 0%, rgba(34,197,94,0.06) 100%)',
-          border: '1px solid rgba(124,110,245,0.2)',
-          borderRadius: 16, padding: '16px 18px', marginBottom: 12,
-        }}>
-          {/* Sprint info row */}
-          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 12 }}>
-            <div>
-              <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 3 }}>
-                <span style={{
-                  fontSize: 9, letterSpacing: '0.14em', color: '#a78bfa',
-                  fontFamily: "'IBM Plex Mono', monospace", fontWeight: 700,
-                }}>{MOCK_SPRINT.name}</span>
-                <span style={{
-                  background: 'rgba(34,197,94,0.12)', border: '1px solid rgba(34,197,94,0.25)',
-                  borderRadius: 99, padding: '1px 7px',
-                  fontSize: 8, color: '#22c55e', letterSpacing: '0.1em',
-                  fontFamily: "'IBM Plex Mono', monospace",
-                }}>ACTIVE</span>
+        {gwData ? (
+          <div style={{
+            background: 'linear-gradient(135deg, rgba(124,110,245,0.08) 0%, rgba(34,197,94,0.06) 100%)',
+            border: '1px solid rgba(124,110,245,0.2)',
+            borderRadius: 16, padding: '16px 18px', marginBottom: 12,
+          }}>
+            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 12 }}>
+              <div>
+                <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 3 }}>
+                  <span style={{ fontSize: 9, letterSpacing: '0.14em', color: '#a78bfa', fontFamily: "'IBM Plex Mono', monospace", fontWeight: 700 }}>
+                    {gwData.sprint.name}
+                  </span>
+                  <span style={{ background: 'rgba(34,197,94,0.12)', border: '1px solid rgba(34,197,94,0.25)', borderRadius: 99, padding: '1px 7px', fontSize: 8, color: '#22c55e', letterSpacing: '0.1em', fontFamily: "'IBM Plex Mono', monospace" }}>
+                    {gwData.sprint.status === 'live' ? 'LIVE' : 'ACTIVE'}
+                  </span>
+                </div>
+                <div style={{ fontFamily: "'Syne', sans-serif", fontWeight: 700, fontSize: 15, color: '#fff' }}>
+                  Gameweek {gwData.gameweek.sprint_week}
+                </div>
               </div>
-              <div style={{
-                fontFamily: "'Syne', sans-serif", fontWeight: 700,
-                fontSize: 15, color: '#fff',
-              }}>{MOCK_SPRINT.week}</div>
+              {gwData.gameweek.days_left !== null && (
+                <div style={{ textAlign: 'right' }}>
+                  <div style={{ fontFamily: "'Syne', sans-serif", fontWeight: 700, fontSize: 22, color: gwData.gameweek.days_left <= 1 ? '#f87171' : '#f59e0b', textShadow: `0 0 20px ${gwData.gameweek.days_left <= 1 ? 'rgba(248,113,113,0.5)' : 'rgba(245,158,11,0.5)'}` }}>
+                    {gwData.gameweek.days_left}
+                  </div>
+                  <div style={{ fontSize: 8, color: 'rgba(255,255,255,0.25)', letterSpacing: '0.12em', fontFamily: "'IBM Plex Mono', monospace" }}>
+                    DAYS LEFT
+                  </div>
+                </div>
+              )}
             </div>
-            <div style={{ textAlign: 'right' }}>
-              <div style={{
-                fontFamily: "'Syne', sans-serif", fontWeight: 700,
-                fontSize: 22, color: '#f59e0b',
-                textShadow: '0 0 20px rgba(245,158,11,0.5)',
-              }}>{MOCK_SPRINT.daysLeft}</div>
-              <div style={{
-                fontSize: 8, color: 'rgba(255,255,255,0.25)',
-                letterSpacing: '0.12em', fontFamily: "'IBM Plex Mono', monospace",
-              }}>DAYS LEFT</div>
+
+            {/* Mini event preview */}
+            <div style={{ display: 'flex', flexDirection: 'column', gap: 5, marginBottom: 14 }}>
+              {(gwData.events ?? []).slice(0, 3).map(ev => {
+                const parts = (ev.fixture_name || '').split(' vs ')
+                const home  = parts[0] || ev.home_team || '?'
+                const away  = parts[1] || ev.away_team || '?'
+                return (
+                  <div key={ev.id} style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', fontSize: 11, padding: '5px 10px', background: 'rgba(255,255,255,0.03)', borderRadius: 8 }}>
+                    <span style={{ fontWeight: 600, color: 'rgba(255,255,255,0.7)', fontFamily: "'Syne', sans-serif", overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', maxWidth: '42%' }}>{home}</span>
+                    <span style={{ fontSize: 9, color: 'rgba(255,255,255,0.2)', fontFamily: "'IBM Plex Mono', monospace" }}>vs</span>
+                    <span style={{ fontWeight: 600, color: 'rgba(255,255,255,0.7)', fontFamily: "'Syne', sans-serif", overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', maxWidth: '42%', textAlign: 'right' }}>{away}</span>
+                  </div>
+                )
+              })}
+              {(gwData.events ?? []).length > 3 && (
+                <div style={{ textAlign: 'center', fontSize: 9, color: 'rgba(255,255,255,0.2)', fontFamily: "'IBM Plex Mono', monospace", padding: '4px 0' }}>
+                  + {gwData.events.length - 3} more fixtures
+                </div>
+              )}
             </div>
+
+            <button onClick={onTryIt} style={{
+              width: '100%', padding: '12px 0', borderRadius: 12, border: 'none',
+              cursor: 'pointer', fontFamily: "'Syne', sans-serif", fontWeight: 700,
+              fontSize: 13, letterSpacing: '0.06em', color: '#fff',
+              background: 'linear-gradient(90deg, #7c6ef5 0%, #a78bfa 50%, #7c6ef5 100%)',
+              backgroundSize: '200% auto', animation: 'auth-shimmer 3s linear infinite',
+              boxShadow: '0 4px 20px rgba(124,110,245,0.35)', transition: 'transform 0.15s, box-shadow 0.15s',
+            }}
+              onMouseEnter={e => { e.currentTarget.style.transform = 'translateY(-1px)'; e.currentTarget.style.boxShadow = '0 6px 28px rgba(124,110,245,0.5)' }}
+              onMouseLeave={e => { e.currentTarget.style.transform = 'translateY(0)'; e.currentTarget.style.boxShadow = '0 4px 20px rgba(124,110,245,0.35)' }}
+            >
+              ⚡ Try this gameweek →
+            </button>
           </div>
+        ) : (
+          <div style={{ height: 40 }} />
+        )}
 
-          {/* Mini fixture preview */}
-          <div style={{ display: 'flex', flexDirection: 'column', gap: 5, marginBottom: 14 }}>
-            {MOCK_FIXTURES.slice(0, 3).map(fix => (
-              <div key={fix.id} style={{
-                display: 'flex', alignItems: 'center', justifyContent: 'space-between',
-                fontSize: 11, color: 'rgba(255,255,255,0.45)',
-                fontFamily: "'IBM Plex Mono', monospace",
-                padding: '5px 10px',
-                background: 'rgba(255,255,255,0.03)',
-                borderRadius: 8,
-              }}>
-                <span style={{ fontWeight: 600, color: 'rgba(255,255,255,0.7)' }}>{fix.home}</span>
-                <span style={{ fontSize: 9, color: 'rgba(255,255,255,0.2)' }}>vs</span>
-                <span style={{ fontWeight: 600, color: 'rgba(255,255,255,0.7)' }}>{fix.away}</span>
-              </div>
-            ))}
-            <div style={{
-              textAlign: 'center', fontSize: 9,
-              color: 'rgba(255,255,255,0.2)', fontFamily: "'IBM Plex Mono', monospace",
-              padding: '4px 0',
-            }}>+ 12 more fixtures</div>
-          </div>
-
-          {/* Try it button */}
-          <button onClick={onTryIt} style={{
-            width: '100%', padding: '12px 0', borderRadius: 12, border: 'none',
-            cursor: 'pointer', fontFamily: "'Syne', sans-serif", fontWeight: 700,
-            fontSize: 13, letterSpacing: '0.06em', color: '#fff',
-            background: 'linear-gradient(90deg, #7c6ef5 0%, #a78bfa 50%, #7c6ef5 100%)',
-            backgroundSize: '200% auto',
-            animation: 'auth-shimmer 3s linear infinite',
-            boxShadow: '0 4px 20px rgba(124,110,245,0.35)',
-            transition: 'transform 0.15s, box-shadow 0.15s',
-          }}
-            onMouseEnter={e => { e.currentTarget.style.transform = 'translateY(-1px)'; e.currentTarget.style.boxShadow = '0 6px 28px rgba(124,110,245,0.5)' }}
-            onMouseLeave={e => { e.currentTarget.style.transform = 'translateY(0)'; e.currentTarget.style.boxShadow = '0 4px 20px rgba(124,110,245,0.35)' }}
-          >
-            ⚡ Try this gameweek →
-          </button>
-        </div>
-
-        <p style={{
-          textAlign: 'center', fontSize: 9, color: 'rgba(255,255,255,0.15)',
-          fontFamily: "'IBM Plex Mono', monospace', letterSpacing: '0.08em",
-        }}>Demo mode — sign up to play for real</p>
+        <p style={{ textAlign: 'center', fontSize: 9, color: 'rgba(255,255,255,0.15)', fontFamily: "'IBM Plex Mono', monospace", letterSpacing: '0.08em' }}>
+          Demo mode — sign up to play for real
+        </p>
       </div>
 
       {/* Right edge fade */}
@@ -779,14 +734,21 @@ function HeroPanel({ onTryIt }) {
 
 export default function AuthLayout({ heading, subheading, children }) {
   const [showPreview, setShowPreview] = useState(false)
+  const [gwData, setGwData]           = useState(null)
   const navigate = useNavigate()
+
+  useEffect(() => {
+    getPublicGameweek()
+      .then(r => r.data && setGwData(r.data))
+      .catch(() => {})
+  }, [])
 
   return (
     <>
       <style>{KEYFRAMES}</style>
 
       <div style={{ minHeight: '100dvh', display: 'flex', background: '#060a10' }}>
-        <HeroPanel onTryIt={() => setShowPreview(true)}/>
+        <HeroPanel onTryIt={() => setShowPreview(true)} gwData={gwData}/>
 
         {/* Right panel */}
         <div style={{
@@ -865,6 +827,7 @@ export default function AuthLayout({ heading, subheading, children }) {
 
       {showPreview && (
         <GamePreviewModal
+          gwData={gwData}
           onClose={() => setShowPreview(false)}
           onSignUp={() => { setShowPreview(false); navigate('/register') }}
           onLogin={() => { setShowPreview(false); navigate('/login') }}
