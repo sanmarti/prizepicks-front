@@ -325,19 +325,17 @@ function WalletCard({ walletBalance }) {
         {/* Balance row */}
         <div className="flex items-start justify-between mb-5">
           <div>
-            <p className={`text-[10px] font-black uppercase tracking-[0.2em] mb-1 ${
-              hasPurchased ? 'text-orange-300' : 'text-orange-900'
-            }`}>Bonus Energy Wallet</p>
+            <p className="text-[10px] font-black uppercase tracking-[0.2em] mb-1 text-white/50">Bonus Energy Wallet</p>
             <div className="flex items-end gap-2">
               <span className={`font-black leading-none ${
                 hasPurchased
                   ? 'text-5xl text-yellow-400 drop-shadow-[0_0_22px_rgba(250,204,21,0.7)]'
-                  : 'text-5xl text-orange-950'
+                  : 'text-5xl text-white/20'
               }`}>{walletBalance}</span>
-              <span className={`text-xl mb-0.5 ${hasPurchased ? 'text-yellow-400/80' : 'text-orange-900/60'}`}>⚡</span>
+              <span className={`text-xl mb-0.5 ${hasPurchased ? 'text-yellow-400/80' : 'text-white/20'}`}>⚡</span>
             </div>
             {hasPurchased && weeksAvailable > 0 && (
-              <p className="text-orange-300/70 text-xs mt-1">≈ {weeksAvailable} matchweek{weeksAvailable !== 1 ? 's' : ''} covered</p>
+              <p className="text-white/50 text-xs mt-1">≈ {weeksAvailable} matchweek{weeksAvailable !== 1 ? 's' : ''} covered</p>
             )}
           </div>
           {/* Battery visual */}
@@ -364,8 +362,8 @@ function WalletCard({ walletBalance }) {
           }`}>
             <span className="text-base flex-shrink-0">♾️</span>
             <div>
-              <p className={`text-xs font-semibold ${hasPurchased ? 'text-orange-100' : 'text-orange-900'}`}>Never expires</p>
-              <p className={`text-[11px] ${hasPurchased ? 'text-orange-300/70' : 'text-orange-900/60'}`}>Your bonus energy stays in your wallet until you use it</p>
+              <p className="text-xs font-semibold text-white">Never expires</p>
+              <p className="text-[11px] text-white/45">Your bonus energy stays in your wallet until you use it</p>
             </div>
           </div>
           <div className={`flex items-center gap-2.5 rounded-xl px-3 py-2.5 border ${
@@ -373,8 +371,8 @@ function WalletCard({ walletBalance }) {
           }`}>
             <span className="text-base flex-shrink-0">📅</span>
             <div>
-              <p className={`text-xs font-semibold ${hasPurchased ? 'text-amber-100' : 'text-orange-900'}`}>Any matchweek, any time</p>
-              <p className={`text-[11px] ${hasPurchased ? 'text-amber-300/70' : 'text-orange-900/60'}`}>Use it whenever you want — no deadline or restriction</p>
+              <p className="text-xs font-semibold text-white">Any matchweek, any time</p>
+              <p className="text-[11px] text-white/45">Use it whenever you want — no deadline or restriction</p>
             </div>
           </div>
           <div className={`flex items-center gap-2.5 rounded-xl px-3 py-2.5 border ${
@@ -382,8 +380,8 @@ function WalletCard({ walletBalance }) {
           }`}>
             <span className="text-base flex-shrink-0">⚡</span>
             <div>
-              <p className={`text-xs font-semibold ${hasPurchased ? 'text-yellow-300' : 'text-orange-900'}`}>Max 5 bonus units per matchweek</p>
-              <p className={`text-[11px] ${hasPurchased ? 'text-yellow-500/70' : 'text-orange-900/60'}`}>On top of your {ENERGY_BUDGET} base energy · used first from your wallet</p>
+              <p className="text-xs font-semibold text-white">Max 5 bonus units per matchweek</p>
+              <p className="text-[11px] text-white/45">On top of your {ENERGY_BUDGET} base energy · used first from your wallet</p>
             </div>
           </div>
         </div>
