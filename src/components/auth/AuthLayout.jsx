@@ -150,6 +150,19 @@ const KEYFRAMES = `
   60%  { transform: translate(-8px, -50px) rotate(-20deg); }
   100% { transform: translate(0px, 0px) rotate(0deg); }
 }
+@keyframes auth-float-d {
+  0%   { transform: translate(0px, 0px) scale(1); }
+  25%  { transform: translate(-14px, -42px) scale(1.12); }
+  50%  { transform: translate(20px, -60px) scale(0.92); }
+  75%  { transform: translate(-8px, -28px) scale(1.08); }
+  100% { transform: translate(0px, 0px) scale(1); }
+}
+@keyframes auth-float-e {
+  0%   { transform: translate(0px, 0px) rotate(0deg); }
+  35%  { transform: translate(16px, -36px) rotate(-15deg); }
+  65%  { transform: translate(-20px, -52px) rotate(10deg); }
+  100% { transform: translate(0px, 0px) rotate(0deg); }
+}
 @keyframes auth-glow {
   0%,100% { opacity: 0.22; transform: scale(1); }
   50% { opacity: 0.55; transform: scale(1.14); }
@@ -615,6 +628,54 @@ function HeroPanel({ onTryIt, gwData }) {
         opacity: 0.8,
       }}>
         ⚽
+      </div>
+
+      {/* Energy 1 — ⚡ (top-left, grande) */}
+      <div style={{
+        position: 'absolute', top: '8%', left: '8%',
+        animation: 'auth-float-d 10s ease-in-out infinite 0.7s',
+        fontSize: 64,
+        filter: 'drop-shadow(0 0 22px rgba(250,204,21,0.55)) drop-shadow(0 12px 28px rgba(0,0,0,0.8))',
+        pointerEvents: 'none', lineHeight: 1,
+        opacity: 0.85,
+      }}>
+        ⚡
+      </div>
+
+      {/* Energy 2 — ⚡ (center-right, mediano) */}
+      <div style={{
+        position: 'absolute', top: '48%', right: '5%',
+        animation: 'auth-float-e 13s ease-in-out infinite 2.3s',
+        fontSize: 48,
+        filter: 'drop-shadow(0 0 18px rgba(250,204,21,0.45)) drop-shadow(0 10px 22px rgba(0,0,0,0.7))',
+        pointerEvents: 'none', lineHeight: 1,
+        opacity: 0.75,
+      }}>
+        ⚡
+      </div>
+
+      {/* Energy 3 — ⚡ (bottom-left, pequeño) */}
+      <div style={{
+        position: 'absolute', bottom: '20%', left: '6%',
+        animation: 'auth-float-d 11s ease-in-out infinite 4.1s',
+        fontSize: 36,
+        filter: 'drop-shadow(0 0 14px rgba(250,204,21,0.4)) drop-shadow(0 8px 18px rgba(0,0,0,0.65))',
+        pointerEvents: 'none', lineHeight: 1,
+        opacity: 0.7,
+      }}>
+        ⚡
+      </div>
+
+      {/* Energy 4 — ⚡ (center, muy sutil) */}
+      <div style={{
+        position: 'absolute', top: '70%', right: '18%',
+        animation: 'auth-float-e 16s ease-in-out infinite 5.5s',
+        fontSize: 30,
+        filter: 'drop-shadow(0 0 10px rgba(250,204,21,0.35)) drop-shadow(0 6px 14px rgba(0,0,0,0.6))',
+        pointerEvents: 'none', lineHeight: 1,
+        opacity: 0.6,
+      }}>
+        ⚡
       </div>
 
       {/* Content */}

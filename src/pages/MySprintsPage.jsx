@@ -1,10 +1,6 @@
 import { useEffect, useState, useRef } from 'react'
 import { getMyRelevantSprints, getSprintDetail, getGloryGameweek } from '../api/glory'
-import { MOCK_PAST_SPRINTS, MOCK_CURRENT_SPRINT, getMockSprintDetail } from '../api/mockSprintData'
 import BottomNav from '../components/layout/BottomNav'
-
-// Demo date: Mon 28 Jul 2026 — W4 of July sprint is live (sprint opens Jul 6, first Monday of July)
-const DEMO_NOW = new Date('2026-07-28T10:00:00')
 
 function fmtDate(d) {
   return new Date(d).toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' })
@@ -16,7 +12,7 @@ function fmtWeekday(d) {
   return new Date(d).toLocaleDateString('en-GB', { weekday: 'short', day: 'numeric', month: 'short' })
 }
 function fmtCountdown(target) {
-  const diff = new Date(target) - DEMO_NOW
+  const diff = new Date(target) - Date.now()
   if (diff <= 0) return null
   const d = Math.floor(diff / 86400000)
   const h = Math.floor((diff % 86400000) / 3600000)
@@ -25,23 +21,35 @@ function fmtCountdown(target) {
   if (h > 0) return `${h}h ${m}m`
   return `${m}m`
 }
-// From lock_time (Sunday 20:00) derive Mon start and Sun end
+// Derive Mon–Sun of the calendar week that contains lockTimeStr
 function getWeekRange(lockTimeStr) {
   if (!lockTimeStr) return { mon: null, sun: null }
   const lockDt = new Date(lockTimeStr)
-  const mon = new Date(lockDt); mon.setDate(mon.getDate() - 6); mon.setHours(0, 0, 0, 0)
-  const sun = new Date(lockDt)
-  return { mon, sun: lockDt }
+  const day = lockDt.getUTCDay() // 0=Sun, 1=Mon … 6=Sat
+  const daysToMon = day === 0 ? -6 : 1 - day
+  const mon = new Date(lockDt)
+  mon.setUTCDate(mon.getUTCDate() + daysToMon)
+  mon.setUTCHours(0, 0, 0, 0)
+  const sun = new Date(mon)
+  sun.setUTCDate(sun.getUTCDate() + 6)
+  sun.setUTCHours(23, 59, 59, 999)
+  return { mon, sun }
 }
+// Trust backend status first; fall back to time-based only for data without a real status
 function getWeekStatus(lockTimeStr, gwStatus) {
-  if (!lockTimeStr) return gwStatus || 'DRAFT'
-  const now = DEMO_NOW
-  const { mon, sun } = getWeekRange(lockTimeStr)
-  if (!mon) return gwStatus || 'DRAFT'
-  const settle = new Date(mon); settle.setDate(settle.getDate() + 7) // next Monday = settle
-  if (now >= settle || gwStatus === 'FINISHED') return 'FINISHED'
-  if (now >= sun    || gwStatus === 'LOCKED')   return 'LOCKED'
-  if (now >= mon    || gwStatus === 'PUBLISHED') return 'PUBLISHED'
+  if (gwStatus === 'FINISHED') return 'FINISHED'
+  if (gwStatus === 'LOCKED')   return 'LOCKED'
+  if (gwStatus === 'PUBLISHED') return 'PUBLISHED'
+  if (gwStatus === 'DRAFT')    return 'DRAFT'
+  // Time-based fallback for legacy/mock data without an explicit status
+  if (!lockTimeStr) return 'DRAFT'
+  const now = new Date()
+  const { mon } = getWeekRange(lockTimeStr)
+  if (!mon) return 'DRAFT'
+  const settle = new Date(mon); settle.setUTCDate(settle.getUTCDate() + 7)
+  if (now >= settle) return 'FINISHED'
+  if (now >= new Date(lockTimeStr)) return 'LOCKED'
+  if (now >= mon) return 'PUBLISHED'
   return 'DRAFT'
 }
 
@@ -638,13 +646,14 @@ function OverallRankingsScreen({ sprint, overallRanking, myUserId, onClose }) {
                   </p>
                   {/* Stats row */}
                   {(() => {
-                    const gw = Math.min(4, Math.round((row.total_correct_picks + row.total_wrong_picks) / 6))
+                    const wrong = row.total_incorrect_picks ?? 0
+                    const total = (row.total_correct_picks || 0) + wrong
+                    const acc = total > 0 ? Math.round((row.total_correct_picks || 0) / total * 100) : null
                     return (
                       <div className="flex items-center gap-2 mt-0.5 flex-wrap">
-                        <span className="text-green-400 text-[10px] font-semibold">{row.total_correct_picks}✓</span>
-                        <span className="text-red-400/80 text-[10px]">{row.total_wrong_picks}✗</span>
-                        <span className="text-gray-500 text-[10px]">{row.accuracy_pct}%</span>
-                        {gw > 0 && <span className="text-[10px] text-gray-600">{gw} GW</span>}
+                        <span className="text-green-400 text-[10px] font-semibold">{row.total_correct_picks ?? 0}✓</span>
+                        <span className="text-red-400/80 text-[10px]">{wrong}✗</span>
+                        {acc !== null && <span className="text-gray-500 text-[10px]">{acc}%</span>}
                       </div>
                     )
                   })()}
@@ -682,21 +691,13 @@ function SprintDetailScreen({ sprintSummary, myUserId, onClose }) {
   const [showRankings, setShowRankings] = useState(false)
   const [showOverall,  setShowOverall]  = useState(false)
 
-  const isMock = sprintSummary.id?.startsWith('mock_')
-
   useEffect(() => {
     setLoading(true)
-    if (isMock) {
-      const d = getMockSprintDetail(sprintSummary.id)
-      setDetail(d)
-      setLoading(false)
-      return
-    }
     getSprintDetail(sprintSummary.id)
       .then(r => setDetail(r.data))
       .catch(() => {})
       .finally(() => setLoading(false))
-  }, [sprintSummary.id, isMock])
+  }, [sprintSummary.id])
 
   const sprint         = detail?.sprint || sprintSummary
   const progress       = detail?.progress
@@ -704,8 +705,7 @@ function SprintDetailScreen({ sprintSummary, myUserId, onClose }) {
   const rankings       = detail?.rankings || []
   const overallRanking = detail?.overall_ranking || []
   const gameweeks      = detail?.gameweeks || []
-  // For mock data the "you" row has user_id='mock_YOU'; use that as effective ID
-  const effectiveUserId = isMock ? 'mock_YOU' : myUserId
+  const effectiveUserId = myUserId
   const outcome   = progress?.sprint_outcome ?? (sprintSummary.status === 'live' ? 'pending' : null)
   const oc        = outcome ? (OUTCOME[outcome] || OUTCOME.pending) : null
   const gwCount   = sprint.gameweek_count || 4
@@ -817,6 +817,78 @@ function SprintDetailScreen({ sprintSummary, myUserId, onClose }) {
           </div>
         ) : (
           <div className="max-w-md mx-auto px-4 space-y-5 pt-5">
+
+            {/* Sprint completed — outcome banner */}
+            {sprint.status === 'completed' && outcome && outcome !== 'pending' && (
+              <div className={`rounded-2xl p-5 bg-gradient-to-br ${
+                outcome === 'promoted'  ? 'from-green-900/40 to-green-950/20 border border-green-500/30' :
+                outcome === 'relegated' ? 'from-red-900/30 to-red-950/15 border border-red-500/25' :
+                'from-white/4 to-white/2 border border-white/10'
+              }`}>
+                <div className="flex items-center gap-3 mb-4">
+                  <div className={`w-12 h-12 rounded-full flex items-center justify-center text-2xl flex-shrink-0 ${
+                    outcome === 'promoted'  ? 'bg-green-900/60 border border-green-500/40' :
+                    outcome === 'relegated' ? 'bg-red-900/50 border border-red-500/30' :
+                    'bg-white/8 border border-white/15'
+                  }`}>
+                    {outcome === 'promoted' ? '⬆' : outcome === 'relegated' ? '⬇' : '='}
+                  </div>
+                  <div>
+                    <p className={`font-black text-base leading-tight ${
+                      outcome === 'promoted' ? 'text-green-300' : outcome === 'relegated' ? 'text-red-300' : 'text-white'
+                    }`}>
+                      {outcome === 'promoted' ? 'Promoted!' : outcome === 'relegated' ? 'Relegated' : 'Retained'}
+                    </p>
+                    <p className="text-gray-500 text-xs mt-0.5">
+                      {outcome === 'promoted' ? 'You move up to the next division for the next sprint' :
+                       outcome === 'relegated' ? 'You drop down to the previous division' :
+                       'You stay in your current division'}
+                    </p>
+                  </div>
+                </div>
+                {/* Division transition */}
+                {division && (
+                  <div className="flex items-center gap-2 text-xs">
+                    <span className="px-2.5 py-1 rounded-lg bg-white/8 border border-white/10 text-gray-300 font-medium">
+                      {division.icon} {division.name}
+                    </span>
+                    <span className={`font-black ${outcome === 'promoted' ? 'text-green-400' : outcome === 'relegated' ? 'text-red-400' : 'text-gray-600'}`}>
+                      {outcome === 'promoted' ? '→' : outcome === 'relegated' ? '→' : '·'}
+                    </span>
+                    {outcome === 'promoted' && (
+                      <span className="px-2.5 py-1 rounded-lg bg-green-900/40 border border-green-500/30 text-green-300 font-medium">
+                        Next division ↑
+                      </span>
+                    )}
+                    {outcome === 'relegated' && (
+                      <span className="px-2.5 py-1 rounded-lg bg-red-900/30 border border-red-500/25 text-red-300 font-medium">
+                        Previous division ↓
+                      </span>
+                    )}
+                    {outcome === 'retained' && (
+                      <span className="px-2.5 py-1 rounded-lg bg-white/8 border border-white/10 text-gray-400 font-medium">
+                        Stay in {division.icon} {division.name}
+                      </span>
+                    )}
+                  </div>
+                )}
+              </div>
+            )}
+
+            {/* Sprint settling — awaiting results */}
+            {sprint.status === 'live' && progress?.sprint_outcome === 'pending' && (() => {
+              const finishedGws = gameweeks.filter(g => getWeekStatus(g?.lock_time, g?.status) === 'FINISHED').length
+              const allFinished = finishedGws >= gwCount
+              return allFinished ? (
+                <div className="bg-purple-950/30 border border-purple-500/20 rounded-2xl px-4 py-3.5 flex items-start gap-3">
+                  <span className="text-xl mt-0.5">⏳</span>
+                  <div>
+                    <p className="text-purple-300 font-bold text-sm">Sprint settling — results incoming</p>
+                    <p className="text-gray-500 text-xs mt-0.5">All matches are finished. Final LP and division outcomes are being calculated.</p>
+                  </div>
+                </div>
+              ) : null
+            })()}
 
             {/* Sprint summary stats */}
             {progress ? (
@@ -1095,21 +1167,18 @@ export default function MySprintsPage() {
     } catch {}
   }, [])
 
-  const realPast = data?.past || []
+  const allSprints = data?.past || []
 
-  // July sprint shows as current only once its W1 has started
-  const sprintStarted = DEMO_NOW >= new Date(MOCK_CURRENT_SPRINT.start_date + 'T00:00:00')
-  const currentSprint = sprintStarted ? MOCK_CURRENT_SPRINT : null
+  // Current sprint = live sprint first, fall back to nearest scheduled
+  const currentSprint =
+    allSprints.find(s => s.status === 'live') ||
+    allSprints.filter(s => s.status === 'scheduled').sort((a, b) => new Date(a.start_date) - new Date(b.start_date))[0] ||
+    null
 
-  // History: real API finished sprints (end_date in the past) + mock past sprints, deduped, newest first, max 4
-  const realPastFinished = realPast
-    .filter(s => s.end_date && new Date(s.end_date + 'T23:59:59') < DEMO_NOW)
-    .map(s => ({ ...s, status: 'finished' }))
-  const realPastIds = new Set(realPastFinished.map(s => s.id))
-  const historicSprints = [
-    ...realPastFinished,
-    ...MOCK_PAST_SPRINTS.filter(s => !realPastIds.has(s.id)),
-  ].sort((a, b) => new Date(b.start_date) - new Date(a.start_date)).slice(0, 4)
+  // History: completed/archived sprints from API, newest first
+  const historicSprints = allSprints
+    .filter(s => s.status === 'completed' || s.status === 'archived')
+    .sort((a, b) => new Date(b.start_date) - new Date(a.start_date))
 
   if (loading) return (
     <div className="min-h-screen bg-[#0a0d12] flex items-center justify-center">

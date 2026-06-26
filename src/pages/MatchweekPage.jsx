@@ -2,7 +2,7 @@ import { useEffect, useState, useCallback, useMemo, useRef } from 'react'
 import { useNavigate } from 'react-router-dom'
 import {
   getGloryStatus, getGloryGameweek, submitGloryPicks,
-  getGloryLeaderboard, getCommunityPicks, getFixtureForm, getGameweekLive, getEnergyPacks,
+  getGloryLeaderboard, getCommunityPicks, getFixtureForm, getFixtureStats, getGameweekLive, getEnergyPacks,
 } from '../api/glory'
 import BottomNav from '../components/layout/BottomNav'
 
@@ -26,7 +26,7 @@ const COUNTRY_FLAGS = {
   'Serbia':'🇷🇸','Australia':'🇦🇺','South Korea':'🇰🇷','Iran':'🇮🇷',
   'Saudi Arabia':'🇸🇦','Tunisia':'🇹🇳','Cameroon':'🇨🇲','Ivory Coast':'🇨🇮',
   'Costa Rica':'🇨🇷','Panama':'🇵🇦','Jamaica':'🇯🇲','Guatemala':'🇬🇹',
-  'Sweden':'🇸🇪','Wales':'🏴󠁧󠁢󠁷󠁬󠁳󠁿','Scotland':'🏴󠁧󠁢󠁳󠁣󠁴󠁿','Turkey':'🇹🇷',
+  'Sweden':'🇸🇪','Wales':'🏴󠁧󠁢󠁷󠁬󠁳󠁿','Scotland':'🏴󠁧󠁢󠁳󠁣󠁴󠁿','Turkey':'🇹🇷','Türkiye':'🇹🇷',
   'Ukraine':'🇺🇦','Romania':'🇷🇴','Slovakia':'🇸🇰','Hungary':'🇭🇺',
   'Czechia':'🇨🇿','Czech Republic':'🇨🇿','Slovenia':'🇸🇮','Albania':'🇦🇱',
   'Georgia':'🇬🇪','New Zealand':'🇳🇿','Bolivia':'🇧🇴','Paraguay':'🇵🇾',
@@ -34,7 +34,25 @@ const COUNTRY_FLAGS = {
   'Nigeria':'🇳🇬','Algeria':'🇩🇿','Mali':'🇲🇱','South Africa':'🇿🇦',
   'Angola':'🇦🇴','Qatar':'🇶🇦','Kuwait':'🇰🇼','Indonesia':'🇮🇩',
   'United States':'🇺🇸','Honduras':'🇭🇳','El Salvador':'🇸🇻','Haiti':'🇭🇹',
-  'Trinidad and Tobago':'🇹🇹','Russia':'🇷🇺','Israel':'🇮🇱','Wales':'🏴󠁧󠁢󠁷󠁬󠁳󠁿',
+  'Trinidad and Tobago':'🇹🇹','Russia':'🇷🇺','Israel':'🇮🇱',
+  'Norway':'🇳🇴','Finland':'🇫🇮','Iceland':'🇮🇸','Ireland':'🇮🇪',
+  'Cape Verde Islands':'🇨🇻','Cape Verde':'🇨🇻',
+  'Burkina Faso':'🇧🇫','Guinea':'🇬🇳','Guinea-Bissau':'🇬🇼','Mozambique':'🇲🇿',
+  'Tanzania':'🇹🇿','Zimbabwe':'🇿🇼','Zambia':'🇿🇲','Namibia':'🇳🇦',
+  'Libya':'🇱🇾','Sudan':'🇸🇩','Ethiopia':'🇪🇹','Benin':'🇧🇯',
+  'Togo':'🇹🇬','Gabon':'🇬🇦','Rwanda':'🇷🇼','Uganda':'🇺🇬',
+  'Oman':'🇴🇲','Bahrain':'🇧🇭','Jordan':'🇯🇴','United Arab Emirates':'🇦🇪','UAE':'🇦🇪',
+  'Syria':'🇸🇾','Lebanon':'🇱🇧','China':'🇨🇳','India':'🇮🇳',
+  'Thailand':'🇹🇭','Vietnam':'🇻🇳','Malaysia':'🇲🇾','Philippines':'🇵🇭',
+  'North Korea':'🇰🇵','Kyrgyzstan':'🇰🇬','Tajikistan':'🇹🇯','Turkmenistan':'🇹🇲',
+  'Azerbaijan':'🇦🇿','Armenia':'🇦🇲','Kazakhstan':'🇰🇿','Belarus':'🇧🇾',
+  'Moldova':'🇲🇩','Kosovo':'🇽🇰','Montenegro':'🇲🇪','North Macedonia':'🇲🇰',
+  'Bosnia':'🇧🇦','Bosnia and Herzegovina':'🇧🇦','Lithuania':'🇱🇹','Latvia':'🇱🇻','Estonia':'🇪🇪',
+  'Luxembourg':'🇱🇺','Malta':'🇲🇹','Cyprus':'🇨🇾','Liechtenstein':'🇱🇮',
+  'Andorra':'🇦🇩','San Marino':'🇸🇲','Gibraltar':'🇬🇮','Faroe Islands':'🇫🇴',
+  'New Caledonia':'🇳🇨','Papua New Guinea':'🇵🇬','Fiji':'🇫🇯',
+  'Dominican Republic':'🇩🇴','Cuba':'🇨🇺','Curaçao':'🇨🇼','Nicaragua':'🇳🇮',
+  'Suriname':'🇸🇷','Guyana':'🇬🇾',
 }
 
 const COMPETITION_ICONS = {
@@ -303,6 +321,149 @@ function FormDropdown({ fixtureId, homeTeam, awayTeam, homeFlag, awayFlag }) {
   )
 }
 
+// ── Live match insights dropdown ───────────────────────────────────────────────
+function InsightsDropdown({ fixtureId, liveEv }) {
+  const [open, setOpen]       = useState(false)
+  const [data, setData]       = useState(null)
+  const [loading, setLoading] = useState(false)
+  const fetchedRef  = useRef(false)
+  const prevElapsed = useRef(null)
+
+  const doFetch = useCallback(() => {
+    if (!fixtureId) return
+    setLoading(true)
+    getFixtureStats(fixtureId)
+      .then(r => setData(r.data))
+      .catch(() => {})
+      .finally(() => setLoading(false))
+  }, [fixtureId])
+
+  const toggle = () => {
+    setOpen(o => {
+      const next = !o
+      if (next && !fetchedRef.current) { fetchedRef.current = true; doFetch() }
+      return next
+    })
+  }
+
+  // Re-fetch while open whenever elapsed minute changes (every ~1 min of live action)
+  useEffect(() => {
+    const el = liveEv?.fixture_elapsed
+    if (open && el != null && el !== prevElapsed.current) {
+      prevElapsed.current = el
+      doFetch()
+    }
+  }, [liveEv?.fixture_elapsed, open, doFetch])
+
+  const st        = liveEv?.fixture_status_short
+  const elapsed   = liveEv?.fixture_elapsed
+  const isLive    = LIVE_STATUSES.includes(st)
+  const isFinished = FINISHED_STATUSES.includes(st)
+  const statusTag = isFinished ? 'FT' : isLive && elapsed ? `${elapsed}'` : null
+
+  return (
+    <div className="border-t border-white/6">
+      <button
+        onClick={toggle}
+        className="w-full flex items-center justify-between px-4 py-2 text-left hover:bg-white/3 transition-colors"
+      >
+        <div className="flex items-center gap-1.5">
+          <span className="text-[10px] text-gray-500 font-semibold tracking-wide uppercase">
+            {isLive ? 'Live insights' : isFinished ? 'Match report' : 'Match insights'}
+          </span>
+          {isLive && <span className="w-1.5 h-1.5 rounded-full bg-blue-400 animate-pulse flex-shrink-0" />}
+        </div>
+        <div className="flex items-center gap-1.5">
+          {statusTag && (
+            <span className={`text-[9px] font-bold tabular-nums ${isLive ? 'text-blue-400' : 'text-gray-500'}`}>{statusTag}</span>
+          )}
+          <span className={`text-gray-700 text-[9px] transition-transform duration-200 ${open ? 'rotate-180' : ''}`}>▼</span>
+        </div>
+      </button>
+
+      {open && (
+        <div className="px-4 pb-3 space-y-2">
+          {loading && (
+            <div className="flex items-center gap-2 text-gray-600 text-[10px]">
+              <div className="w-3 h-3 border border-gray-700 border-t-blue-400 rounded-full animate-spin" />
+              Loading…
+            </div>
+          )}
+
+          {!loading && data && (() => {
+            const goals  = (data.events || []).filter(e => e.type === 'Goal')
+            const cards  = (data.events || []).filter(e => e.type === 'Card')
+            const timeline = [...goals, ...cards].sort((a, b) => (a.elapsed ?? 0) - (b.elapsed ?? 0))
+            const stats  = data.statistics || []
+            const [hStats, aStats] = stats.length >= 2 ? [stats[0], stats[1]] : [null, null]
+            const KEY_STATS = ['Ball Possession', 'Total Shots', 'Shots on Goal', 'Corner Kicks', 'Fouls']
+            const statRows = hStats
+              ? KEY_STATS.map(k => ({
+                  label: k,
+                  h: hStats.stats.find(s => s.type === k)?.value ?? '—',
+                  a: aStats?.stats.find(s => s.type === k)?.value ?? '—',
+                })).filter(r => r.h !== '—' || r.a !== '—')
+              : []
+
+            const hasData = timeline.length > 0 || statRows.length > 0
+            if (!hasData) return <p className="text-gray-700 text-[10px]">No data yet — check back during the match</p>
+
+            return (
+              <>
+                {/* Goal / card timeline */}
+                {timeline.length > 0 && (
+                  <div className="space-y-1">
+                    {timeline.map((e, i) => {
+                      const icon = e.type === 'Goal'
+                        ? (e.detail?.toLowerCase().includes('own goal') ? '⚽ OG' : '⚽')
+                        : e.detail === 'Yellow Card' ? '🟨'
+                        : e.detail === 'Red Card'    ? '🟥'
+                        : e.detail?.includes('Second') ? '🟨🟥' : '📋'
+                      return (
+                        <div key={i} className="flex items-center gap-2 text-[11px]">
+                          <span className="text-gray-600 w-7 text-right font-mono flex-shrink-0">
+                            {e.elapsed}{e.extra ? `+${e.extra}` : ''}′
+                          </span>
+                          <span className="flex-shrink-0 text-xs">{icon}</span>
+                          <span className="text-gray-300 truncate flex-1 min-w-0">{e.player}</span>
+                          <span className="text-gray-600 text-[9px] flex-shrink-0 truncate max-w-[60px]">
+                            {e.team?.split(' ').slice(-1)[0]}
+                          </span>
+                        </div>
+                      )
+                    })}
+                  </div>
+                )}
+
+                {/* Stats table */}
+                {statRows.length > 0 && (
+                  <div className="space-y-1 pt-2 border-t border-white/5">
+                    <div className="flex justify-between text-[9px] text-gray-600 pb-0.5">
+                      <span className="truncate max-w-[80px]">{hStats?.team?.split(' ').slice(-1)[0]}</span>
+                      <span className="truncate max-w-[80px] text-right">{aStats?.team?.split(' ').slice(-1)[0]}</span>
+                    </div>
+                    {statRows.map((r, i) => (
+                      <div key={i} className="flex items-center gap-2 text-[10px]">
+                        <span className="text-gray-200 w-8 text-right font-semibold tabular-nums">{r.h}</span>
+                        <span className="text-gray-600 flex-1 text-center text-[9px]">{r.label}</span>
+                        <span className="text-gray-200 w-8 font-semibold tabular-nums">{r.a}</span>
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </>
+            )
+          })()}
+
+          {!loading && !data && (
+            <p className="text-gray-700 text-[10px]">Insights unavailable</p>
+          )}
+        </div>
+      )}
+    </div>
+  )
+}
+
 // ── Mock events (used when API returns no events) ──────────────────────────────
 const MOCK_GW_EVENTS = [
   // ── Premier League ──
@@ -471,7 +632,7 @@ function WeekSelector({ selectedWeek, gwCount, byWeek, currentWeek, weekHasPicks
 }
 
 // ── Single event pick card ─────────────────────────────────────────────────────
-function EventCard({ event, selectedOptionId, onSelect, isLocked, dimmed, remainingEnergy, picksLocked }) {
+function EventCard({ event, selectedOptionId, onSelect, isLocked, dimmed, remainingEnergy, picksLocked, liveEv, showInsights }) {
   const [open, setOpen] = useState(!dimmed)
 
   const [homeTeam, awayTeam] = (event.fixture_name || '').split(' vs ').map(s => s?.trim())
@@ -481,13 +642,22 @@ function EventCard({ event, selectedOptionId, onSelect, isLocked, dimmed, remain
   const typeInfo = EVENT_TYPE_LABELS[event.event_type] || { label: event.event_type, icon: '📋' }
   const isPlayerScore = event.event_type === 'PLAYER_SCORE'
 
+  const selectedOption = selectedOptionId ? (event.options || []).find(o => o.id === selectedOptionId) : null
+  const pickResult = selectedOption?.result
+  const pickWon  = pickResult === 'WON'
+  const pickLost = pickResult === 'LOST'
+
   return (
     <div className={`rounded-2xl border overflow-hidden transition-all ${
       dimmed
         ? 'bg-white/2 border-white/5 opacity-60'
-        : selectedOptionId
-          ? 'bg-indigo-950/25 border-indigo-500/40'
-          : 'bg-[#0d1117] border-white/8'
+        : pickWon
+          ? 'bg-green-950/30 border-green-500/50 shadow-[0_0_12px_rgba(34,197,94,0.12)]'
+          : pickLost
+            ? 'bg-red-950/20 border-red-500/30'
+            : selectedOptionId
+              ? 'bg-indigo-950/25 border-indigo-500/40'
+              : 'bg-[#0d1117] border-white/8'
     }`}>
       {/* Card header */}
       <button
@@ -505,7 +675,11 @@ function EventCard({ event, selectedOptionId, onSelect, isLocked, dimmed, remain
             <span className="text-[10px] text-gray-600">{event.competition}</span>
             {dimmed && <span className="text-gray-700 text-[10px] ml-1">{open ? '▲' : '▼'}</span>}
             {!dimmed && selectedOptionId && (
-              <span className="text-[10px] bg-indigo-900/50 text-indigo-400 border border-indigo-500/30 px-2 py-0.5 rounded-full ml-1 font-semibold">✓ Picked</span>
+              pickWon
+                ? <span className="text-[10px] bg-green-900/60 text-green-300 border border-green-500/40 px-2 py-0.5 rounded-full ml-1 font-bold">✓ Correct</span>
+                : pickLost
+                  ? <span className="text-[10px] bg-red-900/40 text-red-400 border border-red-500/30 px-2 py-0.5 rounded-full ml-1 font-bold">✗ Fallo</span>
+                  : <span className="text-[10px] bg-indigo-900/50 text-indigo-400 border border-indigo-500/30 px-2 py-0.5 rounded-full ml-1 font-semibold">✓ Your Pick</span>
             )}
           </div>
         </div>
@@ -545,17 +719,33 @@ function EventCard({ event, selectedOptionId, onSelect, isLocked, dimmed, remain
           </div>
         ) : (
           /* Normal match header */
-          <div className="flex items-center gap-2">
-            <div className="flex items-center gap-1.5 flex-1 min-w-0">
-              <span className="text-2xl flex-shrink-0">{homeFlag}</span>
-              <span className={`font-bold text-sm leading-tight truncate ${dimmed ? 'text-gray-500' : 'text-white'}`}>{homeTeam}</span>
-            </div>
-            <span className="text-gray-700 text-xs font-semibold flex-shrink-0">vs</span>
-            <div className="flex items-center gap-1.5 flex-1 min-w-0 justify-end">
-              <span className={`font-bold text-sm leading-tight truncate text-right ${dimmed ? 'text-gray-500' : 'text-white'}`}>{awayTeam}</span>
-              <span className="text-2xl flex-shrink-0">{awayFlag}</span>
-            </div>
-          </div>
+          (() => {
+            const hasScore = liveEv?.home_goals != null && liveEv?.away_goals != null
+            const isLiveMatch = hasScore && LIVE_STATUSES.includes(liveEv?.fixture_status_short)
+            const isDoneMatch = hasScore && FINISHED_STATUSES.includes(liveEv?.fixture_status_short)
+            return (
+              <div className="flex items-center gap-2">
+                <div className="flex items-center gap-1.5 flex-1 min-w-0">
+                  <span className="text-2xl flex-shrink-0">{homeFlag}</span>
+                  <span className={`font-bold text-sm leading-tight truncate ${dimmed ? 'text-gray-500' : 'text-white'}`}>{homeTeam}</span>
+                </div>
+                {(isLiveMatch || isDoneMatch) ? (
+                  <div className="flex flex-col items-center flex-shrink-0 min-w-[52px]">
+                    <span className={`font-black text-xl tabular-nums leading-none ${isLiveMatch ? 'text-green-400' : dimmed ? 'text-gray-400' : 'text-white'}`}>
+                      {liveEv.home_goals}–{liveEv.away_goals}
+                    </span>
+                    {isDoneMatch && <span className="text-[9px] text-gray-600 font-semibold uppercase tracking-wide mt-0.5">FT</span>}
+                  </div>
+                ) : (
+                  <span className="text-gray-700 text-xs font-semibold flex-shrink-0">vs</span>
+                )}
+                <div className="flex items-center gap-1.5 flex-1 min-w-0 justify-end">
+                  <span className={`font-bold text-sm leading-tight truncate text-right ${dimmed ? 'text-gray-500' : 'text-white'}`}>{awayTeam}</span>
+                  <span className="text-2xl flex-shrink-0">{awayFlag}</span>
+                </div>
+              </div>
+            )
+          })()
         )}
 
         {/* Match time + venue */}
@@ -565,34 +755,40 @@ function EventCard({ event, selectedOptionId, onSelect, isLocked, dimmed, remain
         </p>
       </button>
 
-      {/* Form dropdown — only for fixture-based events */}
+      {/* Insights (locked/finished) or recent form (pre-match) dropdown */}
       {event.fixture_id && !isPlayerScore && (
-        <FormDropdown
-          fixtureId={event.fixture_id}
-          homeTeam={homeTeam} awayTeam={awayTeam}
-          homeFlag={homeFlag} awayFlag={awayFlag}
-        />
+        showInsights
+          ? <InsightsDropdown fixtureId={event.fixture_id} liveEv={liveEv} />
+          : <FormDropdown fixtureId={event.fixture_id} homeTeam={homeTeam} awayTeam={awayTeam} homeFlag={homeFlag} awayFlag={awayFlag} />
       )}
 
       {/* Options */}
       {(!dimmed || open) && (
         <div className="px-3 pb-3 grid gap-1.5">
-          {event.options.map(opt => {
+          {[...event.options].sort((a, b) => {
+            const ORDER = { HOME_WIN: 0, DRAW: 1, AWAY_WIN: 2 }
+            return (ORDER[a.result_key] ?? 3) - (ORDER[b.result_key] ?? 3)
+          }).map(opt => {
             const isSelected = opt.id === selectedOptionId
             const won  = opt.result === 'WON'
             const lost = opt.result === 'LOST'
-            const pct  = event.total_picks > 0 ? Math.round((opt.pick_count || 0) / event.total_picks * 100) : null
+            const pct  = !isLocked && event.total_picks > 0 ? Math.round((opt.pick_count || 0) / event.total_picks * 100) : null
             const notEnoughEnergy = !isSelected && !won && !lost && !dimmed
               && remainingEnergy !== undefined && opt.energy_cost != null
               && opt.energy_cost > remainingEnergy
             const lockBlocked = !isSelected && !won && !lost && !dimmed && picksLocked
             const isUnavailable = notEnoughEnergy || lockBlocked
 
-            // Add flag to option label
-            const optTeam = Object.keys(COUNTRY_FLAGS).find(k => opt.label.startsWith(k + ' '))
-            const optFlag = optTeam ? COUNTRY_FLAGS[optTeam] : ''
-            const optLabelClean = optTeam ? opt.label.slice(optTeam.length).trim() : opt.label
-            const isDraw = opt.label === 'Draw'
+            // Flag: use home/away flag directly for MATCH_RESULT, fall back to label lookup
+            const optFlag = opt.result_key === 'HOME_WIN' ? homeFlag
+              : opt.result_key === 'AWAY_WIN' ? awayFlag
+              : opt.result_key === 'DRAW' ? ''
+              : (() => { const t = Object.keys(COUNTRY_FLAGS).find(k => opt.label.startsWith(k + ' ')); return t ? COUNTRY_FLAGS[t] : '' })()
+            const optLabelClean = opt.label
+            const isDraw = opt.result_key === 'DRAW' || opt.label === 'Draw'
+            const optTeam = opt.result_key === 'HOME_WIN' ? homeTeam
+              : opt.result_key === 'AWAY_WIN' ? awayTeam
+              : null
             const es = energyStyle(isSelected ? null : opt.energy_cost)
 
             return (
@@ -700,15 +896,7 @@ function EnergyCTABanner({ remainingEnergy, onSaveAndGo }) {
 }
 
 // ── Sprint leaderboard (compact) ───────────────────────────────────────────────
-function SprintLeaderboard({ sprintId, myUserId, myDivisionId }) {
-  const [data, setData] = useState(null)
-  useEffect(() => {
-    if (!sprintId || !myDivisionId) return
-    getGloryLeaderboard({ sprint_id: sprintId, division_id: myDivisionId })
-      .then(r => setData(r.data))
-      .catch(() => {})
-  }, [sprintId, myDivisionId])
-
+function SprintLeaderboard({ myUserId, data }) {
   if (!data?.rows?.length) return null
 
   const myIdx   = data.rows.findIndex(r => r.user_id === myUserId)
@@ -747,18 +935,29 @@ function SprintLeaderboard({ sprintId, myUserId, myDivisionId }) {
             : null
 
           return (
-            <div key={r.user_id} className={`px-4 py-3 border-b border-white/5 last:border-0 ${isMe ? 'bg-indigo-900/15' : ''}`}>
-              <div className="flex items-center gap-3">
+            <div key={r.user_id} className={`relative border-b border-white/5 last:border-0 ${
+              isMe
+                ? 'bg-gradient-to-r from-indigo-950/80 via-indigo-900/40 to-indigo-950/80 border-b-indigo-500/20'
+                : ''
+            }`}>
+              {isMe && (
+                <div className="absolute inset-y-0 left-0 w-0.5 bg-gradient-to-b from-indigo-400 via-violet-400 to-indigo-400 rounded-r" />
+              )}
+              <div className={`flex items-center gap-3 ${isMe ? 'px-4 py-3.5' : 'px-4 py-2.5'}`}>
                 {/* Rank */}
-                <span className={`w-6 text-center text-xs font-black flex-shrink-0 ${
-                  rank === 1 ? 'text-yellow-400' : rank === 2 ? 'text-gray-300' : rank === 3 ? 'text-amber-600' : 'text-gray-600'
+                <span className={`text-center font-black flex-shrink-0 ${
+                  isMe
+                    ? 'w-7 text-sm text-indigo-300'
+                    : `w-6 text-xs ${rank === 1 ? 'text-yellow-400' : rank === 2 ? 'text-gray-300' : rank === 3 ? 'text-amber-600' : 'text-gray-600'}`
                 }`}>{rank}</span>
 
                 {/* Avatar */}
                 {r.avatar_url
-                  ? <img src={r.avatar_url} alt="" className="w-8 h-8 rounded-full object-cover flex-shrink-0" />
-                  : <div className={`w-8 h-8 rounded-full flex items-center justify-center text-xs font-bold flex-shrink-0 ${
-                      isMe ? 'bg-indigo-700 text-white' : 'bg-white/8 text-gray-400'
+                  ? <img src={r.avatar_url} alt="" className={`rounded-full object-cover flex-shrink-0 ${isMe ? 'w-10 h-10 ring-2 ring-indigo-500/60 ring-offset-1 ring-offset-transparent' : 'w-8 h-8'}`} />
+                  : <div className={`rounded-full flex items-center justify-center font-bold flex-shrink-0 ${
+                      isMe
+                        ? 'w-10 h-10 text-sm bg-indigo-600 text-white ring-2 ring-indigo-400/50 ring-offset-1 ring-offset-transparent shadow-[0_0_12px_rgba(99,102,241,0.5)]'
+                        : 'w-8 h-8 text-xs bg-white/8 text-gray-400'
                     }`}>
                       {(r.display_name || '?')[0].toUpperCase()}
                     </div>
@@ -767,27 +966,35 @@ function SprintLeaderboard({ sprintId, myUserId, myDivisionId }) {
                 {/* Name + stats row */}
                 <div className="flex-1 min-w-0">
                   <div className="flex items-center gap-1.5">
-                    <span className={`text-sm font-semibold truncate ${isMe ? 'text-white' : 'text-gray-300'}`}>
-                      {r.display_name || 'Player'}
+                    <span className={`font-semibold truncate ${isMe ? 'text-white text-sm' : 'text-gray-400 text-xs'}`}>
+                      {r.display_name || 'Jugador'}
                     </span>
-                    {isMe && <span className="text-indigo-400 text-[10px] font-bold flex-shrink-0">YOU</span>}
+                    {isMe && (
+                      <span className="text-[10px] font-black bg-indigo-500/25 text-indigo-300 border border-indigo-500/30 px-1.5 py-0.5 rounded-full flex-shrink-0 tracking-wide">YOU</span>
+                    )}
                     {r.is_rookie && <span className="text-[9px] bg-blue-900/40 text-blue-400 px-1.5 py-0.5 rounded-full flex-shrink-0">ROOKIE</span>}
                   </div>
                   <div className="flex items-center gap-2 mt-0.5 flex-wrap">
-                    <span className="text-[10px] text-green-400 font-semibold">{r.total_correct_picks ?? 0}✓</span>
-                    <span className="text-[10px] text-red-400/70">{r.total_incorrect_picks ?? 0}✗</span>
-                    {accuracy !== null && <span className="text-[10px] text-gray-500">{accuracy}%</span>}
-                    {r.gameweeks_participated > 0 && <span className="text-[10px] text-gray-600">{r.gameweeks_participated} GW</span>}
+                    <span className={`font-semibold ${isMe ? 'text-[11px] text-green-400' : 'text-[10px] text-green-500/60'}`}>{r.total_correct_picks ?? 0}✓</span>
+                    <span className={`${isMe ? 'text-[11px] text-red-400/80' : 'text-[10px] text-red-400/40'}`}>{r.total_incorrect_picks ?? 0}✗</span>
+                    {accuracy !== null && <span className={`${isMe ? 'text-[11px] text-gray-400' : 'text-[10px] text-gray-600'}`}>{accuracy}%</span>}
+                    {r.gameweeks_participated > 0 && <span className={`${isMe ? 'text-[11px] text-gray-500' : 'text-[10px] text-gray-700'}`}>{r.gameweeks_participated} GW</span>}
                     {r.perfect_weeks > 0 && <span className="text-[10px] text-yellow-500">⭐{r.perfect_weeks}</span>}
                   </div>
                 </div>
 
                 {/* Points */}
                 <div className="text-right flex-shrink-0">
-                  <p className={`text-base font-black tabular-nums ${isPromo ? 'text-green-400' : isRel ? 'text-red-400' : isMe ? 'text-indigo-300' : 'text-gray-400'}`}>
+                  <p className={`font-black tabular-nums ${
+                    isMe
+                      ? 'text-xl text-white drop-shadow-[0_0_8px_rgba(99,102,241,0.6)]'
+                      : isPromo ? 'text-base text-green-400'
+                      : isRel   ? 'text-base text-red-400'
+                      : 'text-base text-gray-600'
+                  }`}>
                     {r.total_league_points}
                   </p>
-                  <p className="text-[9px] text-gray-700 -mt-0.5">pts</p>
+                  <p className={`text-[9px] -mt-0.5 ${isMe ? 'text-indigo-400/60' : 'text-gray-700'}`}>pts</p>
                 </div>
               </div>
             </div>
@@ -803,6 +1010,269 @@ function SprintLeaderboard({ sprintId, myUserId, myDivisionId }) {
           {myPts <= relPts && <span className="text-red-400 font-bold animate-pulse">⚠ You're at risk!</span>}
         </div>
       )}
+
+      <a href="/scores"
+        className="flex items-center justify-center gap-2 px-4 py-3 border-t border-white/5 text-indigo-400 hover:text-indigo-300 hover:bg-white/3 transition-colors text-xs font-semibold">
+        View full ranking
+        <svg width="14" height="14" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
+          <polyline points="9 18 15 12 9 6" />
+        </svg>
+      </a>
+    </div>
+  )
+}
+
+// ── Picks confirmation modal (bottom sheet) ───────────────────────────────────
+function PicksConfirmModal({ picks, effectiveEvents, totalEnergy, totalAvailable, gw, submitting, err, onConfirm, onClose }) {
+  const pickedEvents = effectiveEvents.filter(e => picks[e.id])
+  return (
+    <div className="fixed inset-0 z-50 flex items-end justify-center">
+      <div className="absolute inset-0 bg-black/70 backdrop-blur-sm" onClick={!submitting ? onClose : undefined} />
+      <div className="relative w-full max-w-md bg-[#0d1117] border border-white/10 rounded-t-3xl">
+        <div className="flex justify-center pt-3 pb-2">
+          <div className="w-8 h-1 bg-white/15 rounded-full" />
+        </div>
+
+        <div className="px-5 pb-2">
+          <h2 className="text-white font-black text-lg">Review your picks</h2>
+          <p className="text-gray-500 text-xs mt-0.5">
+            {pickedEvents.length} pick{pickedEvents.length !== 1 ? 's' : ''} · {gw?.lock_time ? `Deadline: ${fmtFull(gw.lock_time)}` : 'Check the deadline before confirming'}
+          </p>
+        </div>
+
+        <div className="px-5 py-2 space-y-0 overflow-y-auto" style={{ maxHeight: '40vh' }}>
+          {pickedEvents.map((ev, i) => {
+            const opt = ev.options?.find(o => o.id === picks[ev.id])
+            return (
+              <div key={ev.id} className="flex items-center gap-3 py-2.5 border-b border-white/5 last:border-0">
+                <span className="w-5 h-5 rounded-full bg-indigo-600/20 border border-indigo-500/30 flex items-center justify-center text-indigo-400 text-[10px] font-black flex-shrink-0">{i + 1}</span>
+                <div className="flex-1 min-w-0">
+                  <p className="text-gray-400 text-[11px] truncate">{ev.fixture_name || ev.player_name || 'Event'}</p>
+                  <p className="text-white font-semibold text-sm truncate">{opt?.label}</p>
+                </div>
+                <span className="text-yellow-500 text-xs font-bold flex-shrink-0">⚡{opt?.energy_cost}</span>
+              </div>
+            )
+          })}
+        </div>
+
+        <div className="mx-5 mt-2 mb-3 flex items-center justify-between px-4 py-2.5 bg-yellow-950/20 border border-yellow-500/15 rounded-xl">
+          <span className="text-gray-400 text-sm">⚡ Energy used</span>
+          <span className="text-yellow-400 font-bold text-sm">{totalEnergy} / {totalAvailable}</span>
+        </div>
+
+        {err && <p className="text-red-400 text-xs px-5 mb-2">{err}</p>}
+
+        <div className="px-5 pb-8 space-y-2">
+          <button
+            onClick={onConfirm}
+            disabled={submitting}
+            className="w-full py-4 bg-green-600 hover:bg-green-500 active:bg-green-700 text-white font-black text-base rounded-2xl transition-all active:scale-[0.98] disabled:opacity-50"
+          >
+            {submitting
+              ? <span className="flex items-center justify-center gap-2"><span className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" />Saving…</span>
+              : '✅  Confirm & save picks'
+            }
+          </button>
+          <button
+            onClick={onClose}
+            disabled={submitting}
+            className="w-full py-3 text-gray-400 hover:text-white text-sm font-medium transition-colors disabled:opacity-40"
+          >
+            Keep editing
+          </button>
+        </div>
+      </div>
+    </div>
+  )
+}
+
+// ── Future week preview section ───────────────────────────────────────────────
+function FutureWeekSection({ nextGw, nextWeekNum }) {
+  const [nextGwData, setNextGwData] = useState(null)
+  const [nextPicks, setNextPicks]   = useState({})
+  const [submitted, setSubmitted]   = useState(false)
+  const [loading, setLoading]       = useState(false)
+  const [submitting, setSubmitting] = useState(false)
+  const [err, setErr]               = useState('')
+
+  useEffect(() => {
+    if (!nextGw?.id || nextGw.status !== 'PUBLISHED') { setNextGwData(null); return }
+    setLoading(true)
+    getGloryGameweek(nextGw.id)
+      .then(r => {
+        setNextGwData(r.data)
+        if (r.data.my_picks?.length) {
+          const m = {}
+          for (const p of r.data.my_picks) m[p.event_id] = p.event_option_id
+          setNextPicks(m); setSubmitted(true)
+          try { localStorage.removeItem(`draftPicks_${nextGw.id}`) } catch {}
+        } else {
+          try {
+            const draft = JSON.parse(localStorage.getItem(`draftPicks_${nextGw.id}`) || 'null')
+            if (draft && typeof draft === 'object' && Object.keys(draft).length > 0) setNextPicks(draft)
+          } catch {}
+        }
+      })
+      .catch(() => {})
+      .finally(() => setLoading(false))
+  }, [nextGw?.id, nextGw?.status])
+
+  const gw        = nextGwData?.gameweek
+  const isLocked  = nextGwData?.is_locked ?? false
+  const events    = gw?.events || []
+  const pickCount = Object.keys(nextPicks).length
+  const picksLocked = pickCount === 6 && !submitted && !isLocked
+
+  const handleSelect = (eventId, optionId) => {
+    if (isLocked) return
+    if (picksLocked && !nextPicks[eventId]) return
+    setNextPicks(prev => {
+      const n = { ...prev }
+      if (n[eventId] === optionId) delete n[eventId]; else n[eventId] = optionId
+      if (gw?.id) try { localStorage.setItem(`draftPicks_${gw.id}`, JSON.stringify(n)) } catch {}
+      return n
+    })
+    setSubmitted(false); setErr('')
+  }
+
+  const handleSave = async () => {
+    if (!gw?.id || pickCount !== 6 || submitting) return
+    const pickList = Object.entries(nextPicks).map(([event_id, event_option_id]) => ({ event_id, event_option_id }))
+    setSubmitting(true); setErr('')
+    try {
+      await submitGloryPicks(gw.id, pickList)
+      setSubmitted(true)
+      try { localStorage.removeItem(`draftPicks_${gw.id}`) } catch {}
+    } catch (e) {
+      setErr(e.response?.data?.error || e.response?.data?.message || 'Failed to save picks — try again')
+    } finally {
+      setSubmitting(false)
+    }
+  }
+
+  const divider = (
+    <div className="flex items-center gap-3 mb-4">
+      <div className="h-px flex-1 bg-white/6" />
+      <span className="text-[10px] font-black tracking-widest text-blue-400/80">WEEK {nextWeekNum} · UPCOMING</span>
+      <div className="h-px flex-1 bg-white/6" />
+    </div>
+  )
+
+  if (!nextGw || nextGw.status !== 'PUBLISHED') {
+    return (
+      <div className="mt-6 space-y-4">
+        {divider}
+        <div className="bg-[#0d1117] border border-white/6 rounded-2xl p-6 text-center space-y-2">
+          <p className="text-2xl">🔜</p>
+          <p className="text-gray-300 font-semibold text-sm">Week {nextWeekNum} not published yet</p>
+          <p className="text-gray-600 text-xs leading-relaxed">
+            The matchweek schedule hasn't been released. Check back soon.
+          </p>
+        </div>
+      </div>
+    )
+  }
+
+  return (
+    <div className="mt-6 space-y-3">
+      {divider}
+
+      {/* Lock time info */}
+      {gw?.lock_time && (
+        <div className="flex items-center gap-2.5 px-4 py-3 rounded-2xl bg-blue-950/20 border border-blue-500/15">
+          <span className="text-blue-400 text-lg">📅</span>
+          <div className="flex-1 min-w-0">
+            <p className="text-blue-300 font-semibold text-sm">
+              Week {nextWeekNum} picks open
+            </p>
+            <p className="text-blue-700 text-xs">
+              Closes {fmtFull(gw.lock_time)} · {fmtCountdown(gw.lock_time)}
+            </p>
+          </div>
+          {submitted && <span className="text-green-400 text-xs font-bold flex-shrink-0">✓ Saved</span>}
+        </div>
+      )}
+
+      {loading && (
+        <div className="flex items-center justify-center py-10 gap-2 text-gray-600 text-sm">
+          <div className="w-4 h-4 border border-gray-700 border-t-blue-400 rounded-full animate-spin" />
+          Loading…
+        </div>
+      )}
+
+      {/* Saved banner */}
+      {!loading && submitted && (
+        <div className="flex items-center gap-3 px-4 py-3.5 rounded-2xl bg-green-950/25 border border-green-500/25">
+          <span className="text-green-400 text-xl flex-shrink-0">✅</span>
+          <div className="flex-1 min-w-0">
+            <p className="text-green-300 font-bold text-sm">Week {nextWeekNum} picks saved!</p>
+            <p className="text-green-700 text-xs mt-0.5">Tap any pick to update before the deadline.</p>
+          </div>
+          <span className="text-green-600 font-black text-base flex-shrink-0">{pickCount}/6</span>
+        </div>
+      )}
+
+      {/* Locked banner */}
+      {!loading && isLocked && (
+        <div className="flex items-center gap-2.5 px-4 py-3 rounded-2xl bg-yellow-950/20 border border-yellow-500/20">
+          <span className="text-yellow-400">🔒</span>
+          <p className="text-yellow-300 text-sm font-semibold">Week {nextWeekNum} picks are locked</p>
+        </div>
+      )}
+
+      {/* Events */}
+      {!loading && events.length > 0 && (
+        <div className="space-y-2.5">
+          <p className="text-gray-600 text-[11px] font-medium tracking-wider uppercase px-1">
+            {events.length} events — choose 6 ({pickCount}/6 selected)
+          </p>
+          {events.map(ev => (
+            <EventCard
+              key={ev.id}
+              event={ev}
+              selectedOptionId={nextPicks[ev.id]}
+              onSelect={handleSelect}
+              isLocked={isLocked}
+              dimmed={false}
+              picksLocked={picksLocked}
+            />
+          ))}
+
+          {err && <p className="text-red-400 text-xs px-1">{err}</p>}
+
+          {!isLocked && (
+            <div className="space-y-2 pt-1">
+              <div className="flex gap-1">
+                {Array.from({ length: 6 }, (_, i) => (
+                  <div key={i} className={`h-1.5 flex-1 rounded-full transition-colors ${i < pickCount ? 'bg-blue-500' : 'bg-white/10'}`} />
+                ))}
+              </div>
+              {pickCount === 6 ? (
+                <button
+                  onClick={handleSave}
+                  disabled={submitting}
+                  className="w-full py-4 bg-blue-600 hover:bg-blue-500 active:bg-blue-700 text-white font-black text-base rounded-2xl transition-all active:scale-[0.98] disabled:opacity-50"
+                >
+                  {submitting
+                    ? <span className="flex items-center justify-center gap-2">
+                        <span className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" />
+                        Saving…
+                      </span>
+                    : submitted
+                      ? `✅ Update Week ${nextWeekNum} picks`
+                      : `✅ Save my Week ${nextWeekNum} picks →`
+                  }
+                </button>
+              ) : (
+                <p className="text-center text-gray-600 text-xs py-1">
+                  Select {6 - pickCount} more pick{6 - pickCount !== 1 ? 's' : ''} to save
+                </p>
+              )}
+            </div>
+          )}
+        </div>
+      )}
     </div>
   )
 }
@@ -810,20 +1280,21 @@ function SprintLeaderboard({ sprintId, myUserId, myDivisionId }) {
 // ── Main page ──────────────────────────────────────────────────────────────────
 export default function MatchweekPage() {
   const navigate = useNavigate()
-  const [status,      setStatus]      = useState(null)
-  const [gwData,      setGwData]      = useState(null)
-  const [community,   setCommunity]   = useState(null)
-  const [picks,       setPicks]       = useState({})
-  const [submitting,  setSubmitting]  = useState(false)
-  const [submitted,   setSubmitted]   = useState(false)
-  const [msg,         setMsg]         = useState('')
-  const [err,         setErr]         = useState('')
-  const [loading,     setLoading]     = useState(true)
+  const [status,        setStatus]        = useState(null)
+  const [gwData,        setGwData]        = useState(null)
+  const [community,     setCommunity]     = useState(null)
+  const [picks,         setPicks]         = useState({})
+  const [submitting,    setSubmitting]    = useState(false)
+  const [submitted,     setSubmitted]     = useState(false)
+  const [showConfirm,   setShowConfirm]   = useState(false)
+  const [err,           setErr]           = useState('')
+  const [loading,       setLoading]       = useState(true)
   const [gwLoading,   setGwLoading]   = useState(false)
   const [selectedWeek, setSelectedWeek] = useState(null)
   const [weekHasPicks, setWeekHasPicks] = useState({})
   const [liveData,    setLiveData]    = useState({})
   const [walletBalance, setWalletBalance] = useState(0)
+  const [leaderboard, setLeaderboard] = useState(null)
   const liveIntervalRef = useRef(null)
 
   const loadStatus = useCallback(() =>
@@ -833,7 +1304,7 @@ export default function MatchweekPage() {
   const loadGw = useCallback((gwId) => {
     if (!gwId) return
     setGwLoading(true)
-    setPicks({}); setSubmitted(false); setCommunity(null); setErr(''); setMsg('')
+    setPicks({}); setSubmitted(false); setCommunity(null); setErr(''); setShowConfirm(false)
     getGloryGameweek(gwId).then(r => {
       setGwData(r.data)
       if (r.data.my_picks?.length) {
@@ -901,11 +1372,24 @@ export default function MatchweekPage() {
   const sprint   = status?.sprint
   const div      = status?.division
   const prog     = status?.sprint_progress
+
+  useEffect(() => {
+    if (!sprint?.id || !div?.division_id) return
+    getGloryLeaderboard({ sprint_id: sprint.id, division_id: div.division_id })
+      .then(r => setLeaderboard(r.data))
+      .catch(() => {})
+  }, [sprint?.id, div?.division_id])
   const lp       = prog?.total_league_points ?? 0
   const gwCount  = sprint?.gameweek_count || 4
   const gwList   = sprint?.gameweeks || []
   const byWeek   = useMemo(() => Object.fromEntries(gwList.map(g => [g.sprint_week, g])), [gwList])
   const currentWeek = status?.current_gameweek?.sprint_week
+
+  const myUserId   = status?.user?.id
+  const lbRows     = leaderboard?.rows || []
+  const myRankIdx  = lbRows.findIndex(r => r.user_id === myUserId)
+  const myRank     = myRankIdx >= 0 ? myRankIdx + 1 : null
+  const divSize    = lbRows.length
 
   const gw       = gwData?.gameweek
   const isLocked = gwData?.is_locked ?? false
@@ -958,30 +1442,71 @@ export default function MatchweekPage() {
     })
   }, [effectiveEvents, community])
 
+  // Merge liveData option results into events so green/red shows on buttons without waiting for Sunday settlement
+  const eventsWithLive = useMemo(() => {
+    if (!Object.keys(liveData).length) return eventsWithCounts
+    return eventsWithCounts.map(ev => {
+      const ld = liveData[ev.id]
+      if (!ld?.options?.length) return ev
+      const resultMap = {}
+      for (const o of ld.options) if (o.result === 'WON' || o.result === 'LOST') resultMap[o.id] = o.result
+      if (!Object.keys(resultMap).length) return ev
+      return { ...ev, options: ev.options.map(o => ({ ...o, result: resultMap[o.id] ?? o.result })) }
+    })
+  }, [eventsWithCounts, liveData])
+
   const displayPicks = (isMockResultsMode && Object.keys(picks).length === 0)
     ? MOCK_PREV_WEEK_PICKS
     : picks
 
-  const myPickedEvents = eventsWithCounts.filter(e => displayPicks[e.id])
-  const unpickedEvents = eventsWithCounts.filter(e => !displayPicks[e.id])
+  const myPickedEvents = eventsWithLive.filter(e => displayPicks[e.id])
+  const unpickedEvents = eventsWithLive.filter(e => !displayPicks[e.id])
+
+  // Live tally for locked/finished weeks
+  const liveTally = useMemo(() => {
+    if (!effectiveIsLocked || myPickedEvents.length === 0) return null
+    let won = 0, lost = 0
+    for (const ev of myPickedEvents) {
+      const opt = ev.options?.find(o => o.id === displayPicks[ev.id])
+      if (opt?.result === 'WON') won++
+      else if (opt?.result === 'LOST') lost++
+    }
+    const pending = myPickedEvents.length - won - lost
+    const pts = won + (won === 6 && pending === 0 ? 4 : 0)
+    return { won, lost, pending, pts }
+  }, [effectiveIsLocked, myPickedEvents, displayPicks])
 
   const handleSelect = (eventId, optionId) => {
     if (isLocked) return
-    // If 6 picks locked and trying to pick a new event, block (only allow deselect)
     if (picksLocked && !picks[eventId]) return
-    setPicks(prev => { const n = { ...prev }; if (n[eventId] === optionId) delete n[eventId]; else n[eventId] = optionId; return n })
+    setPicks(prev => {
+      const n = { ...prev }
+      if (n[eventId] === optionId) delete n[eventId]; else n[eventId] = optionId
+      if (gw?.id) {
+        try { localStorage.setItem(`draftPicks_${gw.id}`, JSON.stringify(n)) } catch {}
+      }
+      return n
+    })
     setSubmitted(false)
-    setMsg('')
+    setErr('')
   }
 
-  const savePicks = useCallback(() => {
-    if (submitting || !gw?.id || pickCount < 4) return
+  const openConfirmModal = () => {
+    if (submitting || !gw?.id || pickCount !== 6) return
+    setErr('')
+    setShowConfirm(true)
+  }
+
+  const confirmPicks = useCallback(() => {
+    if (submitting || !gw?.id || pickCount !== 6) return
     const pickList = Object.entries(picks).map(([event_id, event_option_id]) => ({ event_id, event_option_id }))
-    setSubmitting(true); setErr(''); setMsg('')
+    setSubmitting(true); setErr('')
     submitGloryPicks(gw.id, pickList)
       .then(() => {
-        setSubmitted(true); setMsg('✓ Picks saved!'); setTimeout(() => setMsg(''), 3000)
+        setSubmitted(true)
+        setShowConfirm(false)
         if (gw.sprint_week) setWeekHasPicks(prev => ({ ...prev, [gw.sprint_week]: true }))
+        localStorage.removeItem(`draftPicks_${gw.id}`)
       })
       .catch(e => setErr(e.response?.data?.error || e.response?.data?.message || 'Failed to save picks — try again'))
       .finally(() => setSubmitting(false))
@@ -1030,11 +1555,17 @@ export default function MatchweekPage() {
               className="flex items-center gap-2 bg-green-500/15 hover:bg-green-500/25 border border-green-500/40 text-green-400 text-xs font-bold px-3 py-2 rounded-xl transition-colors active:scale-95"
             >
               <span className="w-2 h-2 rounded-full bg-green-400 animate-pulse" />
-              Check Live Scores
+              Live Scores
             </button>
             <div className="text-right">
-              <p className="text-indigo-400 font-black text-2xl leading-none">{lp}</p>
-              <p className="text-gray-600 text-[11px]">Points</p>
+              <p className="text-indigo-400 font-black text-2xl leading-none tabular-nums">{lp}</p>
+              <p className="text-gray-500 text-[11px] leading-none mt-0.5">sprint pts</p>
+              {myRank && (
+                <p className="text-gray-500 text-[11px] leading-none mt-1">
+                  <span className="text-white font-bold">#{myRank}</span>
+                  {divSize > 0 && <span className="text-gray-600"> / {divSize}</span>}
+                </p>
+              )}
             </div>
           </div>
         </div>
@@ -1070,94 +1601,110 @@ export default function MatchweekPage() {
 
             {/* Entry results card (settled weeks) */}
             {!gwLoading && effectiveEntry?.status === 'completed' && (
-              <div className={`flex items-center justify-between rounded-2xl px-4 py-3 ${
+              <div className={`rounded-2xl px-4 py-3 ${
                 effectiveEntry.is_perfect_week
                   ? 'bg-yellow-900/20 border border-yellow-500/30'
                   : 'bg-white/4 border border-white/8'
               }`}>
-                <div className="flex items-center gap-2">
-                  {effectiveEntry.is_perfect_week && <span className="text-lg">⭐</span>}
-                  <div>
-                    <p className="text-white font-bold text-sm">{effectiveEntry.correct_picks}/6 correct</p>
-                    {effectiveEntry.is_perfect_week && <p className="text-yellow-400 text-[11px]">Perfect week!</p>}
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center gap-2">
+                    {effectiveEntry.is_perfect_week && <span className="text-lg">⭐</span>}
+                    <div>
+                      <p className="text-white font-bold text-sm">{effectiveEntry.correct_picks}/6 correct</p>
+                      {effectiveEntry.is_perfect_week && <p className="text-yellow-400 text-[11px]">Perfect week!</p>}
+                    </div>
+                  </div>
+                  <div className="text-right">
+                    <p className="text-indigo-400 font-black text-xl tabular-nums">+{effectiveEntry.league_points} pts</p>
+                    <p className="text-gray-600 text-[10px] -mt-0.5">this week</p>
                   </div>
                 </div>
-                <span className="text-indigo-400 font-black text-xl">+{effectiveEntry.league_points} pts</span>
+                <div className="flex items-center justify-between mt-2 pt-2 border-t border-white/6">
+                  <p className="text-gray-500 text-[11px]">Sprint total</p>
+                  <div className="flex items-center gap-2">
+                    <p className="text-gray-300 font-bold text-sm tabular-nums">{lp} pts</p>
+                    {myRank && (
+                      <span className="text-[11px] bg-indigo-900/40 text-indigo-300 border border-indigo-500/30 px-2 py-0.5 rounded-full font-bold">
+                        #{myRank}{divSize > 0 ? ` / ${divSize}` : ''}
+                      </span>
+                    )}
+                  </div>
+                </div>
               </div>
             )}
           </>
         )}
       </div>
 
-      {/* ── Sticky pick counter (only when gameweek is open for picks) ── */}
+      {/* ── Sticky bar (open gameweeks only) ── */}
       {sprint && !effectiveIsLocked && !gwLoading && gw && (
-        <div className="sticky top-0 z-30 bg-[#0a0d12]/95 backdrop-blur-md border-b border-white/8">
+        <div className={`sticky top-0 z-30 backdrop-blur-md border-b transition-colors ${
+          submitted
+            ? 'bg-green-950/95 border-green-500/20'
+            : 'bg-[#0a0d12]/95 border-white/8'
+        }`}>
           <div className="max-w-md mx-auto px-4 py-3">
-            <div className="flex items-center justify-between mb-2">
-              <div className="flex items-center gap-2">
-                <span className="text-gray-500 text-xs">Picks</span>
-                <span className={`font-black text-sm tabular-nums ${pickCount === 6 ? 'text-green-400' : 'text-indigo-400'}`}>
-                  {pickCount}/6
-                </span>
-                {picksLocked && (
-                  <span className="text-[10px] bg-green-900/30 text-green-400 border border-green-500/25 px-2 py-0.5 rounded-full font-semibold">
-                    {submitting ? 'Saving…' : submitted ? '✓ Saved' : 'Locked'}
-                  </span>
-                )}
-                {!picksLocked && submitting && (
-                  <div className="w-3 h-3 border border-gray-600 border-t-indigo-400 rounded-full animate-spin" />
-                )}
+            {submitted ? (
+              /* ── Saved state ── */
+              <div className="flex items-center justify-between">
+                <div className="flex items-center gap-2.5">
+                  <span className="text-green-400 text-lg">✅</span>
+                  <div>
+                    <p className="text-green-300 font-bold text-sm leading-tight">Picks saved — you're in!</p>
+                    {gw.lock_time && (
+                      <p className="text-green-700 text-[11px]">Editable until {fmtFull(gw.lock_time)}</p>
+                    )}
+                  </div>
+                </div>
+                <span className="text-green-800 text-[10px] text-right leading-tight">Tap any pick<br/>to update</span>
               </div>
-              <div className="flex items-center gap-3">
-                {totalEnergy > 0 && (
-                  <div className="flex flex-col items-end gap-0.5">
-                    <div className="flex items-center gap-1">
+            ) : (
+              /* ── Editing state ── */
+              <>
+                <div className="flex items-center justify-between mb-2">
+                  <div className="flex items-center gap-2">
+                    <span className="text-gray-500 text-xs">Picks</span>
+                    <span className={`font-black text-sm tabular-nums ${pickCount === 6 ? 'text-green-400' : 'text-indigo-400'}`}>
+                      {pickCount}/6
+                    </span>
+                    {picksLocked && (
+                      <span className="text-[10px] bg-green-900/30 text-green-400 border border-green-500/25 px-2 py-0.5 rounded-full font-semibold">Ready</span>
+                    )}
+                  </div>
+                  <div className="flex items-center gap-2">
+                    {totalEnergy > 0 && (
                       <span className={`text-xs font-mono font-bold ${
                         remainingEnergy <= 0 ? 'text-red-400' :
                         remainingEnergy <= 5 ? 'text-amber-400' :
                         remainingEnergy <= 10 ? 'text-yellow-400' : 'text-yellow-500'
-                      }`}>⚡{remainingEnergy}</span>
-                      <span className="text-gray-700 text-[10px]">left</span>
-                    </div>
-                    <span className="text-[9px] text-gray-700">
-                      {BASE_ENERGY} base{extraFromWallet > 0 ? ` +${extraFromWallet} bonus` : ''}
-                    </span>
-                  </div>
-                )}
-                {totalEnergy === 0 && (
-                  <div className="flex flex-col items-end gap-0.5">
-                    <span className="text-gray-600 text-[11px]">⚡{totalAvailable} energy</span>
-                    {extraFromWallet > 0 && (
-                      <span className="text-[9px] text-gray-700">{BASE_ENERGY}+{extraFromWallet} bonus</span>
+                      }`}>⚡{remainingEnergy} left</span>
+                    )}
+                    {totalEnergy === 0 && (
+                      <span className="text-gray-600 text-xs">⚡{totalAvailable} energy</span>
                     )}
                   </div>
+                </div>
+                <div className="flex gap-1 mb-2">
+                  {Array.from({ length: 6 }, (_, i) => (
+                    <div key={i} className={`h-1.5 flex-1 rounded-full transition-colors ${
+                      i < pickCount ? 'bg-indigo-500' : 'bg-white/10'
+                    }`} />
+                  ))}
+                </div>
+                {pickCount === 6 ? (
+                  <button
+                    onClick={openConfirmModal}
+                    className="w-full py-3 bg-indigo-600 hover:bg-indigo-500 active:bg-indigo-700 text-white font-bold rounded-xl text-sm transition-all active:scale-[0.98]"
+                  >
+                    Save my 6 picks →
+                  </button>
+                ) : (
+                  <p className="text-center text-gray-600 text-xs py-1">
+                    Select {6 - pickCount} more pick{6 - pickCount !== 1 ? 's' : ''} to save
+                  </p>
                 )}
-              </div>
-            </div>
-            <div className="flex gap-1">
-              {Array.from({ length: 6 }, (_, i) => (
-                <div key={i} className={`h-1.5 flex-1 rounded-full transition-colors ${
-                  i < pickCount
-                    ? picksLocked ? 'bg-green-500' : 'bg-indigo-500'
-                    : 'bg-white/10'
-                }`} />
-              ))}
-            </div>
-            {pickCount >= 4 && (
-              <button
-                onClick={savePicks}
-                disabled={submitting}
-                className={`mt-2 w-full py-2 rounded-xl text-sm font-bold transition-all active:scale-[0.98] disabled:opacity-50 ${
-                  submitted
-                    ? 'bg-green-700/50 text-green-300 border border-green-600/40'
-                    : 'bg-indigo-600 hover:bg-indigo-500 text-white'
-                }`}
-              >
-                {submitting ? 'Saving…' : submitted ? `✓ Saved (${pickCount} picks)` : `Save ${pickCount} picks`}
-              </button>
+              </>
             )}
-            {err && <p className="text-red-400 text-[11px] mt-2">{err}</p>}
-            {msg && <p className="text-green-400 text-[11px] mt-2">{msg}</p>}
           </div>
         </div>
       )}
@@ -1214,6 +1761,36 @@ export default function MatchweekPage() {
                       </div>
                     )
                   })()
+                )}
+
+                {/* ── LOCKED state banner ── */}
+                {weekRole === 'locked' && (
+                  <div className="flex items-start gap-3 px-4 py-4 rounded-2xl bg-yellow-950/25 border border-yellow-500/30">
+                    <span className="text-xl mt-0.5">🔒</span>
+                    <div className="flex-1 min-w-0">
+                      <p className="font-bold text-sm text-yellow-300">Picks are locked — matches are live</p>
+                      <p className="text-yellow-600 text-xs mt-0.5">
+                        Results will be scored automatically once all fixtures finish.
+                        Your picks are locked in — sit back and watch.
+                      </p>
+                    </div>
+                  </div>
+                )}
+
+                {/* ── Picks saved confirmation banner ── */}
+                {submitted && weekRole !== 'locked' && weekRole !== 'results' && (
+                  <div className="flex items-center gap-4 px-4 py-4 rounded-2xl bg-green-950/30 border border-green-500/30">
+                    <span className="text-2xl flex-shrink-0">✅</span>
+                    <div className="flex-1 min-w-0">
+                      <p className="font-bold text-sm text-green-300">Your picks are saved</p>
+                      <p className="text-green-700 text-xs mt-0.5">
+                        {gw?.lock_time
+                          ? `You can update them anytime before ${fmtFull(gw.lock_time)}.`
+                          : 'You can update them anytime before the deadline.'}
+                      </p>
+                    </div>
+                    <span className="text-green-600 font-black text-base flex-shrink-0">{pickCount}/6</span>
+                  </div>
                 )}
 
                 {/* ── Energy availability ── */}
@@ -1300,7 +1877,7 @@ export default function MatchweekPage() {
                   ) : (
                     <div className="space-y-2.5">
                       <p className="text-gray-600 text-[11px] font-medium tracking-wider uppercase px-1">
-                        {effectiveEvents.length} picks — choose {pickCount >= 4 ? `${pickCount}/6` : '4–6'}
+                        {effectiveEvents.length} events — choose 6 ({pickCount}/6 selected)
                       </p>
                       {eventsWithCounts.map(ev => (
                         <EventCard key={ev.id} event={ev} selectedOptionId={picks[ev.id]}
@@ -1319,6 +1896,58 @@ export default function MatchweekPage() {
                   <>
                     {myPickedEvents.length > 0 && (
                       <div className="space-y-2.5">
+                        {/* Live tally bar */}
+                        {liveTally && (
+                          <div className={`rounded-2xl border px-4 py-3 ${
+                            liveTally.pending === 0 && liveTally.won === 6
+                              ? 'bg-yellow-900/20 border-yellow-500/30'
+                              : liveTally.pending === 0
+                              ? 'bg-white/4 border-white/8'
+                              : 'bg-[#0d1117] border-white/8'
+                          }`}>
+                            {/* Top row: aciertos/fallos/pendientes + pts semana */}
+                            <div className="flex items-center justify-between">
+                              <div className="flex items-center gap-3">
+                                <div className="flex items-center gap-1">
+                                  <span className="text-green-400 font-black text-lg tabular-nums">{liveTally.won}</span>
+                                  <span className="text-green-600 text-xs">✓</span>
+                                </div>
+                                <div className="flex items-center gap-1">
+                                  <span className="text-red-400 font-black text-lg tabular-nums">{liveTally.lost}</span>
+                                  <span className="text-red-600 text-xs">✗</span>
+                                </div>
+                                {liveTally.pending > 0 && (
+                                  <div className="flex items-center gap-1">
+                                    <span className="text-gray-500 font-black text-lg tabular-nums">{liveTally.pending}</span>
+                                    <span className="text-gray-700 text-xs">⏳</span>
+                                  </div>
+                                )}
+                              </div>
+                              <div className="text-right">
+                                {liveTally.pending === 0 && liveTally.won === 6
+                                  ? <p className="text-yellow-400 font-black text-xl tabular-nums">+10 pts ⭐</p>
+                                  : <p className="text-indigo-300 font-black text-xl tabular-nums">+{liveTally.pts} pts</p>
+                                }
+                                <p className="text-gray-600 text-[10px] -mt-0.5">
+                                  this week {liveTally.pending > 0 ? '(provisional)' : '(final)'}
+                                </p>
+                              </div>
+                            </div>
+                            {/* Bottom row: sprint total + ranking */}
+                            <div className="flex items-center justify-between mt-2 pt-2 border-t border-white/6">
+                              <p className="text-gray-500 text-[11px]">Sprint total</p>
+                              <div className="flex items-center gap-2">
+                                <p className="text-gray-300 font-bold text-sm tabular-nums">{lp} pts</p>
+                                {myRank && (
+                                  <span className="text-[11px] bg-indigo-900/40 text-indigo-300 border border-indigo-500/30 px-2 py-0.5 rounded-full font-bold">
+                                    #{myRank}{divSize > 0 ? ` / ${divSize}` : ''}
+                                  </span>
+                                )}
+                              </div>
+                            </div>
+                          </div>
+                        )}
+
                         <p className="text-gray-400 text-xs font-semibold tracking-wider uppercase px-1">Your picks</p>
                         {[...myPickedEvents]
                           .sort((a, b) => {
@@ -1328,20 +1957,40 @@ export default function MatchweekPage() {
                             return (PRIO[as_] ?? 4) - (PRIO[bs_] ?? 4) || new Date(a.match_time) - new Date(b.match_time)
                           })
                           .map(ev => {
-                            const liveStatus = computePickLiveStatus(ev, displayPicks[ev.id], liveData[ev.id])
-                            const liveEv = liveData[ev.id]
+                            const liveEvData = liveData[ev.id]
+                            const liveStatus = computePickLiveStatus(ev, displayPicks[ev.id], liveEvData)
+                            const isFixtureLive = liveEvData && LIVE_STATUSES.includes(liveEvData.fixture_status_short)
+                            const isMatchLiveOrDone = isFixtureLive || (liveEvData && FINISHED_STATUSES.includes(liveEvData.fixture_status_short))
                             return (
-                              <div key={ev.id} className="space-y-1">
-                                <div className="flex items-center justify-between px-1">
-                                  <LivePickBadge status={liveStatus} elapsed={liveEv?.fixture_elapsed} />
-                                  {liveEv?.home_goals != null && liveEv?.away_goals != null && LIVE_STATUSES.includes(liveEv?.fixture_status_short || '') && (
-                                    <span className="text-[11px] text-gray-400 font-mono font-bold">
-                                      {liveEv.home_team?.split(' ').pop() || 'H'} {liveEv.home_goals}–{liveEv.away_goals} {liveEv.away_team?.split(' ').pop() || 'A'}
-                                    </span>
+                              <div key={ev.id} className="space-y-0 relative">
+                                {/* Animated glow ring for live fixtures */}
+                                {isFixtureLive && (
+                                  <div className="absolute -inset-[2px] rounded-[18px] bg-gradient-to-r from-green-500/0 via-green-400/30 to-green-500/0 animate-pulse pointer-events-none z-0" />
+                                )}
+                                <div className={`relative z-10 space-y-0 rounded-2xl overflow-hidden ${isFixtureLive ? 'ring-1 ring-green-500/40' : ''}`}>
+                                  {/* Live header bar */}
+                                  {isFixtureLive && (
+                                    <div className="flex items-center gap-2 px-3 py-2 bg-green-950/60 border-b border-green-500/20">
+                                      <span className="relative flex h-2 w-2">
+                                        <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-green-400 opacity-75" />
+                                        <span className="relative inline-flex rounded-full h-2 w-2 bg-green-400" />
+                                      </span>
+                                      <span className="text-green-400 font-black text-[11px] tracking-widest uppercase">Live</span>
+                                      {liveEvData.fixture_elapsed > 0 && (
+                                        <span className="text-green-500/70 font-bold text-[11px]">{liveEvData.fixture_elapsed}'</span>
+                                      )}
+                                    </div>
                                   )}
+                                  {/* Non-live header (badge only — score is now inside the card) */}
+                                  {!isFixtureLive && (
+                                    <div className="flex items-center px-1 pb-1">
+                                      <LivePickBadge status={liveStatus} elapsed={liveEvData?.fixture_elapsed} />
+                                    </div>
+                                  )}
+                                  <EventCard event={ev} selectedOptionId={displayPicks[ev.id]}
+                                    onSelect={handleSelect} isLocked={true} dimmed={false}
+                                    liveEv={liveEvData} showInsights={true} />
                                 </div>
-                                <EventCard event={ev} selectedOptionId={displayPicks[ev.id]}
-                                  onSelect={handleSelect} isLocked={true} dimmed={false} />
                               </div>
                             )
                           })}
@@ -1359,12 +2008,29 @@ export default function MatchweekPage() {
                     {unpickedEvents.length > 0 && (
                       <div className="space-y-2.5">
                         {myPickedEvents.length > 0 && (
-                          <p className="text-gray-600 text-xs font-medium tracking-wider uppercase px-1">Other events this week</p>
+                          <p className="text-gray-600 text-xs font-medium tracking-wider uppercase px-1">Picks not played</p>
                         )}
-                        {unpickedEvents.map(ev => (
-                          <EventCard key={ev.id} event={ev} selectedOptionId={null}
-                            onSelect={() => {}} isLocked={true} dimmed={myPickedEvents.length > 0} />
-                        ))}
+                        {unpickedEvents.map(ev => {
+                          const liveEvData = liveData[ev.id]
+                          const isLive = liveEvData && LIVE_STATUSES.includes(liveEvData.fixture_status_short)
+                          const isDone = liveEvData && FINISHED_STATUSES.includes(liveEvData.fixture_status_short)
+                          const isMatchLiveOrDone = isLive || isDone
+                          return (
+                            <div key={ev.id} className="space-y-1">
+                              {isLive && (
+                                <div className="flex items-center px-1">
+                                  <span className="flex items-center gap-1.5 text-[10px] text-green-400 font-bold uppercase tracking-wide">
+                                    <span className="w-1.5 h-1.5 rounded-full bg-green-400 animate-pulse" />
+                                    LIVE {liveEvData.fixture_elapsed}'
+                                  </span>
+                                </div>
+                              )}
+                              <EventCard event={ev} selectedOptionId={null}
+                                onSelect={() => {}} isLocked={true} dimmed={myPickedEvents.length > 0}
+                                liveEv={liveEvData} showInsights={true} />
+                            </div>
+                          )
+                        })}
                       </div>
                     )}
                   </>
@@ -1372,10 +2038,17 @@ export default function MatchweekPage() {
 
                 {/* Division standings */}
                 <SprintLeaderboard
-                  sprintId={sprint?.id}
-                  myUserId={status?.user?.id}
-                  myDivisionId={div?.division_id}
+                  myUserId={myUserId}
+                  data={leaderboard}
                 />
+
+                {/* Future week preview — only when viewing the current active week */}
+                {currentWeek != null && selectedWeek === currentWeek && currentWeek < gwCount && (
+                  <FutureWeekSection
+                    nextGw={byWeek[currentWeek + 1] || null}
+                    nextWeekNum={currentWeek + 1}
+                  />
+                )}
               </>
             )}
           </>
@@ -1387,6 +2060,21 @@ export default function MatchweekPage() {
       </div>
 
       <BottomNav />
+
+      {/* ── Picks confirmation modal ── */}
+      {showConfirm && !effectiveIsLocked && (
+        <PicksConfirmModal
+          picks={picks}
+          effectiveEvents={effectiveEvents}
+          totalEnergy={totalEnergy}
+          totalAvailable={totalAvailable}
+          gw={gw}
+          submitting={submitting}
+          err={err}
+          onConfirm={confirmPicks}
+          onClose={() => { if (!submitting) setShowConfirm(false) }}
+        />
+      )}
     </div>
   )
 }

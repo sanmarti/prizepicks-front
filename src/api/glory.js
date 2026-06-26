@@ -18,3 +18,4 @@ export const getSprintDetail       = (sprintId)   => client.get(`/glory/sprints/
 export const getGameweekLive       = (id)         => client.get(`/glory/gameweek/${id}/live`)
 export const getEnergyPacks        = ()           => client.get('/glory/energy-packs')
 export const purchaseEnergyPack    = (id)         => client.post(`/glory/energy-packs/${id}/purchase`)
+export const getPurchaseHistory    = ()           => client.get('/glory/purchase-history')
