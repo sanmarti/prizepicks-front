@@ -894,7 +894,7 @@ export default function ProfilePage() {
                   <div className="w-8 h-8 rounded-xl bg-purple-500/20 border border-purple-400/30 flex items-center justify-center text-purple-300 font-black text-sm flex-shrink-0">05</div>
                   <div>
                     <div className="flex items-center gap-2 mb-1">
-                      <span className="text-xl">🏅</span>
+                      <span className="text-xl">🏆</span>
                       <p className="text-white font-black text-base">Division system</p>
                     </div>
                     <p className="text-purple-200/60 text-xs leading-relaxed">You compete within your division. At sprint end, top players get <span className="text-green-400 font-bold">promoted ⬆</span>, bottom players get <span className="text-red-400 font-bold">relegated ⬇</span>. Reach the top!</p>
@@ -925,7 +925,7 @@ export default function ProfilePage() {
                   <div className="w-8 h-8 rounded-xl bg-orange-500/20 border border-orange-400/30 flex items-center justify-center text-orange-300 font-black text-sm flex-shrink-0">06</div>
                   <div>
                     <div className="flex items-center gap-2 mb-1">
-                      <span className="text-xl">🛒</span>
+                      <span className="text-xl">🔮</span>
                       <p className="text-white font-black text-base">Bonus energy</p>
                     </div>
                     <p className="text-orange-200/60 text-xs leading-relaxed">Want more picks? Buy bonus energy from the <span className="text-orange-300 font-bold">Energy Store</span>. It stays in your wallet until you spend it — you can use up to <span className="text-orange-300 font-bold">+5⚡ extra per matchweek</span>.</p>
