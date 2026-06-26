@@ -953,25 +953,6 @@ export default function ProfilePage() {
               </div>
             </div>
 
-            {/* Pro tips */}
-            <div className="bg-[#0d1117] border border-white/8 rounded-2xl p-4">
-              <p className="text-gray-500 text-[10px] font-black uppercase tracking-[0.18em] mb-3">Pro tips</p>
-              <div className="space-y-3">
-                {[
-                  { icon: '🎯', tip: 'Focus on fixtures you know well — accuracy is more valuable than picking everything.' },
-                  { icon: '⭐', tip: 'A Perfect Week gives a huge LP bonus. Go for it when you feel confident about all fixtures.' },
-                  { icon: '📊', tip: 'Community % stats reveal what everyone else is picking — useful for spotting contrarian value.' },
-                  { icon: '⚡', tip: 'Save your bonus energy for high-confidence matchweeks where you can squeeze out a Perfect Week.' },
-                  { icon: '📈', tip: 'Your accuracy % defines your tier — 70%+ Bronze, 80%+ Silver, 90%+ Gold. Aim for Gold!' },
-                ].map(({ icon, tip }, i) => (
-                  <div key={i} className="flex items-start gap-2.5">
-                    <span className="text-base flex-shrink-0 mt-0.5">{icon}</span>
-                    <p className="text-gray-400 text-xs leading-relaxed">{tip}</p>
-                  </div>
-                ))}
-              </div>
-            </div>
-
             {/* Go play CTA */}
             <button
               onClick={() => window.location.href = '/matchweek'}
