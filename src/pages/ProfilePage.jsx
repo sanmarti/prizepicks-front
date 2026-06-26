@@ -452,7 +452,6 @@ export default function ProfilePage() {
   const TABS = [
     { id: 'stats',   label: 'Stats' },
     { id: 'badges',  label: 'Badges' },
-    { id: 'history', label: 'History' },
     { id: 'wallet',  label: 'Wallet' },
     { id: 'guide',   label: 'Guide' },
     { id: 'account', label: 'Account' },
@@ -762,38 +761,6 @@ export default function ProfilePage() {
               )}
             </Section>
           </div>
-        )}
-
-        {/* History tab */}
-        {activeTab === 'history' && (
-          <Section title="Sprint history">
-            {(!glory?.sprint_history?.length) ? (
-              <div className="text-center py-8">
-                <p className="text-gray-500 text-sm">No completed sprints yet</p>
-              </div>
-            ) : (
-              <div className="space-y-2">
-                {glory.sprint_history.map((s, i) => (
-                  <div key={i} className="flex items-center justify-between bg-white/4 rounded-xl px-3 py-2.5">
-                    <div>
-                      <p className="text-white text-xs font-semibold">{s.sprint_name}</p>
-                      <p className="text-gray-600 text-[10px]">
-                        {s.division_icon} {s.division_name || '—'}
-                      </p>
-                    </div>
-                    <div className="flex items-center gap-3 text-sm">
-                      <span className="text-indigo-400 font-bold">{s.total_league_points} LP</span>
-                      {s.sprint_outcome && (
-                        <span className={OUTCOME_COLOR[s.sprint_outcome] || 'text-gray-500'}>
-                          {OUTCOME_ICON[s.sprint_outcome]}
-                        </span>
-                      )}
-                    </div>
-                  </div>
-                ))}
-              </div>
-            )}
-          </Section>
         )}
 
         {/* Wallet tab */}
