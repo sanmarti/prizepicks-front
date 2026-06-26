@@ -792,15 +792,34 @@ export default function ProfilePage() {
                   <div>
                     <div className="flex items-center gap-2 mb-1">
                       <span className="text-xl">🎯</span>
-                      <p className="text-white font-black text-base">Make your picks</p>
+                      <p className="text-white font-black text-base">Choose your picks</p>
                     </div>
-                    <p className="text-indigo-200/60 text-xs leading-relaxed">Before each matchweek locks, pick the outcome for every fixture — Home win, Draw, or Away win.</p>
+                    <p className="text-indigo-200/60 text-xs leading-relaxed">Every Monday a pool of <span className="text-indigo-300 font-bold">15 picks</span> goes live — drawn from the biggest matches in world football. EPL, La Liga, Champions League, World Cup and more. Pick types vary: match outcome, over/under goals, player to score, clean sheets… back the ones you feel most confident about.</p>
                   </div>
                 </div>
-                <div className="flex gap-2">
-                  <div className="flex-1 py-2 rounded-xl text-center bg-emerald-500/15 border border-emerald-400/30 text-emerald-300 text-xs font-bold">Home ✓</div>
-                  <div className="flex-1 py-2 rounded-xl text-center bg-white/5 border border-white/10 text-gray-500 text-xs font-bold">Draw</div>
-                  <div className="flex-1 py-2 rounded-xl text-center bg-white/5 border border-white/10 text-gray-500 text-xs font-bold">Away</div>
+                {/* Pick type pills */}
+                <div className="flex flex-wrap gap-1.5">
+                  {[
+                    { label: 'Match outcome', icon: '⚽', sel: true },
+                    { label: 'Over / Under', icon: '📊', sel: false },
+                    { label: 'Player to score', icon: '🥅', sel: true },
+                    { label: 'Clean sheet', icon: '🧤', sel: false },
+                  ].map(({ label, icon, sel }) => (
+                    <div key={label} className={`flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg text-[10px] font-semibold border ${
+                      sel
+                        ? 'bg-emerald-500/15 border-emerald-400/30 text-emerald-300'
+                        : 'bg-white/4 border-white/10 text-gray-500'
+                    }`}>
+                      <span>{icon}</span><span>{label}</span>
+                      {sel && <span className="text-emerald-400 font-black">✓</span>}
+                    </div>
+                  ))}
+                </div>
+                {/* Competition badges */}
+                <div className="flex gap-1.5 mt-2 flex-wrap">
+                  {['🏴󠁧󠁢󠁥󠁮󠁧󠁿 EPL', '🇪🇸 La Liga', '🌍 World Cup', '⭐ UCL'].map(c => (
+                    <span key={c} className="text-[9px] font-bold text-indigo-400/60 bg-indigo-500/8 border border-indigo-400/15 px-2 py-0.5 rounded-full">{c}</span>
+                  ))}
                 </div>
               </div>
             </div>
