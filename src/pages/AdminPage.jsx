@@ -89,23 +89,48 @@ const FIXTURE_POOL = {
 const PICK_TYPES = ['Match Result', 'Goals Over/Under', 'BTTS', 'Clean Sheet']
 
 // ── Add fixture modal ─────────────────────────────────────────────────────────
-function AddFixtureModal({ weekNum, onAdd, onClose }) {
-  const [search,   setSearch]   = useState('')
-  const [fixture,  setFixture]  = useState('')
-  const [pickType, setPickType] = useState('Match Result')
+function AddFixtureModal({ weekNum, currentCount, onAdd, onClose }) {
+  const [search,    setSearch]    = useState('')
+  const [fixture,   setFixture]   = useState('')
+  const [pickType,  setPickType]  = useState('Match Result')
+  const [flash,     setFlash]     = useState('')
+  const [addedThis, setAddedThis] = useState(0)
   const allFixtures = Object.values(FIXTURE_POOL).flat()
   const shown = search
     ? allFixtures.filter(f => f.toLowerCase().includes(search.toLowerCase())).slice(0, 10)
     : allFixtures.slice(0, 8)
+
+  const handleAdd = () => {
+    const fix = fixture || search
+    if (!fix) return
+    onAdd(fix, pickType)
+    setAddedThis(n => n + 1)
+    setFlash(`${fix} · ${pickType}`)
+    setPickType('Match Result')
+    setTimeout(() => setFlash(''), 2000)
+  }
+
+  const total = currentCount + addedThis
 
   return (
     <div className="fixed inset-0 z-50 flex items-end justify-center" onClick={onClose}>
       <div className="absolute inset-0 bg-black/60" />
       <div className="relative bg-[#0d1117] border border-white/12 rounded-t-2xl w-full max-w-md p-4 pb-10" onClick={e => e.stopPropagation()}>
         <div className="flex items-center justify-between mb-3">
-          <p className="text-white font-bold text-sm">Add fixture · Week {weekNum}</p>
+          <div>
+            <p className="text-white font-bold text-sm">Add picks · Week {weekNum}</p>
+            <p className="text-gray-600 text-[10px] mt-0.5">{total} / 15 picks this week</p>
+          </div>
           <button onClick={onClose} className="text-gray-500 hover:text-white w-7 h-7 flex items-center justify-center rounded-full hover:bg-white/8">×</button>
         </div>
+
+        {flash && (
+          <div className="mb-2 px-3 py-1.5 rounded-lg bg-green-900/30 border border-green-500/25 flex items-center gap-2">
+            <span className="text-green-400 text-xs">✓</span>
+            <span className="text-green-300 text-xs truncate">{flash}</span>
+          </div>
+        )}
+
         <input
           value={search}
           onChange={e => { setSearch(e.target.value); setFixture('') }}
@@ -113,7 +138,7 @@ function AddFixtureModal({ weekNum, onAdd, onClose }) {
           autoFocus
           className="w-full bg-white/5 border border-white/10 rounded-xl px-3 py-2.5 text-sm text-white placeholder-gray-600 focus:outline-none focus:border-indigo-500/60 mb-2"
         />
-        <div className="max-h-44 overflow-y-auto rounded-xl border border-white/6 mb-3">
+        <div className="max-h-40 overflow-y-auto rounded-xl border border-white/6 mb-3">
           {shown.map(f => (
             <button key={f} onClick={() => { setFixture(f); setSearch(f) }}
               className={`w-full text-left px-3 py-2 text-sm border-b border-white/5 last:border-0 transition-colors ${
@@ -134,12 +159,19 @@ function AddFixtureModal({ weekNum, onAdd, onClose }) {
             </button>
           ))}
         </div>
-        <button
-          onClick={() => { if (!search) return; onAdd(fixture || search, pickType); onClose() }}
-          disabled={!search}
-          className="w-full py-3 rounded-xl bg-indigo-600 hover:bg-indigo-500 text-white font-bold text-sm disabled:opacity-40 disabled:pointer-events-none transition-all">
-          Add to Week {weekNum}
-        </button>
+        <div className="flex gap-2">
+          <button
+            onClick={handleAdd}
+            disabled={!search || total >= 15}
+            className="flex-1 py-3 rounded-xl bg-indigo-600 hover:bg-indigo-500 text-white font-bold text-sm disabled:opacity-40 disabled:pointer-events-none transition-all">
+            {total >= 15 ? 'Week full (15/15)' : '+ Add pick'}
+          </button>
+          <button
+            onClick={onClose}
+            className="px-5 py-3 rounded-xl bg-white/6 hover:bg-white/10 text-gray-300 font-semibold text-sm transition-all">
+            Done
+          </button>
+        </div>
       </div>
     </div>
   )
@@ -148,6 +180,13 @@ function AddFixtureModal({ weekNum, onAdd, onClose }) {
 // ── Week card ─────────────────────────────────────────────────────────────────
 function WeekCard({ weekNum, weekStart, lockDt, settleDt, events, canEdit, onAdd, onRemove }) {
   const [showAdd, setShowAdd] = useState(false)
+  // Group events by fixture for display
+  const grouped = events.reduce((acc, ev, i) => {
+    const key = ev.fixture
+    if (!acc[key]) acc[key] = []
+    acc[key].push({ type: ev.type, idx: i })
+    return acc
+  }, {})
   const status = getWeekStatus(weekStart, lockDt, settleDt)
   const weekEnd = addDays(weekStart, 6)
 
@@ -166,7 +205,7 @@ function WeekCard({ weekNum, weekStart, lockDt, settleDt, events, canEdit, onAdd
 
   return (
     <div className={`rounded-2xl border overflow-hidden ${statusCfg.bg}`}>
-      {showAdd && <AddFixtureModal weekNum={weekNum} onAdd={onAdd} onClose={() => setShowAdd(false)} />}
+      {showAdd && <AddFixtureModal weekNum={weekNum} currentCount={events.length} onAdd={onAdd} onClose={() => setShowAdd(false)} />}
 
       <div className="px-4 pt-3.5 pb-3 flex items-start gap-3">
         <div className={`w-8 h-8 rounded-xl flex items-center justify-center font-black text-xs flex-shrink-0 border ${
@@ -196,25 +235,41 @@ function WeekCard({ weekNum, weekStart, lockDt, settleDt, events, canEdit, onAdd
           </p>
         </div>
 
-        {canEdit && !isLocked && (
-          <button onClick={() => setShowAdd(true)}
-            className="flex-shrink-0 text-xs text-indigo-400 hover:text-white font-semibold px-3 py-1.5 rounded-lg bg-indigo-900/30 hover:bg-indigo-900/50 border border-indigo-500/20 transition-colors">
-            + Add
-          </button>
-        )}
+        <div className="flex-shrink-0 flex flex-col items-end gap-1">
+          {canEdit && !isLocked && (
+            <button onClick={() => setShowAdd(true)}
+              className="text-xs text-indigo-400 hover:text-white font-semibold px-3 py-1.5 rounded-lg bg-indigo-900/30 hover:bg-indigo-900/50 border border-indigo-500/20 transition-colors">
+              + Add
+            </button>
+          )}
+          <span className={`text-[10px] font-bold tabular-nums ${events.length >= 15 ? 'text-green-400' : events.length > 0 ? 'text-indigo-400' : 'text-gray-700'}`}>
+            {events.length} / 15
+          </span>
+        </div>
       </div>
 
-      {/* Fixtures */}
+      {/* Fixtures grouped by match */}
       <div className="px-4 pb-3.5">
         {events.length > 0 ? (
-          <div className="space-y-1">
-            {events.map((ev, i) => (
-              <div key={i} className="flex items-center gap-2 px-3 py-1.5 rounded-lg bg-white/4 border border-white/6 group">
-                <span className="flex-1 text-xs text-gray-200 truncate">{ev.fixture}</span>
-                <span className="text-[10px] text-gray-600 flex-shrink-0">{ev.type}</span>
-                {canEdit && !isLocked && (
-                  <button onClick={() => onRemove(i)} className="text-gray-700 hover:text-red-400 opacity-0 group-hover:opacity-100 transition-opacity text-sm leading-none">×</button>
-                )}
+          <div className="space-y-2">
+            {Object.entries(grouped).map(([fix, picks]) => (
+              <div key={fix} className="rounded-xl bg-white/3 border border-white/6 overflow-hidden">
+                <div className="px-3 py-1.5 border-b border-white/5 flex items-center gap-1.5">
+                  <span className="text-[10px] text-gray-500">⚽</span>
+                  <span className="text-xs text-gray-200 font-semibold flex-1 truncate">{fix}</span>
+                  <span className="text-[10px] text-gray-600">{picks.length} pick{picks.length > 1 ? 's' : ''}</span>
+                </div>
+                <div className="divide-y divide-white/4">
+                  {picks.map(({ type, idx }) => (
+                    <div key={idx} className="flex items-center gap-2 px-3 py-1.5 group">
+                      <span className="w-1.5 h-1.5 rounded-full bg-indigo-500/50 flex-shrink-0" />
+                      <span className="flex-1 text-[11px] text-gray-400">{type}</span>
+                      {canEdit && !isLocked && (
+                        <button onClick={() => onRemove(idx)} className="text-gray-700 hover:text-red-400 opacity-0 group-hover:opacity-100 transition-opacity text-sm leading-none">×</button>
+                      )}
+                    </div>
+                  ))}
+                </div>
               </div>
             ))}
           </div>
