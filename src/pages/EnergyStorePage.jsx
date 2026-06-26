@@ -355,33 +355,47 @@ function WalletCard({ walletBalance }) {
           </div>
         </div>
 
-        {/* Rules pills */}
+        {/* Value props */}
         <div className="space-y-2">
-          <div className={`flex items-center gap-2.5 rounded-xl px-3 py-2.5 border ${
-            hasPurchased ? 'bg-orange-500/10 border-orange-500/20' : 'bg-orange-950/40 border-orange-900/30'
+          {/* Mini pick demo */}
+          <div className={`rounded-xl px-3 py-3 border ${
+            hasPurchased ? 'bg-purple-500/10 border-purple-500/20' : 'bg-white/4 border-white/6'
           }`}>
-            <span className="text-base flex-shrink-0">♾️</span>
+            <p className="text-xs font-semibold text-white mb-2">🔒 Unlock the pick you actually want</p>
+            <div className="flex gap-1.5 items-center">
+              <div className="flex flex-col items-center justify-center rounded-lg px-3 py-1.5 bg-white/5 border border-white/10 min-w-[52px]">
+                <span className="text-xs font-mono text-gray-300">Home</span>
+                <span className="text-[10px] text-gray-500 mt-0.5">3⚡</span>
+              </div>
+              <div className="flex flex-col items-center justify-center rounded-lg px-3 py-1.5 bg-white/5 border border-white/10 min-w-[52px]">
+                <span className="text-xs font-mono text-gray-300">Draw</span>
+                <span className="text-[10px] text-gray-500 mt-0.5">6⚡</span>
+              </div>
+              <div className="flex flex-col items-center justify-center rounded-lg px-3 py-1.5 min-w-[52px] border border-white/10" style={{ background: 'rgba(15,15,20,0.6)' }}>
+                <span className="text-base">🔒</span>
+                <span className="text-[9px] text-gray-600 mt-0.5">Away 8⚡</span>
+              </div>
+            </div>
+            <p className="text-[11px] text-white/40 mt-2">
+              Safer outcomes cost more energy. Run out and the best picks get locked.
+            </p>
+          </div>
+
+          <div className={`flex items-center gap-2.5 rounded-xl px-3 py-2.5 border ${
+            hasPurchased ? 'bg-violet-500/10 border-violet-500/20' : 'bg-white/4 border-white/6'
+          }`}>
+            <span className="text-lg flex-shrink-0">🎯</span>
             <div>
-              <p className="text-xs font-semibold text-white">Never expires</p>
-              <p className="text-[11px] text-white/45">Your bonus energy stays in your wallet until you use it</p>
+              <p className="text-xs font-semibold text-white">Back all 6 events every week</p>
+              <p className="text-[11px] text-white/40">{ENERGY_BUDGET} base energy fills fast. Bonus energy keeps you in the game for every pick.</p>
             </div>
           </div>
-          <div className={`flex items-center gap-2.5 rounded-xl px-3 py-2.5 border ${
-            hasPurchased ? 'bg-amber-500/10 border-amber-500/20' : 'bg-orange-950/40 border-orange-900/30'
-          }`}>
-            <span className="text-base flex-shrink-0">📅</span>
+
+          <div className="flex items-center gap-2.5 rounded-xl px-3 py-2.5 border border-yellow-400/25 bg-yellow-400/8">
+            <span className="text-lg flex-shrink-0">♾️</span>
             <div>
-              <p className="text-xs font-semibold text-white">Any matchweek, any time</p>
-              <p className="text-[11px] text-white/45">Use it whenever you want — no deadline or restriction</p>
-            </div>
-          </div>
-          <div className={`flex items-center gap-2.5 rounded-xl px-3 py-2.5 border ${
-            hasPurchased ? 'bg-yellow-400/10 border-yellow-400/25' : 'bg-orange-950/40 border-orange-900/30'
-          }`}>
-            <span className="text-base flex-shrink-0">⚡</span>
-            <div>
-              <p className="text-xs font-semibold text-white">Max 5 bonus units per matchweek</p>
-              <p className="text-[11px] text-white/45">On top of your {ENERGY_BUDGET} base energy · used first from your wallet</p>
+              <p className="text-yellow-300 text-xs font-semibold">Never expires · use up to +5⚡ per matchweek</p>
+              <p className="text-yellow-500/70 text-[11px]">Stays in your wallet until you need it — no rush, no deadline.</p>
             </div>
           </div>
         </div>
