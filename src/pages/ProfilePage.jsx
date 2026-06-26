@@ -397,15 +397,18 @@ export default function ProfilePage() {
       <div className="max-w-md mx-auto px-4 pt-5 space-y-4">
 
         {/* Hero */}
-        <div className="bg-[#0d1117] border border-white/8 rounded-2xl p-4">
-          <div className="flex items-center gap-4 mb-4">
+        <div className="relative bg-gradient-to-br from-[#0d1117] to-[#0a0d14] border border-white/8 rounded-2xl p-4 overflow-hidden">
+          {/* Subtle glow behind avatar */}
+          <div className="absolute -top-8 -left-8 w-36 h-36 rounded-full blur-3xl bg-indigo-600/10 pointer-events-none" />
+
+          <div className="relative flex items-center gap-4 mb-4">
             <AvatarPicker src={avatarSrc} name={shownName} uploading={uploadingAv} onFile={handleAvatarFile} />
             <div className="min-w-0 flex-1">
               <p className="text-white font-bold text-xl truncate">{shownName}</p>
               <p className="text-gray-500 text-xs truncate">{profile?.email}</p>
               {div && (
-                <div className="flex items-center gap-2 mt-2">
-                  <span className="text-lg">{div.icon}</span>
+                <div className="flex items-center gap-2 mt-1.5">
+                  <span className="text-base">{div.icon}</span>
                   <span className="text-gray-300 text-sm">{div.division_name}</span>
                   {sprintsInDiv > 0 && (
                     <span className="text-gray-600 text-xs">· {sprintsInDiv} sprint{sprintsInDiv > 1 ? 's' : ''}</span>
@@ -413,12 +416,20 @@ export default function ProfilePage() {
                 </div>
               )}
             </div>
+
+            {/* Accuracy badge — prominent top-right */}
+            {stats?.accuracy_pct != null && (
+              <div className="flex-shrink-0 flex flex-col items-center justify-center w-16 h-16 rounded-2xl bg-gradient-to-br from-amber-950 to-orange-950 border border-amber-500/30 shadow-[0_0_18px_-4px_rgba(245,158,11,0.4)]">
+                <span className="text-amber-300 font-black text-xl leading-none">{stats.accuracy_pct}%</span>
+                <span className="text-amber-500/70 text-[9px] font-semibold uppercase tracking-wider mt-0.5">accuracy</span>
+              </div>
+            )}
           </div>
           <InlineMsg status={avatarMsg} />
 
           {/* Current sprint mini */}
           {sprint && prog && (
-            <div className="bg-white/4 rounded-xl px-3 py-2 flex items-center justify-between mt-2">
+            <div className="relative bg-white/4 rounded-xl px-3 py-2 flex items-center justify-between">
               <p className="text-gray-400 text-xs">{sprint.name}</p>
               <div className="flex items-center gap-3 text-xs">
                 <span className="text-indigo-400 font-bold">{prog.total_league_points} LP</span>
@@ -448,7 +459,7 @@ export default function ProfilePage() {
             <StatCard
               label="League Points" value={stats?.lifetime_lp ?? 0} icon="⚡" sub="lifetime"
               gradient="bg-gradient-to-br from-indigo-950 via-violet-900/70 to-indigo-950"
-              glow="shadow-[0_0_32px_-6px_rgba(99,102,241,0.5)]"
+              glow="shadow-[0_0_20px_-6px_rgba(99,102,241,0.35)]"
               border="border-indigo-500/25" textColor="text-indigo-300"
             />
 
@@ -457,10 +468,10 @@ export default function ProfilePage() {
               <StatCard
                 label="Correct picks" value={stats?.lifetime_correct ?? 0} icon="🎯"
                 gradient="bg-gradient-to-br from-emerald-950 via-green-900/60 to-emerald-950"
-                glow="shadow-[0_0_28px_-6px_rgba(52,211,153,0.45)]"
+                glow="shadow-[0_0_16px_-4px_rgba(52,211,153,0.3)]"
                 border="border-emerald-500/25" textColor="text-emerald-300"
               />
-              <div className="relative rounded-2xl overflow-hidden bg-gradient-to-br from-amber-950 via-orange-900/60 to-amber-950 shadow-[0_0_28px_-6px_rgba(245,158,11,0.4)] border border-amber-500/25">
+              <div className="relative rounded-2xl overflow-hidden bg-gradient-to-br from-amber-950 via-orange-900/60 to-amber-950 shadow-[0_0_16px_-4px_rgba(245,158,11,0.25)] border border-amber-500/25">
                 <div className="relative p-4">
                   <div className="flex items-start justify-between mb-2">
                     <span className="text-xl">📊</span>
@@ -481,20 +492,20 @@ export default function ProfilePage() {
               <StatCard
                 label="Perfect weeks" value={stats?.total_perfect_weeks ?? 0} icon="⭐"
                 gradient="bg-gradient-to-br from-yellow-950 via-amber-900/60 to-yellow-950"
-                glow="shadow-[0_0_28px_-6px_rgba(250,204,21,0.4)]"
+                glow="shadow-[0_0_16px_-4px_rgba(250,204,21,0.25)]"
                 border="border-yellow-500/25" textColor="text-yellow-300"
               />
               <StatCard
                 label="Sprints played" value={stats?.sprints_played ?? 0} icon="🏁"
                 gradient="bg-gradient-to-br from-sky-950 via-blue-900/60 to-sky-950"
-                glow="shadow-[0_0_28px_-6px_rgba(56,189,248,0.35)]"
+                glow="shadow-[0_0_16px_-4px_rgba(56,189,248,0.22)]"
                 border="border-sky-500/25" textColor="text-sky-300"
               />
             </div>
 
             {/* Best division */}
             {glory?.highest_division && (
-              <div className="relative rounded-2xl overflow-hidden bg-gradient-to-br from-purple-950 via-fuchsia-900/50 to-purple-950 border border-purple-500/25 shadow-[0_0_28px_-6px_rgba(168,85,247,0.4)]">
+              <div className="relative rounded-2xl overflow-hidden bg-gradient-to-br from-purple-950 via-fuchsia-900/50 to-purple-950 border border-purple-500/25 shadow-[0_0_16px_-4px_rgba(168,85,247,0.25)]">
                 <div className="absolute -top-6 -right-6 w-28 h-28 rounded-full blur-3xl bg-purple-500/20 pointer-events-none" />
                 <div className="relative flex items-center gap-4 p-4">
                   <div className="w-14 h-14 rounded-2xl bg-purple-500/15 border border-purple-500/25 flex items-center justify-center text-3xl flex-shrink-0">
