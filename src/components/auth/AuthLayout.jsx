@@ -529,97 +529,24 @@ function GamePreviewModal({ onClose, onSignUp, onLogin, gwData }) {
 
 const STEPS = [
   {
-    num: '01', accent: '#6366f1', icon: '🎯',
-    title: 'Make your picks',
-    desc: 'Pick Home, Draw or Away for each fixture — before the matchweek locks.',
-    visual: (
-      <div style={{ display: 'flex', gap: 6, marginTop: 8 }}>
-        {[['Home ✓', true], ['Draw', false], ['Away', false]].map(([t, sel]) => (
-          <div key={t} style={{
-            flex: 1, padding: '5px 0', borderRadius: 7, textAlign: 'center',
-            fontSize: 10, fontWeight: 700, fontFamily: "'IBM Plex Mono', monospace",
-            background: sel ? 'rgba(34,197,94,0.15)' : 'rgba(255,255,255,0.05)',
-            border: `1px solid ${sel ? 'rgba(34,197,94,0.3)' : 'rgba(255,255,255,0.1)'}`,
-            color: sel ? '#86efac' : 'rgba(255,255,255,0.35)',
-          }}>{t}</div>
-        ))}
-      </div>
-    ),
+    num: '01', accent: '#22c55e', icon: '⚽',
+    title: 'Pick 6 from 15',
+    desc: 'Every week, choose 6 match predictions from 15 of the best fixtures in world football.',
   },
   {
-    num: '02', accent: '#eab308', icon: '⚡',
-    title: 'Energy = picks',
-    desc: '25⚡ base energy per matchweek, auto-reset every week. Each pick costs energy.',
-    visual: (
-      <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginTop: 8, background: 'rgba(0,0,0,0.25)', borderRadius: 7, padding: '7px 10px' }}>
-        <span style={{ color: '#facc15', fontWeight: 700, fontSize: 11, fontFamily: "'IBM Plex Mono', monospace", flexShrink: 0 }}>⚡25</span>
-        <div style={{ flex: 1, height: 5, borderRadius: 99, background: 'rgba(255,255,255,0.06)', overflow: 'hidden' }}>
-          <div style={{ height: '100%', borderRadius: 99, background: 'linear-gradient(to right, #ca8a04, #facc15)', width: '100%' }} />
-        </div>
-        <span style={{ color: 'rgba(250,204,21,0.4)', fontSize: 9, fontFamily: "'IBM Plex Mono', monospace", flexShrink: 0 }}>base</span>
-      </div>
-    ),
+    num: '02', accent: '#a78bfa', icon: '⚡',
+    title: 'Manage Your Energy',
+    desc: 'You get 25 free energy units each week. Spend them wisely across your 6 predictions.',
   },
   {
-    num: '03', accent: '#22c55e', icon: '📈',
-    title: 'Earn League Points',
-    desc: 'Correct picks earn LP. All correct = Perfect Week ⭐ for a huge bonus.',
-    visual: (
-      <div style={{ display: 'flex', gap: 5, marginTop: 8 }}>
-        {[
-          { label: '+LP', sub: 'correct', c: '#4ade80', bg: 'rgba(34,197,94,0.1)', b: 'rgba(34,197,94,0.2)' },
-          { label: '⭐ bonus', sub: 'all right', c: '#facc15', bg: 'rgba(250,204,21,0.1)', b: 'rgba(250,204,21,0.2)' },
-          { label: '×0', sub: 'wrong', c: '#f87171', bg: 'rgba(248,113,113,0.08)', b: 'rgba(248,113,113,0.15)' },
-        ].map(({ label, sub, c, bg, b }) => (
-          <div key={sub} style={{ flex: 1, textAlign: 'center', padding: '5px 3px', borderRadius: 7, background: bg, border: `1px solid ${b}` }}>
-            <div style={{ color: c, fontWeight: 700, fontSize: 12, fontFamily: "'Syne', sans-serif" }}>{label}</div>
-            <div style={{ color: 'rgba(255,255,255,0.3)', fontSize: 9, fontFamily: "'IBM Plex Mono', monospace", marginTop: 1 }}>{sub}</div>
-          </div>
-        ))}
-      </div>
-    ),
+    num: '03', accent: '#f59e0b', icon: '🎯',
+    title: 'Earn Points & Boosts',
+    desc: 'Every correct pick earns points and unlocks boosts. Stack them to dominate the leaderboard.',
   },
   {
-    num: '04', accent: '#38bdf8', icon: '🏁',
-    title: 'Sprints',
-    desc: 'A sprint spans several matchweeks. Your total LP at the end sets your final rank.',
-    visual: (
-      <div style={{ display: 'flex', gap: 4, marginTop: 8 }}>
-        {['Week 1', 'Week 2', 'Week 3', 'Final'].map((w, i) => (
-          <div key={w} style={{
-            flex: 1, padding: '5px 0', borderRadius: 6, textAlign: 'center',
-            fontSize: 9, fontWeight: 700, fontFamily: "'IBM Plex Mono', monospace",
-            background: i < 3 ? 'rgba(56,189,248,0.08)' : 'rgba(56,189,248,0.2)',
-            border: `1px solid ${i < 3 ? 'rgba(56,189,248,0.15)' : 'rgba(56,189,248,0.45)'}`,
-            color: i < 3 ? '#7dd3fc' : '#bae6fd',
-          }}>{w}</div>
-        ))}
-      </div>
-    ),
-  },
-  {
-    num: '05', accent: '#a78bfa', icon: '🏆',
-    title: 'Division system',
-    desc: 'Top players get promoted ⬆, bottom get relegated ⬇. Climb to the top division!',
-    visual: (
-      <div style={{ display: 'flex', flexDirection: 'column', gap: 3, marginTop: 8 }}>
-        {[
-          { label: '🏆 Top players', result: '⬆ Promoted', c: '#4ade80', bg: 'rgba(34,197,94,0.08)', b: 'rgba(34,197,94,0.18)' },
-          { label: '🤝 Mid table', result: '= Stay', c: 'rgba(255,255,255,0.4)', bg: 'rgba(255,255,255,0.03)', b: 'rgba(255,255,255,0.07)' },
-          { label: '😰 Bottom', result: '⬇ Relegated', c: '#f87171', bg: 'rgba(248,113,113,0.08)', b: 'rgba(248,113,113,0.15)' },
-        ].map(({ label, result, c, bg, b }) => (
-          <div key={label} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '5px 9px', borderRadius: 6, background: bg, border: `1px solid ${b}` }}>
-            <span style={{ color: 'rgba(255,255,255,0.5)', fontSize: 10, fontFamily: "'IBM Plex Mono', monospace" }}>{label}</span>
-            <span style={{ color: c, fontWeight: 700, fontSize: 10, fontFamily: "'IBM Plex Mono', monospace" }}>{result}</span>
-          </div>
-        ))}
-      </div>
-    ),
-  },
-  {
-    num: '06', accent: '#f97316', icon: '🔮',
-    title: 'Bonus energy',
-    desc: 'Buy extra energy from the store — stored in your wallet. Up to +5⚡ extra per matchweek, never expires.',
+    num: '04', accent: '#38bdf8', icon: '🏆',
+    title: 'Climb Divisions',
+    desc: 'Sprints last 4 weeks. Top performers get promoted — bottom ones are relegated. Reach the top.',
   },
 ]
 
@@ -809,29 +736,29 @@ function HeroPanel({ onTryIt, gwData }) {
           <div style={{ flex: 1, height: 1, background: 'rgba(255,255,255,0.05)' }}/>
         </div>
 
-        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 8, marginBottom: 20 }}>
-          {STEPS.map(({ num, accent, icon, title, desc, visual }) => (
+        <div style={{ display: 'flex', flexDirection: 'column', gap: 10, marginBottom: 20 }}>
+          {STEPS.map(({ num, accent, icon, title, desc }) => (
             <div key={num} style={{
-              padding: '12px 13px',
-              background: `linear-gradient(135deg, ${accent}12 0%, rgba(255,255,255,0.02) 100%)`,
-              border: `1px solid ${accent}28`,
-              borderTop: `2px solid ${accent}70`,
-              borderRadius: 10,
-              boxShadow: `0 0 18px -8px ${accent}50`,
+              display: 'flex', gap: 14, alignItems: 'flex-start',
+              padding: '14px 16px',
+              background: 'rgba(255,255,255,0.025)',
+              border: '1px solid rgba(255,255,255,0.06)',
+              borderLeft: `3px solid ${accent}`,
+              borderRadius: 12,
             }}>
-              <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 6 }}>
-                <div style={{
-                  flexShrink: 0, width: 28, height: 28, borderRadius: 7,
-                  background: `${accent}1a`, border: `1px solid ${accent}35`,
-                  display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 14,
-                }}>{icon}</div>
-                <div>
-                  <div style={{ fontSize: 8, color: accent, fontFamily: "'IBM Plex Mono', monospace", fontWeight: 700, letterSpacing: '0.12em', opacity: 0.75 }}>{num}</div>
-                  <div style={{ fontSize: 13, fontFamily: "'Syne', sans-serif", fontWeight: 700, color: '#fff', lineHeight: 1.15 }}>{title}</div>
+              <div style={{
+                flexShrink: 0, width: 36, height: 36, borderRadius: 9,
+                background: `${accent}18`, border: `1px solid ${accent}30`,
+                display: 'flex', alignItems: 'center', justifyContent: 'center',
+                fontSize: 17, boxShadow: `0 0 10px ${accent}20`,
+              }}>{icon}</div>
+              <div style={{ minWidth: 0, flex: 1 }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 4 }}>
+                  <span style={{ fontSize: 11, color: accent, fontFamily: "'IBM Plex Mono', monospace", fontWeight: 700, letterSpacing: '0.12em', opacity: 0.85 }}>{num}</span>
+                  <span style={{ fontSize: 18, fontFamily: "'Syne', sans-serif", fontWeight: 700, color: '#fff', lineHeight: 1.2 }}>{title}</span>
                 </div>
+                <p style={{ fontSize: 14, color: 'rgba(255,255,255,0.5)', fontFamily: "'IBM Plex Mono', monospace", lineHeight: 1.6, margin: 0 }}>{desc}</p>
               </div>
-              <p style={{ fontSize: 11, color: 'rgba(255,255,255,0.42)', fontFamily: "'IBM Plex Mono', monospace", lineHeight: 1.55, margin: 0 }}>{desc}</p>
-              {visual && <div>{visual}</div>}
             </div>
           ))}
         </div>
@@ -1020,31 +947,28 @@ export default function AuthLayout({ heading, subheading, children }) {
 
               {/* Steps */}
               <div style={{ display: 'flex', flexDirection: 'column', gap: 10, marginBottom: 28 }}>
-                {STEPS.map(({ num, accent, icon, title, desc, visual }) => (
+                {STEPS.map(({ num, accent, icon, title, desc }) => (
                   <div key={num} style={{
+                    display: 'flex', gap: 14, alignItems: 'flex-start',
                     padding: '14px 16px',
-                    background: `linear-gradient(135deg, ${accent}12 0%, rgba(255,255,255,0.02) 100%)`,
-                    border: `1px solid ${accent}28`,
+                    background: 'rgba(255,255,255,0.025)',
+                    border: '1px solid rgba(255,255,255,0.06)',
                     borderLeft: `3px solid ${accent}`,
                     borderRadius: 12,
-                    boxShadow: `0 0 20px -10px ${accent}55`,
                   }}>
-                    <div style={{ display: 'flex', gap: 14, alignItems: 'flex-start' }}>
-                      <div style={{
-                        flexShrink: 0, width: 36, height: 36, borderRadius: 9,
-                        background: `${accent}18`, border: `1px solid ${accent}30`,
-                        display: 'flex', alignItems: 'center', justifyContent: 'center',
-                        fontSize: 17, boxShadow: `0 0 10px ${accent}22`,
-                      }}>{icon}</div>
-                      <div style={{ minWidth: 0, flex: 1 }}>
-                        <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 4 }}>
-                          <span style={{ fontSize: 11, color: accent, fontFamily: "'IBM Plex Mono', monospace", fontWeight: 700, letterSpacing: '0.12em', opacity: 0.85 }}>{num}</span>
-                          <span style={{ fontSize: 17, fontFamily: "'Syne', sans-serif", fontWeight: 700, color: '#fff', lineHeight: 1.2 }}>{title}</span>
-                        </div>
-                        <p style={{ fontSize: 13, color: 'rgba(255,255,255,0.5)', fontFamily: "'IBM Plex Mono', monospace", lineHeight: 1.6, margin: 0 }}>{desc}</p>
+                    <div style={{
+                      flexShrink: 0, width: 36, height: 36, borderRadius: 9,
+                      background: `${accent}18`, border: `1px solid ${accent}30`,
+                      display: 'flex', alignItems: 'center', justifyContent: 'center',
+                      fontSize: 17, boxShadow: `0 0 10px ${accent}20`,
+                    }}>{icon}</div>
+                    <div style={{ minWidth: 0, flex: 1 }}>
+                      <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 4 }}>
+                        <span style={{ fontSize: 11, color: accent, fontFamily: "'IBM Plex Mono', monospace", fontWeight: 700, letterSpacing: '0.12em', opacity: 0.85 }}>{num}</span>
+                        <span style={{ fontSize: 18, fontFamily: "'Syne', sans-serif", fontWeight: 700, color: '#fff', lineHeight: 1.2 }}>{title}</span>
                       </div>
+                      <p style={{ fontSize: 14, color: 'rgba(255,255,255,0.5)', fontFamily: "'IBM Plex Mono', monospace", lineHeight: 1.6, margin: 0 }}>{desc}</p>
                     </div>
-                    {visual && <div style={{ marginTop: 10 }}>{visual}</div>}
                   </div>
                 ))}
               </div>
