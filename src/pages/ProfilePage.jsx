@@ -454,6 +454,7 @@ export default function ProfilePage() {
     { id: 'badges',  label: 'Badges' },
     { id: 'history', label: 'History' },
     { id: 'wallet',  label: 'Wallet' },
+    { id: 'guide',   label: 'Guide' },
     { id: 'account', label: 'Account' },
   ]
 
@@ -803,6 +804,196 @@ export default function ProfilePage() {
             loadingWallet={loadingWallet}
             onGoToStore={() => window.location.href = '/store'}
           />
+        )}
+
+        {/* Guide tab */}
+        {activeTab === 'guide' && (
+          <div className="space-y-3">
+
+            {/* Header */}
+            <div className="text-center pt-1 pb-2">
+              <p className="text-white font-black text-xl">How to play</p>
+              <p className="text-gray-600 text-xs mt-1">6 to Glory · season format</p>
+            </div>
+
+            {/* Step 1 — Make picks */}
+            <div className="relative rounded-2xl overflow-hidden bg-gradient-to-br from-indigo-950 via-violet-900/50 to-indigo-950 border border-indigo-500/25 shadow-[0_0_18px_-6px_rgba(99,102,241,0.3)]">
+              <div className="absolute -top-6 -right-6 w-28 h-28 rounded-full blur-3xl bg-indigo-400/15 pointer-events-none" />
+              <div className="relative p-4">
+                <div className="flex items-start gap-3 mb-3">
+                  <div className="w-8 h-8 rounded-xl bg-indigo-500/20 border border-indigo-400/30 flex items-center justify-center text-indigo-300 font-black text-sm flex-shrink-0">01</div>
+                  <div>
+                    <div className="flex items-center gap-2 mb-1">
+                      <span className="text-xl">🎯</span>
+                      <p className="text-white font-black text-base">Make your picks</p>
+                    </div>
+                    <p className="text-indigo-200/60 text-xs leading-relaxed">Before each matchweek locks, pick the outcome for every fixture — Home win, Draw, or Away win.</p>
+                  </div>
+                </div>
+                <div className="flex gap-2">
+                  <div className="flex-1 py-2 rounded-xl text-center bg-emerald-500/15 border border-emerald-400/30 text-emerald-300 text-xs font-bold">Home ✓</div>
+                  <div className="flex-1 py-2 rounded-xl text-center bg-white/5 border border-white/10 text-gray-500 text-xs font-bold">Draw</div>
+                  <div className="flex-1 py-2 rounded-xl text-center bg-white/5 border border-white/10 text-gray-500 text-xs font-bold">Away</div>
+                </div>
+              </div>
+            </div>
+
+            {/* Step 2 — Energy */}
+            <div className="relative rounded-2xl overflow-hidden bg-gradient-to-br from-yellow-950 via-amber-900/50 to-yellow-950 border border-yellow-500/25 shadow-[0_0_18px_-6px_rgba(250,204,21,0.22)]">
+              <div className="absolute -top-6 -right-6 w-28 h-28 rounded-full blur-3xl bg-yellow-400/12 pointer-events-none" />
+              <div className="relative p-4">
+                <div className="flex items-start gap-3 mb-3">
+                  <div className="w-8 h-8 rounded-xl bg-yellow-500/20 border border-yellow-400/30 flex items-center justify-center text-yellow-300 font-black text-sm flex-shrink-0">02</div>
+                  <div>
+                    <div className="flex items-center gap-2 mb-1">
+                      <span className="text-xl">⚡</span>
+                      <p className="text-white font-black text-base">Energy = picks</p>
+                    </div>
+                    <p className="text-yellow-200/60 text-xs leading-relaxed">Every pick costs energy. You get <span className="text-yellow-300 font-bold">25⚡ base energy</span> each matchweek — resets every week automatically.</p>
+                  </div>
+                </div>
+                <div className="bg-black/30 rounded-xl p-3 flex items-center gap-3">
+                  <span className="text-yellow-400 font-black text-sm">⚡25</span>
+                  <div className="flex-1 h-2 rounded-full bg-white/8 overflow-hidden">
+                    <div className="h-full rounded-full bg-gradient-to-r from-yellow-500 to-amber-400" style={{ width: '100%' }} />
+                  </div>
+                  <span className="text-yellow-400/40 text-[10px] font-semibold">weekly base</span>
+                </div>
+              </div>
+            </div>
+
+            {/* Step 3 — Score */}
+            <div className="relative rounded-2xl overflow-hidden bg-gradient-to-br from-emerald-950 via-green-900/50 to-emerald-950 border border-emerald-500/25 shadow-[0_0_18px_-6px_rgba(52,211,153,0.22)]">
+              <div className="absolute -top-6 -right-6 w-28 h-28 rounded-full blur-3xl bg-emerald-400/12 pointer-events-none" />
+              <div className="relative p-4">
+                <div className="flex items-start gap-3 mb-3">
+                  <div className="w-8 h-8 rounded-xl bg-emerald-500/20 border border-emerald-400/30 flex items-center justify-center text-emerald-300 font-black text-sm flex-shrink-0">03</div>
+                  <div>
+                    <div className="flex items-center gap-2 mb-1">
+                      <span className="text-xl">📈</span>
+                      <p className="text-white font-black text-base">Earn League Points</p>
+                    </div>
+                    <p className="text-emerald-200/60 text-xs leading-relaxed">Correct picks earn <span className="text-emerald-300 font-bold">LP</span>. Get every pick right in a week and unlock a <span className="text-yellow-300 font-bold">Perfect Week ⭐</span> bonus.</p>
+                  </div>
+                </div>
+                <div className="flex gap-2">
+                  <div className="flex-1 rounded-xl bg-emerald-500/12 border border-emerald-400/20 px-2 py-2.5 text-center">
+                    <p className="text-emerald-300 font-black text-base">+LP</p>
+                    <p className="text-emerald-400/45 text-[10px] mt-0.5">correct pick</p>
+                  </div>
+                  <div className="flex-1 rounded-xl bg-yellow-500/12 border border-yellow-400/20 px-2 py-2.5 text-center">
+                    <p className="text-yellow-300 font-black text-base">⭐ bonus</p>
+                    <p className="text-yellow-400/45 text-[10px] mt-0.5">all correct</p>
+                  </div>
+                  <div className="flex-1 rounded-xl bg-rose-500/10 border border-rose-400/15 px-2 py-2.5 text-center">
+                    <p className="text-rose-400 font-black text-base">×0</p>
+                    <p className="text-rose-400/45 text-[10px] mt-0.5">wrong pick</p>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            {/* Step 4 — Sprints */}
+            <div className="relative rounded-2xl overflow-hidden bg-gradient-to-br from-sky-950 via-blue-900/50 to-sky-950 border border-sky-500/25 shadow-[0_0_18px_-6px_rgba(56,189,248,0.2)]">
+              <div className="absolute -top-6 -right-6 w-28 h-28 rounded-full blur-3xl bg-sky-400/12 pointer-events-none" />
+              <div className="relative p-4">
+                <div className="flex items-start gap-3 mb-3">
+                  <div className="w-8 h-8 rounded-xl bg-sky-500/20 border border-sky-400/30 flex items-center justify-center text-sky-300 font-black text-sm flex-shrink-0">04</div>
+                  <div>
+                    <div className="flex items-center gap-2 mb-1">
+                      <span className="text-xl">🏁</span>
+                      <p className="text-white font-black text-base">Sprints</p>
+                    </div>
+                    <p className="text-sky-200/60 text-xs leading-relaxed">A sprint spans <span className="text-sky-300 font-bold">several matchweeks</span>. Your total LP at the end sets your final rank in the division.</p>
+                  </div>
+                </div>
+                <div className="flex items-center gap-1.5">
+                  {['Week 1','Week 2','Week 3','Final'].map((w, i) => (
+                    <div key={i} className={`flex-1 rounded-lg py-2 text-center text-[10px] font-bold border ${
+                      i < 3
+                        ? 'bg-sky-500/18 border-sky-400/25 text-sky-300'
+                        : 'bg-sky-500/35 border-sky-400/50 text-sky-200'
+                    }`}>{w}</div>
+                  ))}
+                </div>
+              </div>
+            </div>
+
+            {/* Step 5 — Divisions */}
+            <div className="relative rounded-2xl overflow-hidden bg-gradient-to-br from-purple-950 via-fuchsia-900/50 to-purple-950 border border-purple-500/25 shadow-[0_0_18px_-6px_rgba(168,85,247,0.22)]">
+              <div className="absolute -top-6 -right-6 w-28 h-28 rounded-full blur-3xl bg-purple-400/12 pointer-events-none" />
+              <div className="relative p-4">
+                <div className="flex items-start gap-3 mb-3">
+                  <div className="w-8 h-8 rounded-xl bg-purple-500/20 border border-purple-400/30 flex items-center justify-center text-purple-300 font-black text-sm flex-shrink-0">05</div>
+                  <div>
+                    <div className="flex items-center gap-2 mb-1">
+                      <span className="text-xl">🏅</span>
+                      <p className="text-white font-black text-base">Division system</p>
+                    </div>
+                    <p className="text-purple-200/60 text-xs leading-relaxed">You compete within your division. At sprint end, top players get <span className="text-green-400 font-bold">promoted ⬆</span>, bottom players get <span className="text-red-400 font-bold">relegated ⬇</span>. Reach the top!</p>
+                  </div>
+                </div>
+                <div className="space-y-1.5">
+                  <div className="flex items-center justify-between rounded-xl bg-green-500/10 border border-green-400/20 px-3 py-2">
+                    <span className="text-green-400 text-xs font-bold">🏆 Top players</span>
+                    <span className="text-green-300 text-xs font-black">⬆ Promoted</span>
+                  </div>
+                  <div className="flex items-center justify-between rounded-xl bg-white/4 border border-white/8 px-3 py-2">
+                    <span className="text-gray-400 text-xs font-bold">🤝 Mid table</span>
+                    <span className="text-gray-400 text-xs font-black">= Stay</span>
+                  </div>
+                  <div className="flex items-center justify-between rounded-xl bg-red-500/10 border border-red-400/15 px-3 py-2">
+                    <span className="text-red-400 text-xs font-bold">😰 Bottom players</span>
+                    <span className="text-red-300 text-xs font-black">⬇ Relegated</span>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            {/* Step 6 — Bonus energy */}
+            <div className="relative rounded-2xl overflow-hidden bg-gradient-to-br from-orange-950 via-amber-900/40 to-orange-950 border border-orange-500/25 shadow-[0_0_18px_-6px_rgba(249,115,22,0.22)]">
+              <div className="absolute -top-6 -right-6 w-28 h-28 rounded-full blur-3xl bg-orange-400/12 pointer-events-none" />
+              <div className="relative p-4">
+                <div className="flex items-start gap-3">
+                  <div className="w-8 h-8 rounded-xl bg-orange-500/20 border border-orange-400/30 flex items-center justify-center text-orange-300 font-black text-sm flex-shrink-0">06</div>
+                  <div>
+                    <div className="flex items-center gap-2 mb-1">
+                      <span className="text-xl">🛒</span>
+                      <p className="text-white font-black text-base">Bonus energy</p>
+                    </div>
+                    <p className="text-orange-200/60 text-xs leading-relaxed">Want more picks? Buy bonus energy from the <span className="text-orange-300 font-bold">Energy Store</span>. It stays in your wallet until you spend it — you can use up to <span className="text-orange-300 font-bold">+5⚡ extra per matchweek</span>.</p>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            {/* Pro tips */}
+            <div className="bg-[#0d1117] border border-white/8 rounded-2xl p-4">
+              <p className="text-gray-500 text-[10px] font-black uppercase tracking-[0.18em] mb-3">Pro tips</p>
+              <div className="space-y-3">
+                {[
+                  { icon: '🎯', tip: 'Focus on fixtures you know well — accuracy is more valuable than picking everything.' },
+                  { icon: '⭐', tip: 'A Perfect Week gives a huge LP bonus. Go for it when you feel confident about all fixtures.' },
+                  { icon: '📊', tip: 'Community % stats reveal what everyone else is picking — useful for spotting contrarian value.' },
+                  { icon: '⚡', tip: 'Save your bonus energy for high-confidence matchweeks where you can squeeze out a Perfect Week.' },
+                  { icon: '📈', tip: 'Your accuracy % defines your tier — 70%+ Bronze, 80%+ Silver, 90%+ Gold. Aim for Gold!' },
+                ].map(({ icon, tip }, i) => (
+                  <div key={i} className="flex items-start gap-2.5">
+                    <span className="text-base flex-shrink-0 mt-0.5">{icon}</span>
+                    <p className="text-gray-400 text-xs leading-relaxed">{tip}</p>
+                  </div>
+                ))}
+              </div>
+            </div>
+
+            {/* Go play CTA */}
+            <button
+              onClick={() => window.location.href = '/matchweek'}
+              className="w-full py-3.5 rounded-2xl bg-indigo-600 hover:bg-indigo-500 transition-colors text-white font-bold text-sm"
+            >
+              🏟 Play this matchweek
+            </button>
+          </div>
         )}
 
         {/* Account tab */}
