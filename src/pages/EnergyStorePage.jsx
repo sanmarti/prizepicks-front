@@ -302,87 +302,90 @@ function SuccessToast({ pack, onClose }) {
 
 // ── Wallet card ───────────────────────────────────────────────────────────────
 function WalletCard({ walletBalance }) {
-  const filled = walletBalance > 0
+  const hasPurchased = walletBalance > 0
+  const weeksAvailable = walletBalance > 0 ? Math.floor(walletBalance / 5) : 0
 
   return (
-    <div className="relative rounded-3xl overflow-hidden mb-8">
-      {/* Background */}
-      <div className={`absolute inset-0 ${filled
-        ? 'bg-gradient-to-br from-violet-950 via-indigo-950 to-[#0a0d18]'
-        : 'bg-gradient-to-br from-[#0e0e18] via-[#0a0c16] to-[#080910]'
+    <div className={`relative rounded-2xl overflow-hidden mb-8 ${
+      hasPurchased
+        ? 'bg-gradient-to-br from-orange-950 via-red-900/60 to-yellow-950 shadow-[0_0_40px_-8px_rgba(251,146,60,0.55)]'
+        : 'bg-gradient-to-br from-[#130d06] via-[#100c06] to-[#0a0804] shadow-[0_0_40px_-8px_rgba(251,146,60,0.15)]'
+    }`}>
+      {/* Glow blob top-right */}
+      <div className={`absolute -top-10 -right-10 w-56 h-56 rounded-full blur-3xl pointer-events-none ${
+        hasPurchased ? 'bg-yellow-500/25' : 'bg-orange-600/10'
       }`} />
-
-      {/* Glow blob */}
-      <div className={`absolute -top-10 -right-10 w-52 h-52 rounded-full blur-3xl ${filled
-        ? 'bg-yellow-500/20'
-        : 'bg-indigo-600/10'
-      }`} />
-
-      {/* Scan line */}
-      <div className="absolute inset-0 opacity-[0.03]"
+      {/* Scan lines */}
+      <div className="absolute inset-0 opacity-[0.03] pointer-events-none"
         style={{ backgroundImage: 'repeating-linear-gradient(0deg, transparent, transparent 2px, white 2px, white 3px)', backgroundSize: '100% 3px' }} />
 
-      <div className={`relative border rounded-3xl p-5 ${filled ? 'border-violet-500/25' : 'border-white/6'}`}>
-
-        {/* Top row */}
-        <div className="flex items-start justify-between mb-4">
+      <div className={`relative border rounded-2xl p-5 ${
+        hasPurchased ? 'border-orange-500/30' : 'border-orange-900/40'
+      }`}>
+        {/* Balance row */}
+        <div className="flex items-start justify-between mb-5">
           <div>
-            <p className={`text-[10px] font-black uppercase tracking-[0.2em] ${filled ? 'text-violet-400' : 'text-gray-600'}`}>
-              {filled ? 'Bonus wallet' : 'Wallet empty'}
-            </p>
-            <div className="flex items-end gap-2 mt-1">
-              <span className={`font-black leading-none ${filled ? 'text-5xl text-yellow-400 drop-shadow-[0_0_16px_rgba(250,204,21,0.6)]' : 'text-4xl text-gray-700'}`}>
-                {filled ? `+${walletBalance}` : '0'}
-              </span>
-              <span className={`text-sm mb-1 ${filled ? 'text-yellow-400/60' : 'text-gray-700'}`}>⚡</span>
+            <p className={`text-[10px] font-black uppercase tracking-[0.2em] mb-1 ${
+              hasPurchased ? 'text-orange-300' : 'text-orange-900'
+            }`}>Bonus Energy Wallet</p>
+            <div className="flex items-end gap-2">
+              <span className={`font-black leading-none ${
+                hasPurchased
+                  ? 'text-5xl text-yellow-400 drop-shadow-[0_0_22px_rgba(250,204,21,0.7)]'
+                  : 'text-5xl text-orange-950'
+              }`}>{walletBalance}</span>
+              <span className={`text-xl mb-0.5 ${hasPurchased ? 'text-yellow-400/80' : 'text-orange-900/60'}`}>⚡</span>
             </div>
+            {hasPurchased && weeksAvailable > 0 && (
+              <p className="text-orange-300/70 text-xs mt-1">≈ {weeksAvailable} matchweek{weeksAvailable !== 1 ? 's' : ''} covered</p>
+            )}
           </div>
-
-          {/* Energy cell visual */}
-          <div className={`relative flex flex-col justify-end gap-[3px] p-2 rounded-xl border ${filled ? 'bg-yellow-400/8 border-yellow-400/20' : 'bg-white/3 border-white/8'}`}
-            style={{ width: 36, height: 52 }}>
+          {/* Battery visual */}
+          <div className={`relative flex flex-col justify-end gap-[3px] p-2 rounded-xl border ${
+            hasPurchased ? 'bg-yellow-400/10 border-yellow-400/25' : 'bg-orange-950/60 border-orange-800/30'
+          }`} style={{ width: 34, height: 50 }}>
             {[1,2,3,4].map(i => (
-              <div key={i} className={`w-full rounded-sm transition-all ${
-                filled && i <= Math.ceil((walletBalance / 50) * 4)
-                  ? 'bg-yellow-400 shadow-[0_0_6px_rgba(250,204,21,0.8)]'
-                  : 'bg-white/8'
-              }`} style={{ height: 8 }} />
+              <div key={i} className={`w-full rounded-sm ${
+                hasPurchased && i <= Math.max(1, Math.ceil((Math.min(walletBalance, 100) / 100) * 4))
+                  ? 'bg-yellow-400 shadow-[0_0_8px_rgba(250,204,21,0.9)]'
+                  : 'bg-orange-950'
+              }`} style={{ height: 7 }} />
             ))}
-            <div className={`absolute -top-1.5 left-1/2 -translate-x-1/2 w-2.5 h-1.5 rounded-t-sm ${filled ? 'bg-yellow-400/60' : 'bg-white/15'}`} />
+            <div className={`absolute -top-1.5 left-1/2 -translate-x-1/2 w-2.5 h-1.5 rounded-t-sm ${
+              hasPurchased ? 'bg-yellow-400/60' : 'bg-orange-900/50'
+            }`} />
           </div>
         </div>
 
-        {/* Energy bar */}
-        <div className="mb-4">
-          <div className="h-2 rounded-full bg-white/6 overflow-hidden">
-            <div
-              className={`h-full rounded-full transition-all duration-700 ${filled ? 'bg-gradient-to-r from-yellow-500 to-amber-400 shadow-[0_0_8px_rgba(250,204,21,0.5)]' : 'bg-indigo-600/30'}`}
-              style={{ width: filled ? `${Math.min((walletBalance / 100) * 100, 100)}%` : '0%' }}
-            />
-          </div>
-          <p className={`text-[11px] mt-1.5 ${filled ? 'text-gray-400' : 'text-gray-600'}`}>
-            {filled
-              ? `⚡${walletBalance} bonus on top of your ⚡${ENERGY_BUDGET} base`
-              : `Base ⚡${ENERGY_BUDGET} · buy a pack to add bonus energy`}
-          </p>
-        </div>
-
-        {/* Perks */}
-        <div className="flex gap-2 flex-wrap">
-          <div className={`flex items-center gap-1.5 rounded-xl px-3 py-1.5 border ${filled ? 'bg-violet-500/12 border-violet-500/25 text-violet-300' : 'bg-indigo-500/8 border-indigo-500/15 text-indigo-500'}`}>
-            <span className="text-sm">🎯</span>
-            <span className="text-xs font-semibold">More picks</span>
-          </div>
-          <div className={`flex items-center gap-1.5 rounded-xl px-3 py-1.5 border ${filled ? 'bg-emerald-500/12 border-emerald-500/25 text-emerald-300' : 'bg-emerald-500/8 border-emerald-500/15 text-emerald-600'}`}>
-            <span className="text-sm">🛡️</span>
-            <span className="text-xs font-semibold">Back safer outcomes</span>
-          </div>
-          {filled && (
-            <div className="flex items-center gap-1.5 rounded-xl px-3 py-1.5 border bg-yellow-400/8 border-yellow-400/20 text-yellow-400">
-              <span className="text-sm">🔓</span>
-              <span className="text-xs font-semibold">Unlocked</span>
+        {/* Rules pills */}
+        <div className="space-y-2">
+          <div className={`flex items-center gap-2.5 rounded-xl px-3 py-2.5 border ${
+            hasPurchased ? 'bg-orange-500/10 border-orange-500/20' : 'bg-orange-950/40 border-orange-900/30'
+          }`}>
+            <span className="text-base flex-shrink-0">♾️</span>
+            <div>
+              <p className={`text-xs font-semibold ${hasPurchased ? 'text-orange-100' : 'text-orange-900'}`}>Never expires</p>
+              <p className={`text-[11px] ${hasPurchased ? 'text-orange-300/70' : 'text-orange-900/60'}`}>Your bonus energy stays in your wallet until you use it</p>
             </div>
-          )}
+          </div>
+          <div className={`flex items-center gap-2.5 rounded-xl px-3 py-2.5 border ${
+            hasPurchased ? 'bg-amber-500/10 border-amber-500/20' : 'bg-orange-950/40 border-orange-900/30'
+          }`}>
+            <span className="text-base flex-shrink-0">📅</span>
+            <div>
+              <p className={`text-xs font-semibold ${hasPurchased ? 'text-amber-100' : 'text-orange-900'}`}>Any matchweek, any time</p>
+              <p className={`text-[11px] ${hasPurchased ? 'text-amber-300/70' : 'text-orange-900/60'}`}>Use it whenever you want — no deadline or restriction</p>
+            </div>
+          </div>
+          <div className={`flex items-center gap-2.5 rounded-xl px-3 py-2.5 border ${
+            hasPurchased ? 'bg-yellow-400/10 border-yellow-400/25' : 'bg-orange-950/40 border-orange-900/30'
+          }`}>
+            <span className="text-base flex-shrink-0">⚡</span>
+            <div>
+              <p className={`text-xs font-semibold ${hasPurchased ? 'text-yellow-300' : 'text-orange-900'}`}>Max 5 bonus units per matchweek</p>
+              <p className={`text-[11px] ${hasPurchased ? 'text-yellow-500/70' : 'text-orange-900/60'}`}>On top of your {ENERGY_BUDGET} base energy · used first from your wallet</p>
+            </div>
+          </div>
         </div>
       </div>
     </div>
