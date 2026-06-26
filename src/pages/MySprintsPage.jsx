@@ -151,23 +151,60 @@ function RankingsScreen({ sprint, division, rankings, myUserId, onClose }) {
                     <div className="flex-1 h-px bg-red-500/15" />
                   </div>
                 )}
-                <div className={`flex items-center gap-3 px-4 py-3 border-b border-white/4 ${isMe ? 'bg-indigo-900/20' : isPromo ? 'bg-green-950/15' : isRel ? 'bg-red-950/12' : ''}`}>
-                  <span className={`w-7 text-center text-sm font-black flex-shrink-0 ${rank === 1 ? 'text-yellow-400' : rank === 2 ? 'text-gray-300' : rank === 3 ? 'text-amber-600' : 'text-gray-600'}`}>{rank}</span>
+                <div className={`relative flex items-center gap-3 border-b ${
+                  isMe ? 'px-4 py-4 border-indigo-500/25' : 'px-4 py-2.5 border-white/4'
+                } ${
+                  !isMe && isPromo ? 'bg-green-950/15' : !isMe && isRel ? 'bg-red-950/12' : ''
+                }`}
+                  style={isMe ? {
+                    background: 'linear-gradient(90deg, rgba(49,46,129,0.7) 0%, rgba(55,48,163,0.4) 60%, rgba(49,46,129,0.15) 100%)',
+                    boxShadow: 'inset 0 0 40px -10px rgba(99,102,241,0.3)',
+                  } : {}}>
+
+                  {/* Left accent bar */}
+                  {isMe
+                    ? <span className="absolute left-0 top-0 bottom-0 w-1 rounded-r-full bg-gradient-to-b from-indigo-400 via-violet-400 to-indigo-400" />
+                    : (isPromo || isRel) && <span className={`absolute left-0 top-0 bottom-0 w-0.5 ${isPromo ? 'bg-green-500' : 'bg-red-500'}`} />
+                  }
+
+                  <span className={`text-center font-black flex-shrink-0 ${
+                    isMe ? 'w-8 text-base text-indigo-300' :
+                    `w-7 text-sm ${rank === 1 ? 'text-yellow-400' : rank === 2 ? 'text-gray-300' : rank === 3 ? 'text-amber-600' : 'text-gray-600'}`
+                  }`}>{rank}</span>
+
                   {row.avatar_url
-                    ? <img src={row.avatar_url} alt="" className="w-8 h-8 rounded-full object-cover flex-shrink-0" />
-                    : <div className="w-8 h-8 rounded-full bg-indigo-900/50 flex items-center justify-center text-xs text-indigo-300 font-bold flex-shrink-0">
+                    ? <img src={row.avatar_url} alt="" className={`rounded-full object-cover flex-shrink-0 ${isMe ? 'w-11 h-11' : 'w-8 h-8'}`}
+                        style={isMe ? { boxShadow: '0 0 0 2px rgba(99,102,241,0.7), 0 0 16px rgba(99,102,241,0.4)' } : {}} />
+                    : <div className={`rounded-full flex items-center justify-center font-bold flex-shrink-0 ${
+                        isMe ? 'w-11 h-11 text-base bg-indigo-700 text-white' : 'w-8 h-8 text-xs bg-indigo-900/50 text-indigo-300'
+                      }`} style={isMe ? { boxShadow: '0 0 0 2px rgba(99,102,241,0.6), 0 0 16px rgba(99,102,241,0.35)' } : {}}>
                         {(row.display_name || '?')[0].toUpperCase()}
                       </div>
                   }
+
                   <div className="flex-1 min-w-0">
-                    <p className={`text-sm font-medium truncate ${isMe ? 'text-white' : 'text-gray-200'}`}>
-                      {row.display_name || 'Player'}{isMe && <span className="text-indigo-400 text-xs ml-1">← you</span>}
+                    <div className="flex items-center gap-1.5">
+                      <p className={`font-semibold truncate ${isMe ? 'text-white text-base' : 'text-gray-400 text-sm'}`}>
+                        {row.display_name || 'Player'}
+                      </p>
+                      {isMe && (
+                        <span className="text-[10px] font-black px-1.5 py-0.5 rounded-full border border-indigo-500/40 bg-indigo-500/20 text-indigo-300 flex-shrink-0">YOU</span>
+                      )}
+                    </div>
+                    <p className={`text-[10px] mt-0.5 ${isMe ? 'text-gray-400' : 'text-gray-700'}`}>
+                      <span className={isMe ? 'text-green-400 font-semibold' : ''}>{row.total_correct_picks ?? 0}✓</span>
+                      {' correct · '}
+                      {row.perfect_weeks ?? 0}⭐
                     </p>
-                    <p className="text-gray-600 text-[10px]">{row.total_correct_picks ?? 0}✓ correct · {row.perfect_weeks ?? 0}⭐</p>
                   </div>
+
                   <div className="text-right flex-shrink-0">
-                    <p className={`font-black text-base ${isPromo ? 'text-green-400' : isRel ? 'text-red-400' : 'text-indigo-400'}`}>{row.total_league_points}</p>
-                    <p className="text-gray-700 text-[10px]">LP</p>
+                    <p className={`font-black tabular-nums ${
+                      isMe ? 'text-2xl text-white' : isPromo ? 'text-base text-green-400' : isRel ? 'text-base text-red-400' : 'text-base text-indigo-400'
+                    }`} style={isMe ? { textShadow: '0 0 16px rgba(99,102,241,0.7)' } : {}}>
+                      {row.total_league_points}
+                    </p>
+                    <p className={`text-[10px] -mt-0.5 ${isMe ? 'text-indigo-400/70' : 'text-gray-700'}`}>LP</p>
                   </div>
                 </div>
               </div>

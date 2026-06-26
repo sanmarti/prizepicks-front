@@ -337,34 +337,54 @@ function RankingsScreen({ div, sprintId, sprintName, myUserId, onOpenPicker, onB
                     </div>
                   )}
 
-                  <div className={`w-full flex items-center gap-3 px-4 py-3 border-b relative transition-colors ${
-                    isPromo ? 'bg-green-950/50 border-green-900/60' :
-                    isRel   ? 'bg-red-950/45 border-red-900/50' : 'border-white/4'
+                  <div className={`w-full flex items-center gap-3 border-b relative transition-colors ${
+                    isMe    ? 'px-4 py-4' : 'px-4 py-2.5'
+                  } ${
+                    !isMe && isPromo ? 'bg-green-950/50 border-green-900/60' :
+                    !isMe && isRel   ? 'bg-red-950/45 border-red-900/50' :
+                    !isMe            ? 'border-white/4' : ''
                   }`}
-                    style={isMe ? { background: v.bg + 'cc', borderColor: v.border } : {}}
+                    style={isMe ? {
+                      background: `linear-gradient(90deg, ${v.bg}ee 0%, ${v.bg}99 60%, ${v.bg}44 100%)`,
+                      borderColor: v.border,
+                      boxShadow: `inset 0 0 40px -10px ${v.glow}44`,
+                    } : {}}
                   >
-                    {(isPromo || isRel) && !isMe && (
-                      <span className={`absolute left-0 top-0 bottom-0 w-0.5 ${isPromo ? 'bg-green-500' : 'bg-red-500'}`} />
-                    )}
-                    {isMe && <span className="absolute left-0 top-0 bottom-0 w-0.5" style={{ background: v.accent }} />}
+                    {/* Left accent bar */}
+                    {isMe
+                      ? <span className="absolute left-0 top-0 bottom-0 w-1 rounded-r-full" style={{ background: `linear-gradient(180deg, ${v.accent}, ${v.accent}88)` }} />
+                      : (isPromo || isRel) && <span className={`absolute left-0 top-0 bottom-0 w-0.5 ${isPromo ? 'bg-green-500' : 'bg-red-500'}`} />
+                    }
 
-                    <span className={`w-7 text-center text-sm font-black flex-shrink-0 ${
-                      rank === 1 ? 'text-yellow-400' : rank === 2 ? 'text-gray-300' : rank === 3 ? 'text-amber-600' : 'text-gray-600'
-                    }`}>{rank}</span>
+                    <span className={`text-center font-black flex-shrink-0 ${
+                      isMe ? 'w-8 text-base' : 'w-7 text-sm'
+                    } ${
+                      isMe ? '' : rank === 1 ? 'text-yellow-400' : rank === 2 ? 'text-gray-300' : rank === 3 ? 'text-amber-600' : 'text-gray-600'
+                    }`} style={isMe ? { color: v.accent } : {}}>{rank}</span>
 
                     {row.avatar_url
-                      ? <img src={row.avatar_url} alt="" className="w-9 h-9 rounded-full object-cover flex-shrink-0" />
-                      : <div className="w-9 h-9 rounded-full flex items-center justify-center text-sm font-bold flex-shrink-0"
-                          style={{ background: isMe ? v.bg : 'rgba(255,255,255,0.08)', color: isMe ? v.accent : '#9ca3af' }}>
+                      ? <img src={row.avatar_url} alt="" className={`rounded-full object-cover flex-shrink-0 ${isMe ? 'w-11 h-11' : 'w-8 h-8'}`}
+                          style={isMe ? { boxShadow: `0 0 0 2px ${v.accent}99, 0 0 16px ${v.glow}66` } : {}} />
+                      : <div className={`rounded-full flex items-center justify-center font-bold flex-shrink-0 ${isMe ? 'w-11 h-11 text-base' : 'w-8 h-8 text-sm'}`}
+                          style={{
+                            background: isMe ? v.bg : 'rgba(255,255,255,0.08)',
+                            color: isMe ? v.accent : '#9ca3af',
+                            ...(isMe ? { boxShadow: `0 0 0 2px ${v.accent}80, 0 0 16px ${v.glow}55` } : {}),
+                          }}>
                           {(row.display_name || '?')[0].toUpperCase()}
                         </div>
                     }
 
                     <div className="flex-1 min-w-0">
-                      <p className={`text-sm font-semibold truncate ${isMe ? 'text-white' : 'text-gray-200'}`}>
-                        {row.display_name || 'Player'}
-                        {isMe && <span className="text-[10px] font-bold ml-1.5" style={{ color: v.accent }}>you</span>}
-                      </p>
+                      <div className="flex items-center gap-1.5 flex-wrap">
+                        <p className={`font-semibold truncate ${isMe ? 'text-white text-base' : 'text-gray-400 text-sm'}`}>
+                          {row.display_name || 'Player'}
+                        </p>
+                        {isMe && (
+                          <span className="text-[10px] font-black px-1.5 py-0.5 rounded-full border flex-shrink-0"
+                            style={{ background: v.bg, borderColor: v.border, color: v.accent }}>YOU</span>
+                        )}
+                      </div>
                       {(() => {
                         const wrong = row.total_incorrect_picks ?? row.total_wrong_picks ?? 0
                         const total = (row.total_correct_picks || 0) + wrong
@@ -372,10 +392,10 @@ function RankingsScreen({ div, sprintId, sprintName, myUserId, onOpenPicker, onB
                         const gw  = row.gameweeks_participated
                         return (
                           <div className="flex items-center gap-2 mt-0.5 flex-wrap">
-                            <span className="text-[10px] text-green-400 font-semibold">{row.total_correct_picks ?? 0}✓</span>
-                            <span className="text-[10px] text-red-400/70">{wrong}✗</span>
-                            {acc !== null && <span className="text-[10px] text-gray-500">{acc}%</span>}
-                            {gw > 0 && <span className="text-[10px] text-gray-600">{gw} GW</span>}
+                            <span className={`font-semibold ${isMe ? 'text-[11px] text-green-400' : 'text-[10px] text-green-500/50'}`}>{row.total_correct_picks ?? 0}✓</span>
+                            <span className={`${isMe ? 'text-[11px] text-red-400/80' : 'text-[10px] text-red-400/35'}`}>{wrong}✗</span>
+                            {acc !== null && <span className={`${isMe ? 'text-[11px] text-gray-400' : 'text-[10px] text-gray-700'}`}>{acc}%</span>}
+                            {gw > 0 && <span className={`${isMe ? 'text-[11px] text-gray-500' : 'text-[10px] text-gray-700'}`}>{gw} GW</span>}
                             {row.perfect_weeks > 0 && <span className="text-[10px] text-yellow-500">⭐{row.perfect_weeks}</span>}
                           </div>
                         )
@@ -385,10 +405,17 @@ function RankingsScreen({ div, sprintId, sprintName, myUserId, onOpenPicker, onB
                     <div className="flex items-center gap-1.5 flex-shrink-0">
                       {isPromo && <span className="text-green-400 text-xs">⬆</span>}
                       {isRel   && <span className="text-red-400 text-xs">⬇</span>}
-                      <span className="font-black text-base" style={{ color: isMe ? v.accent : isPromo ? '#4ade80' : isRel ? '#f87171' : '#818cf8' }}>
-                        {row.total_league_points}
-                        <span className="text-[10px] font-normal text-gray-600 ml-0.5">LP</span>
-                      </span>
+                      <div className="text-right">
+                        <span className={`font-black tabular-nums ${isMe ? 'text-2xl' : 'text-base'}`}
+                          style={{
+                            color: isMe ? '#fff' : isPromo ? '#4ade80' : isRel ? '#f87171' : '#818cf8',
+                            ...(isMe ? { textShadow: `0 0 16px ${v.glow}` } : {}),
+                          }}>
+                          {row.total_league_points}
+                        </span>
+                        <p className={`font-normal ${isMe ? 'text-[11px]' : 'text-[10px] text-gray-600'}`}
+                          style={isMe ? { color: v.accent + 'aa' } : {}}>LP</p>
+                      </div>
                     </div>
                   </div>
 
