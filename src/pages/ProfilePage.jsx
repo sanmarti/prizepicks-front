@@ -67,14 +67,14 @@ function InlineMsg({ status }) {
   )
 }
 
-function AvatarPicker({ src, name, uploading, onFile }) {
+function AvatarPicker({ src, name, uploading, onFile, ringClass = 'border-indigo-500' }) {
   const ref = useRef()
   const initial = (name || '?')[0].toUpperCase()
   return (
     <div className="relative w-20 h-20 flex-shrink-0">
       <div
         onClick={() => !uploading && ref.current.click()}
-        className="w-20 h-20 rounded-full border-2 border-indigo-500 overflow-hidden cursor-pointer relative group"
+        className={`w-20 h-20 rounded-full border-2 ${ringClass} overflow-hidden cursor-pointer relative group`}
       >
         {src
           ? <img src={src} alt={name} className="w-full h-full object-cover" />
@@ -97,6 +97,52 @@ function AvatarPicker({ src, name, uploading, onFile }) {
 
 const OUTCOME_ICON = { promoted: '⬆', retained: '=', relegated: '⬇', pending: '⏳' }
 const OUTCOME_COLOR = { promoted: 'text-green-400', retained: 'text-gray-400', relegated: 'text-red-400', pending: 'text-indigo-400' }
+
+const TIERS = [
+  { min: 90, label: 'Gold Predictor',   icon: '🥇', color: 'gold',
+    accentColor: '#f59e0b',
+    heroBg: 'linear-gradient(135deg, #1c1505 0%, #2d1a00 45%, #0a0d12 100%)',
+    heroShadow: '0 0 70px -10px rgba(250,204,21,0.45)',
+    heroBorder: 'rgba(250,204,21,0.35)',
+    avatarRing: 'border-yellow-400',
+    badgeBg: 'linear-gradient(135deg, #1c1505, #2d1a00)',
+    badgeBorder: 'rgba(250,204,21,0.5)',
+    badgeShadow: '0 0 26px -4px rgba(250,204,21,0.7)',
+    badgeText: 'text-yellow-300',
+    barFrom: '#eab308', barTo: '#fbbf24',
+    desc: '90%+ accuracy · exceptional predictor',
+  },
+  { min: 80, label: 'Silver Predictor', icon: '🥈', color: 'silver',
+    accentColor: '#94a3b8',
+    heroBg: 'linear-gradient(135deg, #1e293b 0%, #15202b 45%, #0a0d12 100%)',
+    heroShadow: '0 0 70px -10px rgba(148,163,184,0.4)',
+    heroBorder: 'rgba(148,163,184,0.35)',
+    avatarRing: 'border-slate-300',
+    badgeBg: 'linear-gradient(135deg, #1e293b, #334155)',
+    badgeBorder: 'rgba(203,213,225,0.45)',
+    badgeShadow: '0 0 26px -4px rgba(148,163,184,0.6)',
+    badgeText: 'text-slate-200',
+    barFrom: '#94a3b8', barTo: '#e2e8f0',
+    desc: '80%+ accuracy · elite predictor',
+  },
+  { min: 70, label: 'Bronze Predictor', icon: '🥉', color: 'bronze',
+    accentColor: '#f97316',
+    heroBg: 'linear-gradient(135deg, #1c0a00 0%, #2d1500 45%, #0a0d12 100%)',
+    heroShadow: '0 0 70px -10px rgba(249,115,22,0.4)',
+    heroBorder: 'rgba(249,115,22,0.35)',
+    avatarRing: 'border-orange-400',
+    badgeBg: 'linear-gradient(135deg, #1c0a00, #2d1500)',
+    badgeBorder: 'rgba(249,115,22,0.5)',
+    badgeShadow: '0 0 26px -4px rgba(249,115,22,0.65)',
+    badgeText: 'text-orange-300',
+    barFrom: '#f97316', barTo: '#fbbf24',
+    desc: '70%+ accuracy · skilled predictor',
+  },
+]
+function getAccuracyTier(pct) {
+  if (!pct || pct < 70) return null
+  return TIERS.find(t => pct >= t.min) ?? null
+}
 
 const MAX_ENERGY_PER_WEEK = 5
 
@@ -383,6 +429,7 @@ export default function ProfilePage() {
   const sprint    = status?.sprint
   const prog      = status?.sprint_progress
   const sprintsInDiv = glory?.sprint_history?.filter(s => s.division_name === div?.division_name).length ?? 0
+  const tier      = getAccuracyTier(stats?.accuracy_pct)
 
   const TABS = [
     { id: 'stats',   label: 'Stats' },
@@ -397,12 +444,30 @@ export default function ProfilePage() {
       <div className="max-w-md mx-auto px-4 pt-5 space-y-4">
 
         {/* Hero */}
-        <div className="relative bg-gradient-to-br from-[#0d1117] to-[#0a0d14] border border-white/8 rounded-2xl p-4 overflow-hidden">
-          {/* Subtle glow behind avatar */}
-          <div className="absolute -top-8 -left-8 w-36 h-36 rounded-full blur-3xl bg-indigo-600/10 pointer-events-none" />
+        <div
+          className="relative rounded-2xl p-4 overflow-hidden"
+          style={{
+            background: tier ? tier.heroBg : 'linear-gradient(135deg, #0d1117, #0a0d14)',
+            boxShadow: tier ? tier.heroShadow : undefined,
+            border: `1px solid ${tier ? tier.heroBorder : 'rgba(255,255,255,0.08)'}`,
+          }}
+        >
+          {/* Glow blob */}
+          <div className="absolute -top-8 -left-8 w-36 h-36 rounded-full blur-3xl pointer-events-none"
+            style={{ background: tier ? tier.accentColor : '#6366f1', opacity: tier ? 0.18 : 0.1 }} />
+
+          {/* Tier label banner */}
+          {tier && (
+            <div className="flex items-center gap-1.5 mb-3">
+              <span className="text-base leading-none">{tier.icon}</span>
+              <span className={`text-[10px] font-black uppercase tracking-[0.2em] ${tier.badgeText}`}>{tier.label}</span>
+              <div className="flex-1 h-px ml-1" style={{ background: `linear-gradient(to right, ${tier.accentColor}40, transparent)` }} />
+            </div>
+          )}
 
           <div className="relative flex items-center gap-4 mb-4">
-            <AvatarPicker src={avatarSrc} name={shownName} uploading={uploadingAv} onFile={handleAvatarFile} />
+            <AvatarPicker src={avatarSrc} name={shownName} uploading={uploadingAv} onFile={handleAvatarFile}
+              ringClass={tier ? tier.avatarRing : 'border-indigo-500'} />
             <div className="min-w-0 flex-1">
               <p className="text-white font-bold text-xl truncate">{shownName}</p>
               <p className="text-gray-500 text-xs truncate">{profile?.email}</p>
@@ -417,11 +482,24 @@ export default function ProfilePage() {
               )}
             </div>
 
-            {/* Accuracy badge — prominent top-right */}
+            {/* Accuracy badge */}
             {stats?.accuracy_pct != null && (
-              <div className="flex-shrink-0 flex flex-col items-center justify-center w-16 h-16 rounded-2xl bg-gradient-to-br from-amber-950 to-orange-950 border border-amber-500/30 shadow-[0_0_18px_-4px_rgba(245,158,11,0.4)]">
-                <span className="text-amber-300 font-black text-xl leading-none">{stats.accuracy_pct}%</span>
-                <span className="text-amber-500/70 text-[9px] font-semibold uppercase tracking-wider mt-0.5">accuracy</span>
+              <div
+                className="flex-shrink-0 flex flex-col items-center justify-center w-16 h-16 rounded-2xl"
+                style={{
+                  background: tier ? tier.badgeBg : 'linear-gradient(135deg, #1c0f00, #2d1900)',
+                  border: `1px solid ${tier ? tier.badgeBorder : 'rgba(245,158,11,0.35)'}`,
+                  boxShadow: tier ? tier.badgeShadow : '0 0 18px -4px rgba(245,158,11,0.4)',
+                }}
+              >
+                {tier
+                  ? <span className="text-lg leading-none mb-0.5">{tier.icon}</span>
+                  : <span className="text-amber-500/70 text-[9px] font-semibold uppercase tracking-wider mb-0.5">accuracy</span>
+                }
+                <span className={`font-black text-xl leading-none ${tier ? tier.badgeText : 'text-amber-300'}`}>
+                  {stats.accuracy_pct}%
+                </span>
+                {tier && <span className={`text-[8px] font-bold uppercase tracking-wider mt-0.5 ${tier.badgeText} opacity-50`}>{tier.color}</span>}
               </div>
             )}
           </div>
@@ -429,7 +507,8 @@ export default function ProfilePage() {
 
           {/* Current sprint mini */}
           {sprint && prog && (
-            <div className="relative bg-white/4 rounded-xl px-3 py-2 flex items-center justify-between">
+            <div className="relative bg-white/4 rounded-xl px-3 py-2 flex items-center justify-between"
+              style={tier ? { background: `${tier.accentColor}10`, border: `1px solid ${tier.accentColor}20` } : {}}>
               <p className="text-gray-400 text-xs">{sprint.name}</p>
               <div className="flex items-center gap-3 text-xs">
                 <span className="text-indigo-400 font-bold">{prog.total_league_points} LP</span>
@@ -455,58 +534,151 @@ export default function ProfilePage() {
         {/* Stats tab */}
         {activeTab === 'stats' && (
           <div className="space-y-3">
-            {/* Hero stat — League Points */}
-            <StatCard
-              label="League Points" value={stats?.lifetime_lp ?? 0} icon="⚡" sub="lifetime"
-              gradient="bg-gradient-to-br from-indigo-950 via-violet-900/70 to-indigo-950"
-              glow="shadow-[0_0_20px_-6px_rgba(99,102,241,0.35)]"
-              border="border-indigo-500/25" textColor="text-indigo-300"
-            />
 
-            {/* Row — Correct picks + Accuracy */}
-            <div className="grid grid-cols-2 gap-3">
-              <StatCard
-                label="Correct picks" value={stats?.lifetime_correct ?? 0} icon="🎯"
-                gradient="bg-gradient-to-br from-emerald-950 via-green-900/60 to-emerald-950"
-                glow="shadow-[0_0_16px_-4px_rgba(52,211,153,0.3)]"
-                border="border-emerald-500/25" textColor="text-emerald-300"
-              />
-              <div className="relative rounded-2xl overflow-hidden bg-gradient-to-br from-amber-950 via-orange-900/60 to-amber-950 shadow-[0_0_16px_-4px_rgba(245,158,11,0.25)] border border-amber-500/25">
-                <div className="relative p-4">
-                  <div className="flex items-start justify-between mb-2">
-                    <span className="text-xl">📊</span>
+            {/* ── Hero: Accuracy (most important) ── */}
+            <div
+              className="relative rounded-2xl overflow-hidden"
+              style={{
+                background: tier ? tier.badgeBg : 'linear-gradient(135deg, #1c1000, #2d1900 50%, #1c0a00)',
+                border: `1px solid ${tier ? tier.badgeBorder : 'rgba(245,158,11,0.3)'}`,
+                boxShadow: tier ? tier.badgeShadow : '0 0 22px -6px rgba(245,158,11,0.35)',
+              }}
+            >
+              <div className="absolute -top-8 -right-8 w-40 h-40 rounded-full blur-3xl pointer-events-none"
+                style={{ background: tier ? tier.accentColor : '#f59e0b', opacity: 0.18 }} />
+              <div className="relative p-5">
+                <div className="flex items-center justify-between mb-3">
+                  <div className="flex items-center gap-2">
+                    <span className="text-2xl">{tier ? tier.icon : '📊'}</span>
+                    {tier
+                      ? <span className={`text-[10px] font-black uppercase tracking-[0.18em] ${tier.badgeText}`}>{tier.label}</span>
+                      : <span className="text-[10px] font-black uppercase tracking-[0.18em] text-amber-500/60">Prediction accuracy</span>
+                    }
                   </div>
-                  <p className="font-black text-3xl leading-none mb-1 text-amber-300">{stats?.accuracy_pct ?? 0}%</p>
-                  <p className="text-white/40 text-[11px] font-medium mb-2">Accuracy</p>
-                  {/* Mini bar */}
-                  <div className="h-1.5 rounded-full bg-white/8 overflow-hidden">
-                    <div className="h-full rounded-full bg-gradient-to-r from-amber-500 to-yellow-400"
-                      style={{ width: `${stats?.accuracy_pct ?? 0}%`, transition: 'width 0.6s ease' }} />
-                  </div>
+                  <span className="text-white/25 text-[10px] font-semibold uppercase tracking-widest">lifetime</span>
+                </div>
+                <p className={`font-black leading-none mb-1 ${tier ? tier.badgeText : 'text-amber-300'}`}
+                  style={{ fontSize: 56 }}>
+                  {stats?.accuracy_pct ?? 0}<span style={{ fontSize: 28, opacity: 0.55 }}>%</span>
+                </p>
+                <p className="text-white/35 text-[11px] font-medium mb-3">
+                  {stats?.lifetime_correct ?? 0} correct out of {stats?.total_picks ?? 0} picks
+                </p>
+                {/* Tier progress bar */}
+                <div className="h-2 rounded-full bg-white/8 overflow-hidden mb-1.5">
+                  <div className="h-full rounded-full transition-all duration-700"
+                    style={{
+                      width: `${Math.min(stats?.accuracy_pct ?? 0, 100)}%`,
+                      background: tier
+                        ? `linear-gradient(to right, ${tier.barFrom}, ${tier.barTo})`
+                        : 'linear-gradient(to right, #f59e0b, #fbbf24)',
+                    }} />
+                </div>
+                {/* Tier milestones */}
+                <div className="flex justify-between text-[9px] text-white/20 font-semibold">
+                  <span>0%</span><span>🥉 70%</span><span>🥈 80%</span><span>🥇 90%</span>
                 </div>
               </div>
             </div>
 
-            {/* Row — Perfect weeks + Sprints played */}
+            {/* ── Current division ── */}
+            {div && (
+              <div className="relative rounded-2xl overflow-hidden bg-gradient-to-br from-indigo-950 via-violet-900/50 to-indigo-950 border border-indigo-500/25 shadow-[0_0_18px_-6px_rgba(99,102,241,0.3)]">
+                <div className="relative flex items-center justify-between p-4">
+                  <div className="flex items-center gap-3">
+                    <div className="w-12 h-12 rounded-xl bg-indigo-500/15 border border-indigo-500/25 flex items-center justify-center text-2xl flex-shrink-0">
+                      {div.icon}
+                    </div>
+                    <div>
+                      <p className="text-[10px] font-black uppercase tracking-[0.15em] text-indigo-400 mb-0.5">Current division</p>
+                      <p className="text-white font-black text-lg leading-tight">{div.division_name}</p>
+                      {sprintsInDiv > 0 && <p className="text-indigo-300/40 text-xs">{sprintsInDiv} sprint{sprintsInDiv > 1 ? 's' : ''} here</p>}
+                    </div>
+                  </div>
+                  {status?.next_division && (
+                    <div className="flex flex-col items-end gap-1">
+                      <span className="text-white/20 text-[9px] uppercase tracking-widest">next up</span>
+                      <span className="text-2xl">{status.next_division.icon}</span>
+                      <span className="text-indigo-300/60 text-[10px] font-semibold">{status.next_division.name}</span>
+                    </div>
+                  )}
+                </div>
+              </div>
+            )}
+
+            {/* ── Row: LP + Total picks ── */}
+            <div className="grid grid-cols-2 gap-3">
+              <StatCard
+                label="League Points" value={stats?.lifetime_lp ?? 0} icon="⚡" sub="lifetime"
+                gradient="bg-gradient-to-br from-violet-950 via-purple-900/60 to-violet-950"
+                glow="shadow-[0_0_16px_-4px_rgba(139,92,246,0.28)]"
+                border="border-violet-500/25" textColor="text-violet-300"
+              />
+              <StatCard
+                label="Picks made" value={stats?.total_picks ?? 0} icon="🎮" sub="total"
+                gradient="bg-gradient-to-br from-cyan-950 via-teal-900/50 to-cyan-950"
+                glow="shadow-[0_0_16px_-4px_rgba(6,182,212,0.22)]"
+                border="border-cyan-500/25" textColor="text-cyan-300"
+              />
+            </div>
+
+            {/* ── Row: Correct + Incorrect ── */}
+            <div className="grid grid-cols-2 gap-3">
+              <StatCard
+                label="Correct picks" value={stats?.lifetime_correct ?? 0} icon="✅"
+                gradient="bg-gradient-to-br from-emerald-950 via-green-900/60 to-emerald-950"
+                glow="shadow-[0_0_16px_-4px_rgba(52,211,153,0.28)]"
+                border="border-emerald-500/25" textColor="text-emerald-300"
+              />
+              <StatCard
+                label="Incorrect picks" value={stats?.lifetime_incorrect ?? 0} icon="❌"
+                gradient="bg-gradient-to-br from-rose-950 via-red-900/40 to-rose-950"
+                glow="shadow-[0_0_16px_-4px_rgba(244,63,94,0.18)]"
+                border="border-rose-500/20" textColor="text-rose-400"
+              />
+            </div>
+
+            {/* ── Row: Perfect weeks + Sprints ── */}
             <div className="grid grid-cols-2 gap-3">
               <StatCard
                 label="Perfect weeks" value={stats?.total_perfect_weeks ?? 0} icon="⭐"
                 gradient="bg-gradient-to-br from-yellow-950 via-amber-900/60 to-yellow-950"
-                glow="shadow-[0_0_16px_-4px_rgba(250,204,21,0.25)]"
+                glow="shadow-[0_0_16px_-4px_rgba(250,204,21,0.22)]"
                 border="border-yellow-500/25" textColor="text-yellow-300"
               />
               <StatCard
                 label="Sprints played" value={stats?.sprints_played ?? 0} icon="🏁"
                 gradient="bg-gradient-to-br from-sky-950 via-blue-900/60 to-sky-950"
-                glow="shadow-[0_0_16px_-4px_rgba(56,189,248,0.22)]"
+                glow="shadow-[0_0_16px_-4px_rgba(56,189,248,0.2)]"
                 border="border-sky-500/25" textColor="text-sky-300"
               />
             </div>
 
-            {/* Best division */}
+            {/* ── Current sprint ── */}
+            {sprint && prog && (
+              <div className="bg-[#0d1117] border border-white/8 rounded-2xl p-4">
+                <p className="text-gray-500 text-[10px] font-black uppercase tracking-[0.18em] mb-3">Current sprint · {sprint.name}</p>
+                <div className="grid grid-cols-3 gap-2 text-center">
+                  <div className="bg-white/3 rounded-xl py-3">
+                    <p className="text-indigo-400 font-black text-2xl">{prog.total_league_points}</p>
+                    <p className="text-white/25 text-[10px] uppercase tracking-wider mt-0.5">LP</p>
+                  </div>
+                  <div className="bg-white/3 rounded-xl py-3">
+                    <p className="text-emerald-400 font-black text-2xl">{prog.total_correct_picks}</p>
+                    <p className="text-white/25 text-[10px] uppercase tracking-wider mt-0.5">Correct</p>
+                  </div>
+                  <div className="bg-white/3 rounded-xl py-3">
+                    <p className="text-yellow-400 font-black text-2xl">{prog.perfect_weeks ?? 0}</p>
+                    <p className="text-white/25 text-[10px] uppercase tracking-wider mt-0.5">Perfect</p>
+                  </div>
+                </div>
+              </div>
+            )}
+
+            {/* ── Best division reached ── */}
             {glory?.highest_division && (
-              <div className="relative rounded-2xl overflow-hidden bg-gradient-to-br from-purple-950 via-fuchsia-900/50 to-purple-950 border border-purple-500/25 shadow-[0_0_16px_-4px_rgba(168,85,247,0.25)]">
-                <div className="absolute -top-6 -right-6 w-28 h-28 rounded-full blur-3xl bg-purple-500/20 pointer-events-none" />
+              <div className="relative rounded-2xl overflow-hidden bg-gradient-to-br from-purple-950 via-fuchsia-900/50 to-purple-950 border border-purple-500/25 shadow-[0_0_16px_-4px_rgba(168,85,247,0.22)]">
+                <div className="absolute -top-6 -right-6 w-28 h-28 rounded-full blur-3xl bg-purple-500/18 pointer-events-none" />
                 <div className="relative flex items-center gap-4 p-4">
                   <div className="w-14 h-14 rounded-2xl bg-purple-500/15 border border-purple-500/25 flex items-center justify-center text-3xl flex-shrink-0">
                     {glory.highest_division.icon}
@@ -514,7 +686,7 @@ export default function ProfilePage() {
                   <div>
                     <p className="text-[10px] font-black uppercase tracking-[0.2em] text-purple-400 mb-0.5">Personal best</p>
                     <p className="text-white font-black text-lg leading-tight">{glory.highest_division.name}</p>
-                    <p className="text-purple-300/60 text-xs mt-0.5">Highest division reached</p>
+                    <p className="text-purple-300/50 text-xs mt-0.5">Highest division reached</p>
                   </div>
                 </div>
               </div>
@@ -524,27 +696,53 @@ export default function ProfilePage() {
 
         {/* Badges tab */}
         {activeTab === 'badges' && (
-          <Section title={`Badges (${glory?.badges?.length ?? 0})`}>
-            {(!glory?.badges?.length) ? (
-              <div className="text-center py-8">
-                <p className="text-4xl mb-2">🏅</p>
-                <p className="text-gray-500 text-sm">No badges yet</p>
-                <p className="text-gray-700 text-xs mt-1">Earn them by playing and competing</p>
-              </div>
-            ) : (
-              <div className="grid grid-cols-2 gap-2">
-                {glory.badges.map((b, i) => (
-                  <div key={i} className="bg-white/4 rounded-2xl p-3 flex items-center gap-2.5">
-                    <span className="text-2xl flex-shrink-0">{b.icon}</span>
-                    <div className="min-w-0">
-                      <p className="text-white text-xs font-semibold truncate">{b.name}</p>
-                      <p className="text-gray-600 text-[10px]">{new Date(b.earned_at).toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' })}</p>
-                    </div>
+          <div className="space-y-3">
+            {/* Accuracy tier badge (auto-generated) */}
+            {tier && (
+              <div
+                className="relative rounded-2xl overflow-hidden"
+                style={{
+                  background: tier.badgeBg,
+                  border: `1px solid ${tier.badgeBorder}`,
+                  boxShadow: tier.badgeShadow,
+                }}
+              >
+                <div className="absolute -top-6 -right-6 w-32 h-32 rounded-full blur-3xl pointer-events-none"
+                  style={{ background: tier.accentColor, opacity: 0.2 }} />
+                <div className="relative flex items-center gap-4 p-4">
+                  <span className="text-5xl flex-shrink-0">{tier.icon}</span>
+                  <div className="min-w-0">
+                    <p className={`font-black text-lg ${tier.badgeText}`}>{tier.label}</p>
+                    <p className="text-white/50 text-xs mt-0.5">{stats?.accuracy_pct}% prediction accuracy</p>
+                    <p className="text-white/25 text-[10px] mt-1">{tier.desc}</p>
                   </div>
-                ))}
+                  <div className="flex-shrink-0 text-[10px] text-white/20 font-semibold uppercase tracking-widest">earned</div>
+                </div>
               </div>
             )}
-          </Section>
+
+            <Section title={`Badges (${(glory?.badges?.length ?? 0) + (tier ? 1 : 0)})`}>
+              {(!glory?.badges?.length && !tier) ? (
+                <div className="text-center py-8">
+                  <p className="text-4xl mb-2">🏅</p>
+                  <p className="text-gray-500 text-sm">No badges yet</p>
+                  <p className="text-gray-700 text-xs mt-1">Earn them by playing and competing</p>
+                </div>
+              ) : (
+                <div className="grid grid-cols-2 gap-2">
+                  {glory?.badges?.map((b, i) => (
+                    <div key={i} className="bg-white/4 rounded-2xl p-3 flex items-center gap-2.5">
+                      <span className="text-2xl flex-shrink-0">{b.icon}</span>
+                      <div className="min-w-0">
+                        <p className="text-white text-xs font-semibold truncate">{b.name}</p>
+                        <p className="text-gray-600 text-[10px]">{new Date(b.earned_at).toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' })}</p>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </Section>
+          </div>
         )}
 
         {/* History tab */}
