@@ -1,6 +1,6 @@
-import { useEffect, useRef, useState } from 'react'
+import { useEffect, useRef, useState, useCallback } from 'react'
 import { getProfile, updateProfile, changePassword } from '../api/users'
-import { getGloryProfile, getGloryStatus } from '../api/glory'
+import { getGloryProfile, getGloryStatus, getPurchaseHistory } from '../api/glory'
 import { useAuthStore } from '../store/authStore'
 import BottomNav from '../components/layout/BottomNav'
 import Spinner from '../components/ui/Spinner'
@@ -26,11 +26,19 @@ function compressImage(file) {
 
 const INP = "w-full px-4 py-3 rounded-xl text-white text-sm bg-white/5 border border-white/10 focus:outline-none focus:border-indigo-500 transition-colors placeholder-gray-600"
 
-function Stat({ label, value, color = 'text-white' }) {
+function StatCard({ label, value, icon, gradient, glow, textColor, border, sub }) {
   return (
-    <div className="flex-1 bg-white/4 rounded-2xl p-3 text-center">
-      <p className={`font-black text-xl ${color}`}>{value ?? '—'}</p>
-      <p className="text-gray-600 text-[10px] mt-0.5 leading-tight">{label}</p>
+    <div className={`relative rounded-2xl overflow-hidden ${gradient} ${glow} border ${border}`}>
+      <div className="absolute -top-4 -right-4 w-20 h-20 rounded-full blur-2xl opacity-40 pointer-events-none"
+        style={{ background: 'white' }} />
+      <div className="relative p-4">
+        <div className="flex items-start justify-between mb-2">
+          <span className="text-xl">{icon}</span>
+          {sub && <span className="text-[10px] text-white/40 font-semibold uppercase tracking-widest">{sub}</span>}
+        </div>
+        <p className={`font-black text-3xl leading-none mb-1 ${textColor}`}>{value ?? '—'}</p>
+        <p className="text-white/40 text-[11px] font-medium">{label}</p>
+      </div>
     </div>
   )
 }
@@ -90,6 +98,189 @@ function AvatarPicker({ src, name, uploading, onFile }) {
 const OUTCOME_ICON = { promoted: '⬆', retained: '=', relegated: '⬇', pending: '⏳' }
 const OUTCOME_COLOR = { promoted: 'text-green-400', retained: 'text-gray-400', relegated: 'text-red-400', pending: 'text-indigo-400' }
 
+const MAX_ENERGY_PER_WEEK = 5
+
+// ── Wallet tab ─────────────────────────────────────────────────────────────────
+function WalletTab({ walletBalance, transactions, loadingWallet, onGoToStore }) {
+  const [showHistory, setShowHistory] = useState(false)
+  const hasPurchased = walletBalance > 0 || transactions.length > 0
+  const weeksAvailable = walletBalance > 0 ? Math.floor(walletBalance / MAX_ENERGY_PER_WEEK) : 0
+  const purchaseTxs = transactions.filter(t => t.type === 'PURCHASE')
+  const usageTxs    = transactions.filter(t => t.type !== 'PURCHASE')
+
+  return (
+    <div className="space-y-4">
+      {/* Main wallet card */}
+      <div className={`relative rounded-2xl overflow-hidden shadow-[0_0_40px_-8px_rgba(168,85,247,0.4)] ${
+        hasPurchased ? 'bg-gradient-to-br from-purple-950 via-violet-900/60 to-indigo-950'
+                     : 'bg-gradient-to-br from-[#0e0c18] via-[#0a0c16] to-[#080910]'
+      }`}>
+        {/* Glow blob */}
+        <div className={`absolute -top-10 -right-10 w-52 h-52 rounded-full blur-3xl pointer-events-none ${
+          hasPurchased ? 'bg-yellow-500/15' : 'bg-violet-600/8'
+        }`} />
+        {/* Scan lines */}
+        <div className="absolute inset-0 opacity-[0.03] pointer-events-none"
+          style={{ backgroundImage: 'repeating-linear-gradient(0deg, transparent, transparent 2px, white 2px, white 3px)', backgroundSize: '100% 3px' }} />
+
+        <div className={`relative border rounded-2xl p-5 ${
+          hasPurchased ? 'border-purple-500/30' : 'border-white/6'
+        }`}>
+          {/* Balance row */}
+          <div className="flex items-start justify-between mb-5">
+            <div>
+              <p className={`text-[10px] font-black uppercase tracking-[0.2em] mb-1 ${
+                hasPurchased ? 'text-violet-400' : 'text-gray-600'
+              }`}>Bonus Energy Wallet</p>
+              <div className="flex items-end gap-2">
+                <span className={`font-black leading-none ${
+                  hasPurchased
+                    ? 'text-5xl text-yellow-400 drop-shadow-[0_0_20px_rgba(250,204,21,0.55)]'
+                    : 'text-5xl text-gray-700'
+                }`}>{walletBalance}</span>
+                <span className={`text-xl mb-0.5 ${hasPurchased ? 'text-yellow-400/70' : 'text-gray-700'}`}>⚡</span>
+              </div>
+              {hasPurchased && weeksAvailable > 0 && (
+                <p className="text-violet-400/70 text-xs mt-1">≈ {weeksAvailable} matchweek{weeksAvailable !== 1 ? 's' : ''} covered</p>
+              )}
+            </div>
+            {/* Battery visual */}
+            <div className={`relative flex flex-col justify-end gap-[3px] p-2 rounded-xl border ${
+              hasPurchased ? 'bg-yellow-400/8 border-yellow-400/20' : 'bg-white/3 border-white/8'
+            }`} style={{ width: 34, height: 50 }}>
+              {[1,2,3,4].map(i => (
+                <div key={i} className={`w-full rounded-sm ${
+                  hasPurchased && i <= Math.max(1, Math.ceil((Math.min(walletBalance, 100) / 100) * 4))
+                    ? 'bg-yellow-400 shadow-[0_0_6px_rgba(250,204,21,0.8)]'
+                    : 'bg-white/8'
+                }`} style={{ height: 7 }} />
+              ))}
+              <div className={`absolute -top-1.5 left-1/2 -translate-x-1/2 w-2.5 h-1.5 rounded-t-sm ${
+                hasPurchased ? 'bg-yellow-400/50' : 'bg-white/12'
+              }`} />
+            </div>
+          </div>
+
+          {/* Rules pills */}
+          <div className="space-y-2 mb-5">
+            <div className={`flex items-center gap-2.5 rounded-xl px-3 py-2.5 border ${
+              hasPurchased ? 'bg-purple-500/10 border-purple-500/20' : 'bg-white/4 border-white/6'
+            }`}>
+              <span className="text-base flex-shrink-0">♾️</span>
+              <div>
+                <p className={`text-xs font-semibold ${hasPurchased ? 'text-purple-200' : 'text-white'}`}>Never expires</p>
+                <p className={`text-[11px] ${hasPurchased ? 'text-purple-400/70' : 'text-gray-500'}`}>Your bonus energy stays in your wallet until you use it</p>
+              </div>
+            </div>
+            <div className={`flex items-center gap-2.5 rounded-xl px-3 py-2.5 border ${
+              hasPurchased ? 'bg-violet-500/10 border-violet-500/20' : 'bg-white/4 border-white/6'
+            }`}>
+              <span className="text-base flex-shrink-0">📅</span>
+              <div>
+                <p className={`text-xs font-semibold ${hasPurchased ? 'text-violet-200' : 'text-white'}`}>Any matchweek, any time</p>
+                <p className={`text-[11px] ${hasPurchased ? 'text-violet-400/70' : 'text-gray-500'}`}>Use it whenever you want — no deadline or restriction</p>
+              </div>
+            </div>
+            <div className="flex items-center gap-2.5 rounded-xl px-3 py-2.5 border border-yellow-400/25 bg-yellow-400/8">
+              <span className="text-base flex-shrink-0">⚡</span>
+              <div>
+                <p className="text-yellow-300 text-xs font-semibold">Max 5 bonus units per matchweek</p>
+                <p className="text-yellow-500/70 text-[11px]">On top of your 25 base energy · used first from your wallet</p>
+              </div>
+            </div>
+          </div>
+
+          {!hasPurchased ? (
+            <button onClick={onGoToStore}
+              className="w-full py-3 rounded-xl bg-yellow-500/15 border border-yellow-400/25 text-yellow-400 text-sm font-semibold hover:bg-yellow-500/25 transition-colors">
+              ⚡ Get bonus energy
+            </button>
+          ) : (
+            <button onClick={onGoToStore}
+              className="w-full py-3 rounded-xl bg-white/5 border border-white/10 text-gray-300 text-sm font-semibold hover:bg-white/8 transition-colors">
+              ⚡ Buy more energy
+            </button>
+          )}
+        </div>
+      </div>
+
+      {/* Purchase history */}
+      <div className="bg-[#0d1117] border border-white/8 rounded-2xl overflow-hidden">
+        <button
+          onClick={() => setShowHistory(h => !h)}
+          className="w-full flex items-center justify-between px-4 py-3.5 text-left hover:bg-white/3 transition-colors"
+        >
+          <div className="flex items-center gap-2.5">
+            <span className="text-base">🧾</span>
+            <div>
+              <p className="text-white text-sm font-semibold">Purchase history</p>
+              {purchaseTxs.length > 0 && (
+                <p className="text-gray-600 text-[11px]">{purchaseTxs.length} purchase{purchaseTxs.length !== 1 ? 's' : ''}</p>
+              )}
+            </div>
+          </div>
+          <svg className={`w-4 h-4 text-gray-600 transition-transform ${showHistory ? 'rotate-180' : ''}`}
+            fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
+            <polyline points="6 9 12 15 18 9" />
+          </svg>
+        </button>
+
+        {showHistory && (
+          <div className="border-t border-white/5">
+            {loadingWallet ? (
+              <div className="flex justify-center py-6"><Spinner size={20} /></div>
+            ) : purchaseTxs.length === 0 ? (
+              <div className="text-center py-8 px-4">
+                <p className="text-3xl mb-2">🛒</p>
+                <p className="text-gray-500 text-sm">No purchases yet</p>
+                <p className="text-gray-700 text-xs mt-1">Visit the Energy Store to get bonus energy</p>
+              </div>
+            ) : (
+              <div className="divide-y divide-white/4">
+                {purchaseTxs.map((tx, i) => (
+                  <div key={tx.id ?? i} className="flex items-center justify-between px-4 py-3">
+                    <div>
+                      <p className="text-white text-xs font-semibold">{tx.description?.replace('Purchased: ', '') || 'Energy pack'}</p>
+                      <p className="text-gray-600 text-[10px] mt-0.5">
+                        {new Date(tx.created_at).toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' })}
+                        {' · '}
+                        {new Date(tx.created_at).toLocaleTimeString('en-GB', { hour: '2-digit', minute: '2-digit' })}
+                      </p>
+                    </div>
+                    <span className="text-yellow-400 font-black text-sm">+{tx.amount}⚡</span>
+                  </div>
+                ))}
+              </div>
+            )}
+          </div>
+        )}
+      </div>
+
+      {/* Usage history (if any consumption txs exist) */}
+      {usageTxs.length > 0 && (
+        <div className="bg-[#0d1117] border border-white/8 rounded-2xl overflow-hidden">
+          <div className="px-4 py-3 border-b border-white/5">
+            <p className="text-gray-500 text-[11px] font-semibold tracking-widest uppercase">Energy used</p>
+          </div>
+          <div className="divide-y divide-white/4">
+            {usageTxs.map((tx, i) => (
+              <div key={tx.id ?? i} className="flex items-center justify-between px-4 py-3">
+                <div>
+                  <p className="text-white text-xs font-semibold">{tx.description || 'Energy used'}</p>
+                  <p className="text-gray-600 text-[10px] mt-0.5">
+                    {new Date(tx.created_at).toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' })}
+                  </p>
+                </div>
+                <span className="text-red-400 font-black text-sm">{tx.amount}⚡</span>
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
+    </div>
+  )
+}
+
 export default function ProfilePage() {
   const { user: jwt, logout } = useAuthStore()
 
@@ -109,7 +300,24 @@ export default function ProfilePage() {
   const [showPw,       setShowPw]       = useState(false)
   const [savingPw,     setSavingPw]     = useState(false)
   const [pwMsg,        setPwMsg]        = useState(null)
-  const [activeTab,    setActiveTab]    = useState('stats') // stats | badges | history | account
+  const [activeTab,    setActiveTab]    = useState('stats') // stats | badges | history | wallet | account
+
+  const [walletBalance,    setWalletBalance]    = useState(0)
+  const [walletTxs,        setWalletTxs]        = useState([])
+  const [loadingWallet,    setLoadingWallet]    = useState(false)
+  const [walletLoaded,     setWalletLoaded]     = useState(false)
+
+  const loadWallet = useCallback(async () => {
+    if (walletLoaded) return
+    setLoadingWallet(true)
+    try {
+      const { data } = await getPurchaseHistory()
+      setWalletBalance(data.wallet_balance ?? 0)
+      setWalletTxs(data.transactions ?? [])
+      setWalletLoaded(true)
+    } catch {}
+    finally { setLoadingWallet(false) }
+  }, [walletLoaded])
 
   useEffect(() => {
     const emailPrefix = (jwt?.email ?? '').split('@')[0]
@@ -126,6 +334,10 @@ export default function ProfilePage() {
     getGloryProfile().then(r => setGlory(r.data)).catch(() => {})
     getGloryStatus().then(r => setStatus(r.data)).catch(() => {})
   }, [jwt])
+
+  useEffect(() => {
+    if (activeTab === 'wallet') loadWallet()
+  }, [activeTab, loadWallet])
 
   async function handleAvatarFile(file) {
     setUploadingAv(true); setAvatarMsg(null)
@@ -176,6 +388,7 @@ export default function ProfilePage() {
     { id: 'stats',   label: 'Stats' },
     { id: 'badges',  label: 'Badges' },
     { id: 'history', label: 'History' },
+    { id: 'wallet',  label: 'Wallet' },
     { id: 'account', label: 'Account' },
   ]
 
@@ -217,10 +430,10 @@ export default function ProfilePage() {
         </div>
 
         {/* Tab nav */}
-        <div className="flex gap-1 bg-white/3 border border-white/8 rounded-2xl p-1">
+        <div className="flex gap-1 bg-white/3 border border-white/8 rounded-2xl p-1 overflow-x-auto scrollbar-none">
           {TABS.map(t => (
             <button key={t.id} onClick={() => setActiveTab(t.id)}
-              className={`flex-1 py-2 rounded-xl text-xs font-medium transition-colors ${
+              className={`flex-shrink-0 flex-1 min-w-0 py-2 px-2 rounded-xl text-xs font-medium transition-colors whitespace-nowrap ${
                 activeTab === t.id ? 'bg-indigo-600 text-white' : 'text-gray-500 hover:text-gray-300'
               }`}>
               {t.label}
@@ -230,29 +443,70 @@ export default function ProfilePage() {
 
         {/* Stats tab */}
         {activeTab === 'stats' && (
-          <div className="space-y-4">
-            <Section title="Lifetime stats">
-              <div className="flex gap-2 mb-3">
-                <Stat label="League Points" value={stats?.lifetime_lp ?? 0} color="text-indigo-400" />
-                <Stat label="Correct picks" value={stats?.lifetime_correct ?? 0} color="text-green-400" />
-                <Stat label="Accuracy" value={`${stats?.accuracy_pct ?? 0}%`} color="text-white" />
-              </div>
-              <div className="flex gap-2">
-                <Stat label="Perfect weeks" value={stats?.total_perfect_weeks ?? 0} color="text-yellow-400" />
-                <Stat label="Sprints played" value={stats?.sprints_played ?? 0} color="text-white" />
-              </div>
-            </Section>
+          <div className="space-y-3">
+            {/* Hero stat — League Points */}
+            <StatCard
+              label="League Points" value={stats?.lifetime_lp ?? 0} icon="⚡" sub="lifetime"
+              gradient="bg-gradient-to-br from-indigo-950 via-violet-900/70 to-indigo-950"
+              glow="shadow-[0_0_32px_-6px_rgba(99,102,241,0.5)]"
+              border="border-indigo-500/25" textColor="text-indigo-300"
+            />
 
-            {glory?.highest_division && (
-              <Section title="Best division reached">
-                <div className="flex items-center gap-3">
-                  <span className="text-3xl">{glory.highest_division.icon}</span>
-                  <div>
-                    <p className="text-white font-semibold">{glory.highest_division.name}</p>
-                    <p className="text-gray-500 text-sm">Personal best</p>
+            {/* Row — Correct picks + Accuracy */}
+            <div className="grid grid-cols-2 gap-3">
+              <StatCard
+                label="Correct picks" value={stats?.lifetime_correct ?? 0} icon="🎯"
+                gradient="bg-gradient-to-br from-emerald-950 via-green-900/60 to-emerald-950"
+                glow="shadow-[0_0_28px_-6px_rgba(52,211,153,0.45)]"
+                border="border-emerald-500/25" textColor="text-emerald-300"
+              />
+              <div className="relative rounded-2xl overflow-hidden bg-gradient-to-br from-amber-950 via-orange-900/60 to-amber-950 shadow-[0_0_28px_-6px_rgba(245,158,11,0.4)] border border-amber-500/25">
+                <div className="relative p-4">
+                  <div className="flex items-start justify-between mb-2">
+                    <span className="text-xl">📊</span>
+                  </div>
+                  <p className="font-black text-3xl leading-none mb-1 text-amber-300">{stats?.accuracy_pct ?? 0}%</p>
+                  <p className="text-white/40 text-[11px] font-medium mb-2">Accuracy</p>
+                  {/* Mini bar */}
+                  <div className="h-1.5 rounded-full bg-white/8 overflow-hidden">
+                    <div className="h-full rounded-full bg-gradient-to-r from-amber-500 to-yellow-400"
+                      style={{ width: `${stats?.accuracy_pct ?? 0}%`, transition: 'width 0.6s ease' }} />
                   </div>
                 </div>
-              </Section>
+              </div>
+            </div>
+
+            {/* Row — Perfect weeks + Sprints played */}
+            <div className="grid grid-cols-2 gap-3">
+              <StatCard
+                label="Perfect weeks" value={stats?.total_perfect_weeks ?? 0} icon="⭐"
+                gradient="bg-gradient-to-br from-yellow-950 via-amber-900/60 to-yellow-950"
+                glow="shadow-[0_0_28px_-6px_rgba(250,204,21,0.4)]"
+                border="border-yellow-500/25" textColor="text-yellow-300"
+              />
+              <StatCard
+                label="Sprints played" value={stats?.sprints_played ?? 0} icon="🏁"
+                gradient="bg-gradient-to-br from-sky-950 via-blue-900/60 to-sky-950"
+                glow="shadow-[0_0_28px_-6px_rgba(56,189,248,0.35)]"
+                border="border-sky-500/25" textColor="text-sky-300"
+              />
+            </div>
+
+            {/* Best division */}
+            {glory?.highest_division && (
+              <div className="relative rounded-2xl overflow-hidden bg-gradient-to-br from-purple-950 via-fuchsia-900/50 to-purple-950 border border-purple-500/25 shadow-[0_0_28px_-6px_rgba(168,85,247,0.4)]">
+                <div className="absolute -top-6 -right-6 w-28 h-28 rounded-full blur-3xl bg-purple-500/20 pointer-events-none" />
+                <div className="relative flex items-center gap-4 p-4">
+                  <div className="w-14 h-14 rounded-2xl bg-purple-500/15 border border-purple-500/25 flex items-center justify-center text-3xl flex-shrink-0">
+                    {glory.highest_division.icon}
+                  </div>
+                  <div>
+                    <p className="text-[10px] font-black uppercase tracking-[0.2em] text-purple-400 mb-0.5">Personal best</p>
+                    <p className="text-white font-black text-lg leading-tight">{glory.highest_division.name}</p>
+                    <p className="text-purple-300/60 text-xs mt-0.5">Highest division reached</p>
+                  </div>
+                </div>
+              </div>
             )}
           </div>
         )}
@@ -312,6 +566,16 @@ export default function ProfilePage() {
               </div>
             )}
           </Section>
+        )}
+
+        {/* Wallet tab */}
+        {activeTab === 'wallet' && (
+          <WalletTab
+            walletBalance={walletBalance}
+            transactions={walletTxs}
+            loadingWallet={loadingWallet}
+            onGoToStore={() => window.location.href = '/store'}
+          />
         )}
 
         {/* Account tab */}
