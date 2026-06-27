@@ -117,6 +117,18 @@ const AWARD_BADGES = [
   },
 ]
 
+const BADGE_ACCENTS = {
+  FIRST_GAMEWEEK:    { glow: '#34d399', border: 'rgba(52,211,153,0.35)',  text: 'text-emerald-400' },
+  PERFECT_WEEK:      { glow: '#facc15', border: 'rgba(250,204,21,0.4)',   text: 'text-yellow-400'  },
+  CONSISTENT_PLAYER: { glow: '#fb923c', border: 'rgba(251,146,60,0.35)',  text: 'text-orange-400'  },
+  PERFECT_MONTH:     { glow: '#fbbf24', border: 'rgba(251,191,36,0.35)',  text: 'text-amber-400'   },
+  FIRST_PROMOTION:   { glow: '#818cf8', border: 'rgba(129,140,248,0.35)', text: 'text-indigo-400'  },
+  COMEBACK:          { glow: '#fb7185', border: 'rgba(251,113,133,0.35)', text: 'text-rose-400'    },
+  THREE_PROMOTIONS:  { glow: '#a78bfa', border: 'rgba(167,139,250,0.35)', text: 'text-violet-400'  },
+  REACHED_DIV1:      { glow: '#38bdf8', border: 'rgba(56,189,248,0.35)',  text: 'text-sky-400'     },
+  REACHED_CHAMPIONS: { glow: '#fde047', border: 'rgba(253,224,71,0.45)', text: 'text-yellow-300'  },
+}
+
 function AwardBadge({ cfg, count }) {
   return (
     <div className="relative flex-shrink-0 flex flex-col items-center justify-center gap-1 rounded-2xl overflow-hidden"
@@ -267,21 +279,6 @@ function WalletTab({ walletBalance, transactions, loadingWallet, onGoToStore }) 
               {hasPurchased && weeksAvailable > 0 && (
                 <p className="text-violet-400/70 text-xs mt-1">≈ {weeksAvailable} matchweek{weeksAvailable !== 1 ? 's' : ''} covered</p>
               )}
-            </div>
-            {/* Battery visual */}
-            <div className={`relative flex flex-col justify-end gap-[3px] p-2 rounded-xl border ${
-              hasPurchased ? 'bg-yellow-400/8 border-yellow-400/20' : 'bg-white/3 border-white/8'
-            }`} style={{ width: 34, height: 50 }}>
-              {[1,2,3,4].map(i => (
-                <div key={i} className={`w-full rounded-sm ${
-                  hasPurchased && i <= Math.max(1, Math.ceil((Math.min(walletBalance, 100) / 100) * 4))
-                    ? 'bg-yellow-400 shadow-[0_0_6px_rgba(250,204,21,0.8)]'
-                    : 'bg-white/8'
-                }`} style={{ height: 7 }} />
-              ))}
-              <div className={`absolute -top-1.5 left-1/2 -translate-x-1/2 w-2.5 h-1.5 rounded-t-sm ${
-                hasPurchased ? 'bg-yellow-400/50' : 'bg-white/12'
-              }`} />
             </div>
           </div>
 
@@ -798,59 +795,103 @@ export default function ProfilePage() {
         {/* Badges tab */}
         {activeTab === 'badges' && (
           <div className="space-y-3">
-            {/* Accuracy tier badge (auto-generated) */}
-            {tier && (
-              <div
-                className="relative rounded-2xl overflow-hidden"
-                style={{
-                  background: tier.badgeBg,
-                  border: `1px solid ${tier.badgeBorder}`,
-                  boxShadow: tier.badgeShadow,
-                }}
-              >
-                <div className="absolute -top-6 -right-6 w-32 h-32 rounded-full blur-3xl pointer-events-none"
-                  style={{ background: tier.accentColor, opacity: 0.2 }} />
-                <div className="relative flex items-center gap-4 p-4">
-                  <span className="text-5xl flex-shrink-0">{tier.icon}</span>
-                  <div className="min-w-0">
-                    <p className={`font-black text-lg ${tier.badgeText}`}>{tier.label}</p>
-                    <p className="text-white/50 text-xs mt-0.5">{stats?.accuracy_pct}% prediction accuracy</p>
-                    <p className="text-white/25 text-[10px] mt-1">{tier.desc}</p>
-                  </div>
-                  <div className="flex-shrink-0 text-[10px] text-white/20 font-semibold uppercase tracking-widest">earned</div>
+
+            {/* 1. Accuracy tier — always first */}
+            <div
+              className="relative rounded-2xl overflow-hidden"
+              style={tier
+                ? { background: tier.badgeBg, border: `1px solid ${tier.badgeBorder}`, boxShadow: tier.badgeShadow }
+                : { background: 'rgba(255,255,255,0.02)', border: '1px solid rgba(255,255,255,0.06)', opacity: 0.45 }
+              }
+            >
+              <div className="absolute -top-6 -right-6 w-32 h-32 rounded-full blur-3xl pointer-events-none"
+                style={{ background: tier ? tier.accentColor : '#6366f1', opacity: tier ? 0.2 : 0.06 }} />
+              <div className="relative flex items-center gap-4 p-4">
+                <span className="text-5xl flex-shrink-0">{tier ? tier.icon : '🏅'}</span>
+                <div className="min-w-0">
+                  <p className={`font-black text-lg ${tier ? tier.badgeText : 'text-white/25'}`}>{tier ? tier.label : 'Prediction Tier'}</p>
+                  <p className="text-white/50 text-xs mt-0.5">
+                    {tier ? `${stats?.accuracy_pct}% prediction accuracy` : 'Reach 70% accuracy with 10+ picks to unlock'}
+                  </p>
+                  {tier && <p className="text-white/25 text-[10px] mt-1">{tier.desc}</p>}
+                </div>
+                <div className="flex-shrink-0 text-[10px] font-semibold uppercase tracking-widest" style={{ color: tier ? 'rgba(255,255,255,0.2)' : 'rgba(255,255,255,0.12)' }}>
+                  {tier ? 'earned' : 'locked'}
                 </div>
               </div>
-            )}
+            </div>
 
-            <Section title={`Badges (${(glory?.badges?.length ?? 0) + (tier ? 1 : 0)})`}>
-              {(!glory?.badges?.length && !tier) ? (
-                <div className="text-center py-8">
-                  <p className="text-4xl mb-2">🏅</p>
-                  <p className="text-gray-500 text-sm">No badges yet</p>
-                  <p className="text-gray-700 text-xs mt-1">Earn them by playing and competing</p>
-                </div>
-              ) : (
-                <div className="grid grid-cols-2 gap-2">
-                  {glory?.badges?.map((b, i) => (
-                    <div key={i} className="bg-white/4 rounded-2xl p-3 flex items-center gap-2.5">
-                      <span className="text-2xl flex-shrink-0">{b.icon}</span>
-                      <div className="min-w-0">
-                        <p className="text-white text-xs font-semibold truncate">{b.name}</p>
-                        <p className="text-gray-600 text-[10px]">{new Date(b.earned_at).toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' })}</p>
-                      </div>
+            {/* 2. Trophies — always shown, dim if 0 */}
+            <Section title="Trophies">
+              <div className="grid grid-cols-3 gap-2">
+                {[
+                  { icon: '⭐', label: 'Perfect\nWeeks',     count: stats?.total_perfect_weeks, color: '#facc15', border: 'rgba(250,204,21,0.35)' },
+                  { icon: '🏆', label: 'Sprints\nPlayed',    count: stats?.sprints_played,       color: '#7dd3fc', border: 'rgba(56,189,248,0.35)'  },
+                  { icon: '📅', label: 'Matchweeks\nPlayed', count: stats?.matchweeks_played,    color: '#c4b5fd', border: 'rgba(167,139,250,0.35)' },
+                ].map((t, i) => {
+                  const on = (t.count ?? 0) > 0
+                  return (
+                    <div key={i} className="relative rounded-2xl overflow-hidden flex flex-col items-center text-center py-3 px-2"
+                      style={{
+                        background: on ? 'rgba(255,255,255,0.05)' : 'rgba(255,255,255,0.015)',
+                        border: `1px solid ${on ? t.border : 'rgba(255,255,255,0.05)'}`,
+                        boxShadow: on ? `0 0 18px -5px ${t.color}50` : 'none',
+                        opacity: on ? 1 : 0.4,
+                      }}>
+                      {on && <div className="absolute -top-3 -right-3 w-14 h-14 rounded-full blur-xl pointer-events-none" style={{ background: t.color, opacity: 0.22 }} />}
+                      <span className="relative text-2xl mb-1 leading-none">{t.icon}</span>
+                      <p className="relative font-black text-2xl leading-none tabular-nums" style={{ color: on ? t.color : 'rgba(255,255,255,0.25)' }}>{t.count ?? 0}</p>
+                      <p className="relative mt-1 whitespace-pre-line text-center" style={{ fontSize: 9, color: 'rgba(255,255,255,0.3)', textTransform: 'uppercase', letterSpacing: '0.05em', lineHeight: 1.35 }}>{t.label}</p>
                     </div>
-                  ))}
-                </div>
-              )}
+                  )
+                })}
+              </div>
             </Section>
 
-            {/* Division championship badges */}
+            {/* 3. Achievement badges — all shown, earned colorful / unearned dim */}
+            {!!glory?.badges?.length && (
+              <Section title={`Achievements (${glory.badges.filter(b => b.earned_count > 0).length}/${glory.badges.length})`}>
+                <div className="grid grid-cols-2 gap-2">
+                  {glory.badges.map((b, i) => {
+                    const earned = b.earned_count > 0
+                    const ac = BADGE_ACCENTS[b.code] ?? { glow: '#6366f1', border: 'rgba(99,102,241,0.35)', text: 'text-indigo-400' }
+                    return (
+                      <div key={i} className="relative rounded-2xl overflow-hidden p-3"
+                        style={{
+                          background: earned ? 'rgba(255,255,255,0.055)' : 'rgba(255,255,255,0.02)',
+                          border: `1px solid ${earned ? ac.border : 'rgba(255,255,255,0.06)'}`,
+                          boxShadow: earned ? `0 0 18px -5px ${ac.glow}55` : 'none',
+                          opacity: earned ? 1 : 0.38,
+                        }}>
+                        {earned && <div className="absolute -top-4 -right-4 w-20 h-20 rounded-full blur-2xl pointer-events-none" style={{ background: ac.glow, opacity: 0.28 }} />}
+                        <div className="relative flex items-start gap-2.5">
+                          <span className="text-2xl flex-shrink-0 leading-none mt-0.5">{b.icon}</span>
+                          <div className="min-w-0 flex-1">
+                            <div className="flex items-center justify-between gap-1">
+                              <p className={`text-xs font-bold leading-tight truncate ${earned ? 'text-white' : 'text-white/35'}`}>{b.name}</p>
+                              {b.earned_count > 1 && <span className={`text-[10px] font-black flex-shrink-0 ${ac.text}`}>×{b.earned_count}</span>}
+                            </div>
+                            <p className={`text-[10px] leading-snug mt-0.5 ${earned ? 'text-white/40' : 'text-white/20'}`}>{b.description}</p>
+                            {earned && b.last_earned_at && (
+                              <p className={`text-[9px] mt-1 ${ac.text} opacity-60`}>{new Date(b.last_earned_at).toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' })}</p>
+                            )}
+                          </div>
+                        </div>
+                      </div>
+                    )
+                  })}
+                </div>
+              </Section>
+            )}
+
+            {/* 4. Division champion badges */}
             {!!glory?.division_championships?.length && (
               <Section title={`Division Champion (${glory.division_championships.length})`}>
                 <div className="grid grid-cols-2 gap-2">
                   {glory.division_championships.map((dc, i) => (
-                    <div key={i} className="relative rounded-2xl overflow-hidden bg-white/4 border border-yellow-500/20 p-3">
-                      <div className="absolute -top-4 -right-4 w-20 h-20 rounded-full blur-2xl pointer-events-none bg-yellow-400/15" />
+                    <div key={i} className="relative rounded-2xl overflow-hidden p-3"
+                      style={{ background: 'rgba(255,255,255,0.05)', border: 'rgba(250,204,21,0.3) solid 1px', boxShadow: '0 0 18px -5px rgba(250,204,21,0.35)' }}>
+                      <div className="absolute -top-4 -right-4 w-20 h-20 rounded-full blur-2xl pointer-events-none bg-yellow-400/20" />
                       <div className="relative">
                         <div className="flex items-center gap-1.5 mb-2">
                           <span className="text-xl leading-none">{dc.division_icon}</span>
@@ -858,10 +899,8 @@ export default function ProfilePage() {
                         </div>
                         <div className="flex items-end justify-between">
                           <div>
-                            <div className="flex items-baseline gap-1">
-                              <p className="text-yellow-400 font-black text-xl leading-none">👑 {dc.championships}</p>
-                            </div>
-                            <p className="text-gray-600 text-[10px]">{dc.championships === 1 ? 'title' : 'titles'}</p>
+                            <p className="text-yellow-400 font-black text-xl leading-none">👑 {dc.championships}</p>
+                            <p className="text-yellow-500/50 text-[10px]">{dc.championships === 1 ? 'title' : 'titles'}</p>
                           </div>
                           <div className="text-right">
                             <p className="text-white/40 font-semibold text-xs leading-none">{dc.sprints_in_division}</p>
@@ -875,7 +914,7 @@ export default function ProfilePage() {
               </Section>
             )}
 
-            {/* Competition badges */}
+            {/* 5. Competition badges */}
             {!!glory?.competition_stats?.length && (
               <Section title={`Competition Badges (${glory.competition_stats.length})`}>
                 <div className="grid grid-cols-2 gap-2">
@@ -884,8 +923,9 @@ export default function ProfilePage() {
                     const flag = LEAGUE_FLAGS[comp.api_league_id] ?? '🏆'
                     const accuracy = comp.total > 0 ? Math.round((comp.correct / comp.total) * 100) : 0
                     return (
-                      <div key={i} className="relative rounded-2xl overflow-hidden bg-white/4 border border-white/8 p-3">
-                        <div className="absolute -top-4 -right-4 w-20 h-20 rounded-full blur-2xl pointer-events-none bg-green-400/10" />
+                      <div key={i} className="relative rounded-2xl overflow-hidden p-3"
+                        style={{ background: 'rgba(255,255,255,0.05)', border: '1px solid rgba(52,211,153,0.25)', boxShadow: '0 0 18px -5px rgba(52,211,153,0.3)' }}>
+                        <div className="absolute -top-4 -right-4 w-20 h-20 rounded-full blur-2xl pointer-events-none bg-emerald-400/15" />
                         <div className="relative">
                           <div className="flex items-center gap-2 mb-2">
                             <span className="text-2xl leading-none">{flag}</span>
@@ -893,8 +933,8 @@ export default function ProfilePage() {
                           </div>
                           <div className="flex items-end justify-between">
                             <div>
-                              <p className="text-green-400 font-black text-xl leading-none">{comp.correct}</p>
-                              <p className="text-gray-600 text-[10px]">correct picks</p>
+                              <p className="text-emerald-400 font-black text-xl leading-none">{comp.correct}</p>
+                              <p className="text-emerald-600/60 text-[10px]">correct picks</p>
                             </div>
                             <div className="text-right">
                               <p className="text-white font-bold text-sm leading-none">{accuracy}%</p>
