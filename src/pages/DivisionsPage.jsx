@@ -13,6 +13,25 @@ const V = {
 }
 const getV = d => V[d.display_order] || V[1]
 
+function getPlayerTier(correct, incorrect) {
+  const total = (correct || 0) + (incorrect || 0)
+  if (total < 10) return null
+  const pct = (correct || 0) / total * 100
+  if (pct >= 90) return { icon: '🥇', color: 'gold',   label: 'Gold Predictor' }
+  if (pct >= 80) return { icon: '🥈', color: 'silver', label: 'Silver Predictor' }
+  if (pct >= 70) return { icon: '🥉', color: 'bronze', label: 'Bronze Predictor' }
+  return null
+}
+const TIER_BG = { gold: 'linear-gradient(135deg,#78350f,#b45309)', silver: 'linear-gradient(135deg,#1e293b,#475569)', bronze: 'linear-gradient(135deg,#431407,#9a3412)' }
+function TierBadgeSm({ correct, incorrect }) {
+  const t = getPlayerTier(correct, incorrect)
+  if (!t) return null
+  return (
+    <span className="absolute -bottom-0.5 -right-0.5 w-[15px] h-[15px] text-[9px] rounded-full border border-[#0a0d12] flex items-center justify-center leading-none pointer-events-none"
+      style={{ background: TIER_BG[t.color] }} title={t.label}>{t.icon}</span>
+  )
+}
+
 // ── Full-screen "All Divisions" list ──────────────────────────────────────────
 function DivisionsListScreen({ divisions, divStats, myDivId, activeDiv, onSelect, onClose, totalPlayers }) {
   const myDiv    = divisions.find(d => d.id === myDivId)
@@ -362,18 +381,21 @@ function RankingsScreen({ div, sprintId, sprintName, myUserId, onOpenPicker, onB
                       isMe ? '' : rank === 1 ? 'text-yellow-400' : rank === 2 ? 'text-gray-300' : rank === 3 ? 'text-amber-600' : 'text-gray-600'
                     }`} style={isMe ? { color: v.accent } : {}}>{rank}</span>
 
-                    {row.avatar_url
-                      ? <img src={row.avatar_url} alt="" className={`rounded-full object-cover flex-shrink-0 ${isMe ? 'w-11 h-11' : 'w-8 h-8'}`}
-                          style={isMe ? { boxShadow: `0 0 0 2px ${v.accent}99, 0 0 16px ${v.glow}66` } : {}} />
-                      : <div className={`rounded-full flex items-center justify-center font-bold flex-shrink-0 ${isMe ? 'w-11 h-11 text-base' : 'w-8 h-8 text-sm'}`}
-                          style={{
-                            background: isMe ? v.bg : 'rgba(255,255,255,0.08)',
-                            color: isMe ? v.accent : '#9ca3af',
-                            ...(isMe ? { boxShadow: `0 0 0 2px ${v.accent}80, 0 0 16px ${v.glow}55` } : {}),
-                          }}>
-                          {(row.display_name || '?')[0].toUpperCase()}
-                        </div>
-                    }
+                    <div className="relative flex-shrink-0">
+                      {row.avatar_url
+                        ? <img src={row.avatar_url} alt="" className={`rounded-full object-cover ${isMe ? 'w-11 h-11' : 'w-8 h-8'}`}
+                            style={isMe ? { boxShadow: `0 0 0 2px ${v.accent}99, 0 0 16px ${v.glow}66` } : {}} />
+                        : <div className={`rounded-full flex items-center justify-center font-bold ${isMe ? 'w-11 h-11 text-base' : 'w-8 h-8 text-sm'}`}
+                            style={{
+                              background: isMe ? v.bg : 'rgba(255,255,255,0.08)',
+                              color: isMe ? v.accent : '#9ca3af',
+                              ...(isMe ? { boxShadow: `0 0 0 2px ${v.accent}80, 0 0 16px ${v.glow}55` } : {}),
+                            }}>
+                            {(row.display_name || '?')[0].toUpperCase()}
+                          </div>
+                      }
+                      <TierBadgeSm correct={row.total_correct_picks} incorrect={row.total_incorrect_picks} />
+                    </div>
 
                     <div className="flex-1 min-w-0">
                       <div className="flex items-center gap-1.5 flex-wrap">
