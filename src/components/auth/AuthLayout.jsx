@@ -530,23 +530,23 @@ function GamePreviewModal({ onClose, onSignUp, onLogin, gwData }) {
 const STEPS = [
   {
     num: '01', accent: '#22c55e', icon: '⚽',
-    title: 'Pick 6 from 15',
-    desc: 'Every week, choose 6 match predictions from 15 of the best fixtures in world football.',
+    title: '15 picks, every Monday',
+    desc: 'A curated pool of 15 events goes live each Monday — match outcomes, over/unders, clean sheets and more, drawn from EPL, La Liga, Champions League and major tournaments.',
   },
   {
-    num: '02', accent: '#a78bfa', icon: '⚡',
-    title: 'Manage Your Energy',
-    desc: 'You get 25 free energy units each week. Spend them wisely across your 6 predictions.',
+    num: '02', accent: '#a78bfa', icon: '🎯',
+    title: 'Pick your 6 before Sunday',
+    desc: 'Choose the 6 you feel most confident about. Each correct pick earns 1 point. Nail all 6 and you get a Perfect Week bonus — +4 extra points.',
   },
   {
-    num: '03', accent: '#f59e0b', icon: '🎯',
-    title: 'Earn Points & Boosts',
-    desc: 'Every correct pick earns points and unlocks boosts. Stack them to dominate the leaderboard.',
+    num: '03', accent: '#f59e0b', icon: '📅',
+    title: 'Sprints of 4–5 matchweeks',
+    desc: 'Each sprint runs 4 to 5 weeks. Points accumulate on the division leaderboard — finish in the top tier and you get promoted at the end of the sprint.',
   },
   {
     num: '04', accent: '#38bdf8', icon: '🏆',
-    title: 'Climb Divisions',
-    desc: 'Sprints last 4 weeks. Top performers get promoted — bottom ones are relegated. Reach the top.',
+    title: 'Rise through the divisions',
+    desc: 'Top predictors get promoted, weakest get relegated. Climb from Academy all the way to Hall of Legends. Your accuracy badge follows you.',
   },
 ]
 
