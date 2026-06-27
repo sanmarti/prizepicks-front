@@ -117,6 +117,19 @@ const AWARD_BADGES = [
   },
 ]
 
+const ALL_BADGES_STATIC = [
+  { code: 'FIRST_GAMEWEEK',    name: 'First Gameweek',      description: 'Completed your first Gameweek',                        icon: '🎮' },
+  { code: 'FIRST_CORRECT',     name: 'First Correct Pick',  description: 'Got your first correct prediction',                    icon: '✅' },
+  { code: 'PERFECT_WEEK',      name: 'Perfect Week',        description: '6/6 picks correct in one Gameweek',                    icon: '⭐' },
+  { code: 'PERFECT_MONTH',     name: 'Perfect Month',       description: 'Perfect Week in all 4 Gameweeks of a Sprint',          icon: '🌟' },
+  { code: 'CONSISTENT_PLAYER', name: 'Consistent Player',   description: 'Completed all 4 Gameweeks in a Sprint',                icon: '🗓️' },
+  { code: 'FIRST_PROMOTION',   name: 'First Promotion',     description: 'Promoted to a higher division for the first time',     icon: '⬆️' },
+  { code: 'COMEBACK',          name: 'Comeback Promotion',  description: 'Promoted after being relegated',                       icon: '💪' },
+  { code: 'THREE_PROMOTIONS',  name: 'Rising Star',         description: 'Promoted 3 times total',                               icon: '🚀' },
+  { code: 'REACHED_DIV1',      name: 'Elite Climber',       description: 'Reached Division 1',                                   icon: '🏅' },
+  { code: 'REACHED_CHAMPIONS', name: 'Champion',            description: 'Reached Champions / Legend',                           icon: '👑' },
+]
+
 const BADGE_ACCENTS = {
   FIRST_GAMEWEEK:    { glow: '#34d399', border: 'rgba(52,211,153,0.35)',  text: 'text-emerald-400' },
   PERFECT_WEEK:      { glow: '#facc15', border: 'rgba(250,204,21,0.4)',   text: 'text-yellow-400'  },
@@ -848,41 +861,48 @@ export default function ProfilePage() {
               </div>
             </Section>
 
-            {/* 3. Achievement badges — all shown, earned colorful / unearned dim */}
-            {!!glory?.badges?.length && (
-              <Section title={`Achievements (${glory.badges.filter(b => b.earned_count > 0).length}/${glory.badges.length})`}>
-                <div className="grid grid-cols-2 gap-2">
-                  {glory.badges.map((b, i) => {
-                    const earned = b.earned_count > 0
-                    const ac = BADGE_ACCENTS[b.code] ?? { glow: '#6366f1', border: 'rgba(99,102,241,0.35)', text: 'text-indigo-400' }
-                    return (
-                      <div key={i} className="relative rounded-2xl overflow-hidden p-3"
-                        style={{
-                          background: earned ? 'rgba(255,255,255,0.055)' : 'rgba(255,255,255,0.02)',
-                          border: `1px solid ${earned ? ac.border : 'rgba(255,255,255,0.06)'}`,
-                          boxShadow: earned ? `0 0 18px -5px ${ac.glow}55` : 'none',
-                          opacity: earned ? 1 : 0.38,
-                        }}>
-                        {earned && <div className="absolute -top-4 -right-4 w-20 h-20 rounded-full blur-2xl pointer-events-none" style={{ background: ac.glow, opacity: 0.28 }} />}
-                        <div className="relative flex items-start gap-2.5">
-                          <span className="text-2xl flex-shrink-0 leading-none mt-0.5">{b.icon}</span>
-                          <div className="min-w-0 flex-1">
-                            <div className="flex items-center justify-between gap-1">
-                              <p className={`text-xs font-bold leading-tight truncate ${earned ? 'text-white' : 'text-white/35'}`}>{b.name}</p>
-                              {b.earned_count > 1 && <span className={`text-[10px] font-black flex-shrink-0 ${ac.text}`}>×{b.earned_count}</span>}
+            {/* 3. Achievement badges — always shown, earned colorful / unearned dim */}
+            {(() => {
+              const earnedMap = Object.fromEntries((glory?.badges ?? []).map(b => [b.code, b]))
+              const badgeList = glory?.badges?.length ? glory.badges : ALL_BADGES_STATIC.map(b => ({ ...b, earned_count: 0, last_earned_at: null }))
+              const earnedCount = badgeList.filter(b => (earnedMap[b.code]?.earned_count ?? b.earned_count ?? 0) > 0).length
+              return (
+                <Section title={`Achievements (${earnedCount}/${badgeList.length})`}>
+                  <div className="grid grid-cols-2 gap-2">
+                    {badgeList.map((b, i) => {
+                      const live = earnedMap[b.code] ?? b
+                      const count = live.earned_count ?? 0
+                      const earned = count > 0
+                      const ac = BADGE_ACCENTS[b.code] ?? { glow: '#6366f1', border: 'rgba(99,102,241,0.35)', text: 'text-indigo-400' }
+                      return (
+                        <div key={i} className="relative rounded-2xl overflow-hidden p-3"
+                          style={{
+                            background: earned ? 'rgba(255,255,255,0.055)' : 'rgba(255,255,255,0.02)',
+                            border: `1px solid ${earned ? ac.border : 'rgba(255,255,255,0.06)'}`,
+                            boxShadow: earned ? `0 0 18px -5px ${ac.glow}55` : 'none',
+                            opacity: earned ? 1 : 0.38,
+                          }}>
+                          {earned && <div className="absolute -top-4 -right-4 w-20 h-20 rounded-full blur-2xl pointer-events-none" style={{ background: ac.glow, opacity: 0.28 }} />}
+                          <div className="relative flex items-start gap-2.5">
+                            <span className="text-2xl flex-shrink-0 leading-none mt-0.5">{b.icon}</span>
+                            <div className="min-w-0 flex-1">
+                              <div className="flex items-center justify-between gap-1">
+                                <p className={`text-xs font-bold leading-tight truncate ${earned ? 'text-white' : 'text-white/35'}`}>{b.name}</p>
+                                {count > 1 && <span className={`text-[10px] font-black flex-shrink-0 ${ac.text}`}>×{count}</span>}
+                              </div>
+                              <p className={`text-[10px] leading-snug mt-0.5 ${earned ? 'text-white/40' : 'text-white/20'}`}>{b.description}</p>
+                              {earned && live.last_earned_at && (
+                                <p className={`text-[9px] mt-1 ${ac.text} opacity-60`}>{new Date(live.last_earned_at).toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' })}</p>
+                              )}
                             </div>
-                            <p className={`text-[10px] leading-snug mt-0.5 ${earned ? 'text-white/40' : 'text-white/20'}`}>{b.description}</p>
-                            {earned && b.last_earned_at && (
-                              <p className={`text-[9px] mt-1 ${ac.text} opacity-60`}>{new Date(b.last_earned_at).toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' })}</p>
-                            )}
                           </div>
                         </div>
-                      </div>
-                    )
-                  })}
-                </div>
-              </Section>
-            )}
+                      )
+                    })}
+                  </div>
+                </Section>
+              )
+            })()}
 
             {/* 4. Division champion badges */}
             {!!glory?.division_championships?.length && (
