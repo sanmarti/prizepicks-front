@@ -846,6 +846,37 @@ export default function ProfilePage() {
               )}
             </Section>
 
+            {/* Division championship badges */}
+            {!!glory?.division_championships?.length && (
+              <Section title={`Division Champion (${glory.division_championships.length})`}>
+                <div className="grid grid-cols-2 gap-2">
+                  {glory.division_championships.map((dc, i) => (
+                    <div key={i} className="relative rounded-2xl overflow-hidden bg-white/4 border border-yellow-500/20 p-3">
+                      <div className="absolute -top-4 -right-4 w-20 h-20 rounded-full blur-2xl pointer-events-none bg-yellow-400/15" />
+                      <div className="relative">
+                        <div className="flex items-center gap-1.5 mb-2">
+                          <span className="text-xl leading-none">{dc.division_icon}</span>
+                          <p className="text-white text-[11px] font-bold leading-tight truncate">{dc.division_name}</p>
+                        </div>
+                        <div className="flex items-end justify-between">
+                          <div>
+                            <div className="flex items-baseline gap-1">
+                              <p className="text-yellow-400 font-black text-xl leading-none">👑 {dc.championships}</p>
+                            </div>
+                            <p className="text-gray-600 text-[10px]">{dc.championships === 1 ? 'title' : 'titles'}</p>
+                          </div>
+                          <div className="text-right">
+                            <p className="text-white/40 font-semibold text-xs leading-none">{dc.sprints_in_division}</p>
+                            <p className="text-gray-700 text-[10px]">sprints</p>
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </Section>
+            )}
+
             {/* Competition badges */}
             {!!glory?.competition_stats?.length && (
               <Section title={`Competition Badges (${glory.competition_stats.length})`}>
