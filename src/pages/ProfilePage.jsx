@@ -845,6 +845,40 @@ export default function ProfilePage() {
                 </div>
               )}
             </Section>
+
+            {/* Competition badges */}
+            {!!glory?.competition_stats?.length && (
+              <Section title={`Competition Badges (${glory.competition_stats.length})`}>
+                <div className="grid grid-cols-2 gap-2">
+                  {glory.competition_stats.map((comp, i) => {
+                    const LEAGUE_FLAGS = { 1:'🌍', 2:'⭐', 3:'🏅', 848:'🥉', 5:'🌐', 39:'🏴󠁧󠁢󠁥󠁮󠁧󠁿', 140:'🇪🇸', 78:'🇩🇪', 135:'🇮🇹', 61:'🇫🇷', 88:'🇳🇱', 94:'🇵🇹', 144:'🇧🇪', 179:'🏴󠁧󠁢󠁳󠁣󠁴󠁿', 45:'🏴󠁧󠁢󠁥󠁮󠁧󠁿', 143:'🇪🇸', 137:'🇮🇹', 15:'🌐', 253:'🇺🇸' }
+                    const flag = LEAGUE_FLAGS[comp.api_league_id] ?? '🏆'
+                    const accuracy = comp.total > 0 ? Math.round((comp.correct / comp.total) * 100) : 0
+                    return (
+                      <div key={i} className="relative rounded-2xl overflow-hidden bg-white/4 border border-white/8 p-3">
+                        <div className="absolute -top-4 -right-4 w-20 h-20 rounded-full blur-2xl pointer-events-none bg-green-400/10" />
+                        <div className="relative">
+                          <div className="flex items-center gap-2 mb-2">
+                            <span className="text-2xl leading-none">{flag}</span>
+                            <p className="text-white text-[11px] font-bold leading-tight truncate">{comp.competition_name}</p>
+                          </div>
+                          <div className="flex items-end justify-between">
+                            <div>
+                              <p className="text-green-400 font-black text-xl leading-none">{comp.correct}</p>
+                              <p className="text-gray-600 text-[10px]">correct picks</p>
+                            </div>
+                            <div className="text-right">
+                              <p className="text-white font-bold text-sm leading-none">{accuracy}%</p>
+                              <p className="text-gray-600 text-[10px]">accuracy</p>
+                            </div>
+                          </div>
+                        </div>
+                      </div>
+                    )
+                  })}
+                </div>
+              </Section>
+            )}
           </div>
         )}
 
