@@ -373,7 +373,7 @@ function WalletTab({ walletBalance, transactions, loadingWallet, onGoToStore }) 
               <div className="flex justify-center py-6"><Spinner size={20} /></div>
             ) : purchaseTxs.length === 0 ? (
               <div className="text-center py-8 px-4">
-                <p className="text-3xl mb-2">🛒</p>
+                <p className="text-3xl mb-2">⚡</p>
                 <p className="text-gray-500 text-sm">No purchases yet</p>
                 <p className="text-gray-700 text-xs mt-1">Visit the Energy Store to get bonus energy</p>
               </div>
