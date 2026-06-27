@@ -2,6 +2,26 @@ import { useEffect, useState, useRef } from 'react'
 import { getMyRelevantSprints, getSprintDetail, getGloryGameweek } from '../api/glory'
 import BottomNav from '../components/layout/BottomNav'
 
+function getPlayerTier(correct, incorrect) {
+  const total = (correct || 0) + (incorrect || 0)
+  if (total < 10) return null
+  const pct = (correct || 0) / total * 100
+  if (pct >= 90) return { icon: '🥇', color: 'gold',   label: 'Gold Predictor' }
+  if (pct >= 80) return { icon: '🥈', color: 'silver', label: 'Silver Predictor' }
+  if (pct >= 70) return { icon: '🥉', color: 'bronze', label: 'Bronze Predictor' }
+  return null
+}
+const TIER_BG = { gold: 'linear-gradient(135deg,#78350f,#b45309)', silver: 'linear-gradient(135deg,#1e293b,#475569)', bronze: 'linear-gradient(135deg,#431407,#9a3412)' }
+
+function TierBadgeSm({ correct, incorrect }) {
+  const t = getPlayerTier(correct, incorrect)
+  if (!t) return null
+  return (
+    <span className="absolute -bottom-0.5 -right-0.5 w-[15px] h-[15px] text-[9px] rounded-full border border-[#0a0d12] flex items-center justify-center leading-none pointer-events-none"
+      style={{ background: TIER_BG[t.color] }} title={t.label}>{t.icon}</span>
+  )
+}
+
 function fmtDate(d) {
   return new Date(d).toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' })
 }
@@ -172,15 +192,18 @@ function RankingsScreen({ sprint, division, rankings, myUserId, onClose }) {
                     `w-7 text-sm ${rank === 1 ? 'text-yellow-400' : rank === 2 ? 'text-gray-300' : rank === 3 ? 'text-amber-600' : 'text-gray-600'}`
                   }`}>{rank}</span>
 
-                  {row.avatar_url
-                    ? <img src={row.avatar_url} alt="" className={`rounded-full object-cover flex-shrink-0 ${isMe ? 'w-11 h-11' : 'w-8 h-8'}`}
-                        style={isMe ? { boxShadow: '0 0 0 2px rgba(99,102,241,0.7), 0 0 16px rgba(99,102,241,0.4)' } : {}} />
-                    : <div className={`rounded-full flex items-center justify-center font-bold flex-shrink-0 ${
-                        isMe ? 'w-11 h-11 text-base bg-indigo-700 text-white' : 'w-8 h-8 text-xs bg-indigo-900/50 text-indigo-300'
-                      }`} style={isMe ? { boxShadow: '0 0 0 2px rgba(99,102,241,0.6), 0 0 16px rgba(99,102,241,0.35)' } : {}}>
-                        {(row.display_name || '?')[0].toUpperCase()}
-                      </div>
-                  }
+                  <div className="relative flex-shrink-0">
+                    {row.avatar_url
+                      ? <img src={row.avatar_url} alt="" className={`rounded-full object-cover ${isMe ? 'w-11 h-11' : 'w-8 h-8'}`}
+                          style={isMe ? { boxShadow: '0 0 0 2px rgba(99,102,241,0.7), 0 0 16px rgba(99,102,241,0.4)' } : {}} />
+                      : <div className={`rounded-full flex items-center justify-center font-bold ${
+                          isMe ? 'w-11 h-11 text-base bg-indigo-700 text-white' : 'w-8 h-8 text-xs bg-indigo-900/50 text-indigo-300'
+                        }`} style={isMe ? { boxShadow: '0 0 0 2px rgba(99,102,241,0.6), 0 0 16px rgba(99,102,241,0.35)' } : {}}>
+                          {(row.display_name || '?')[0].toUpperCase()}
+                        </div>
+                    }
+                    <TierBadgeSm correct={row.total_correct_picks} incorrect={row.total_incorrect_picks} />
+                  </div>
 
                   <div className="flex-1 min-w-0">
                     <div className="flex items-center gap-1.5">
@@ -553,8 +576,11 @@ function InlineRankings({ rankings, myUserId, promLP, relLP, onViewFull }) {
         return (
           <div key={row.user_id} className={`flex items-start gap-3 px-4 py-3 border-b border-white/4 ${isMe ? 'bg-indigo-900/20' : ''}`}>
             <span className={`w-6 text-center text-xs font-black flex-shrink-0 mt-0.5 ${rank === 1 ? 'text-yellow-400' : rank === 2 ? 'text-gray-300' : 'text-amber-600'}`}>{rank}</span>
-            <div className="w-7 h-7 rounded-full bg-indigo-900/40 flex items-center justify-center text-xs text-indigo-300 font-bold flex-shrink-0 mt-0.5">
-              {(row.display_name || '?')[0].toUpperCase()}
+            <div className="relative flex-shrink-0 mt-0.5">
+              <div className="w-7 h-7 rounded-full bg-indigo-900/40 flex items-center justify-center text-xs text-indigo-300 font-bold">
+                {(row.display_name || '?')[0].toUpperCase()}
+              </div>
+              <TierBadgeSm correct={row.total_correct_picks} incorrect={row.total_incorrect_picks} />
             </div>
             <div className="flex-1 min-w-0">
               <p className={`text-sm truncate ${isMe ? 'text-white font-semibold' : 'text-gray-300'}`}>
@@ -590,8 +616,11 @@ function InlineRankings({ rankings, myUserId, promLP, relLP, onViewFull }) {
         return (
           <div className="flex items-start gap-3 px-4 py-3 bg-indigo-900/20 border-t border-indigo-500/15">
             <span className="w-6 text-center text-xs font-black text-indigo-400 flex-shrink-0 mt-0.5">{myIdx + 1}</span>
-            <div className="w-7 h-7 rounded-full bg-indigo-700/50 flex items-center justify-center text-xs text-indigo-200 font-bold flex-shrink-0 mt-0.5">
-              {(myRow.display_name || '?')[0].toUpperCase()}
+            <div className="relative flex-shrink-0 mt-0.5">
+              <div className="w-7 h-7 rounded-full bg-indigo-700/50 flex items-center justify-center text-xs text-indigo-200 font-bold">
+                {(myRow.display_name || '?')[0].toUpperCase()}
+              </div>
+              <TierBadgeSm correct={myRow.total_correct_picks} incorrect={myRow.total_incorrect_picks} />
             </div>
             <div className="flex-1 min-w-0">
               <p className="text-sm text-white font-semibold truncate">{myRow.display_name || 'You'} <span className="text-indigo-400 text-xs">you</span></p>
@@ -663,10 +692,13 @@ function OverallRankingsScreen({ sprint, overallRanking, myUserId, onClose }) {
                 }`}>{row.overall_rank}</span>
 
                 {/* Avatar */}
-                <div className={`w-8 h-8 rounded-full flex items-center justify-center text-xs font-bold flex-shrink-0 ${
-                  isMe ? 'bg-indigo-700/60 text-indigo-200' : 'bg-white/8 text-gray-400'
-                }`}>
-                  {(row.display_name || '?')[0].toUpperCase()}
+                <div className="relative flex-shrink-0">
+                  <div className={`w-8 h-8 rounded-full flex items-center justify-center text-xs font-bold ${
+                    isMe ? 'bg-indigo-700/60 text-indigo-200' : 'bg-white/8 text-gray-400'
+                  }`}>
+                    {(row.display_name || '?')[0].toUpperCase()}
+                  </div>
+                  <TierBadgeSm correct={row.total_correct_picks} incorrect={row.total_incorrect_picks} />
                 </div>
 
                 {/* Info */}

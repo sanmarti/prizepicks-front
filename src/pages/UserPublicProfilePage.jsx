@@ -6,6 +6,14 @@ import BottomNav from '../components/layout/BottomNav'
 const OUTCOME_ICON  = { promoted: '⬆', retained: '=', relegated: '⬇', pending: '⏳' }
 const OUTCOME_COLOR = { promoted: 'text-green-400', retained: 'text-gray-400', relegated: 'text-red-400', pending: 'text-indigo-400' }
 
+const TIER_BG = { gold: 'linear-gradient(135deg,#78350f,#b45309)', silver: 'linear-gradient(135deg,#1e293b,#475569)', bronze: 'linear-gradient(135deg,#431407,#9a3412)' }
+function getAccuracyTierPublic(pct) {
+  if (!pct || pct < 70) return null
+  if (pct >= 90) return { icon: '🥇', color: 'gold',   label: 'Gold Predictor' }
+  if (pct >= 80) return { icon: '🥈', color: 'silver', label: 'Silver Predictor' }
+  return        { icon: '🥉', color: 'bronze', label: 'Bronze Predictor' }
+}
+
 export default function UserPublicProfilePage() {
   const { id }    = useParams()
   const navigate  = useNavigate()
@@ -33,6 +41,7 @@ export default function UserPublicProfilePage() {
 
   const { user, division, lifetime_stats: stats, sprint_history, badges } = data
   const name = user.display_name || user.id.slice(0, 8)
+  const tier = getAccuracyTierPublic(stats?.accuracy_pct)
 
   return (
     <div className="min-h-screen bg-[#0a0d12] text-white pb-24">
@@ -44,12 +53,18 @@ export default function UserPublicProfilePage() {
 
         {/* Hero */}
         <div className="bg-[#0d1117] border border-white/8 rounded-2xl p-4 flex items-center gap-4">
-          {user.avatar_url
-            ? <img src={user.avatar_url} alt={name} className="w-16 h-16 rounded-full object-cover flex-shrink-0" />
-            : <div className="w-16 h-16 rounded-full bg-indigo-900/40 flex items-center justify-center text-indigo-300 text-2xl font-bold flex-shrink-0">
-                {name[0].toUpperCase()}
-              </div>
-          }
+          <div className="relative flex-shrink-0">
+            {user.avatar_url
+              ? <img src={user.avatar_url} alt={name} className="w-16 h-16 rounded-full object-cover" />
+              : <div className="w-16 h-16 rounded-full bg-indigo-900/40 flex items-center justify-center text-indigo-300 text-2xl font-bold">
+                  {name[0].toUpperCase()}
+                </div>
+            }
+            {tier && (
+              <span className="absolute bottom-0 right-0 w-5 h-5 text-xs rounded-full border-2 border-[#0d1117] flex items-center justify-center leading-none pointer-events-none"
+                style={{ background: TIER_BG[tier.color] }} title={tier.label}>{tier.icon}</span>
+            )}
+          </div>
           <div className="min-w-0">
             <p className="text-white font-bold text-xl truncate">{name}</p>
             {division && (

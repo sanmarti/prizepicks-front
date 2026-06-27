@@ -6,6 +6,17 @@ import {
 } from '../api/glory'
 import BottomNav from '../components/layout/BottomNav'
 
+function getPlayerTier(correct, incorrect) {
+  const total = (correct || 0) + (incorrect || 0)
+  if (total < 10) return null
+  const pct = (correct || 0) / total * 100
+  if (pct >= 90) return { icon: '🥇', color: 'gold',   label: 'Gold Predictor' }
+  if (pct >= 80) return { icon: '🥈', color: 'silver', label: 'Silver Predictor' }
+  if (pct >= 70) return { icon: '🥉', color: 'bronze', label: 'Bronze Predictor' }
+  return null
+}
+const TIER_BG = { gold: 'linear-gradient(135deg,#78350f,#b45309)', silver: 'linear-gradient(135deg,#1e293b,#475569)', bronze: 'linear-gradient(135deg,#431407,#9a3412)' }
+
 const EVENT_TYPE_LABELS = {
   MATCH_RESULT:  { label: 'Match Result',       icon: '⚽' },
   GOALS:         { label: 'Goals Over/Under',   icon: '🥅' },
@@ -952,16 +963,27 @@ function SprintLeaderboard({ myUserId, data }) {
                 }`}>{rank}</span>
 
                 {/* Avatar */}
-                {r.avatar_url
-                  ? <img src={r.avatar_url} alt="" className={`rounded-full object-cover flex-shrink-0 ${isMe ? 'w-10 h-10 ring-2 ring-indigo-500/60 ring-offset-1 ring-offset-transparent' : 'w-8 h-8'}`} />
-                  : <div className={`rounded-full flex items-center justify-center font-bold flex-shrink-0 ${
-                      isMe
-                        ? 'w-10 h-10 text-sm bg-indigo-600 text-white ring-2 ring-indigo-400/50 ring-offset-1 ring-offset-transparent shadow-[0_0_12px_rgba(99,102,241,0.5)]'
-                        : 'w-8 h-8 text-xs bg-white/8 text-gray-400'
-                    }`}>
-                      {(r.display_name || '?')[0].toUpperCase()}
+                {(() => {
+                  const t = getPlayerTier(r.total_correct_picks, r.total_incorrect_picks)
+                  return (
+                    <div className="relative flex-shrink-0">
+                      {r.avatar_url
+                        ? <img src={r.avatar_url} alt="" className={`rounded-full object-cover ${isMe ? 'w-10 h-10 ring-2 ring-indigo-500/60 ring-offset-1 ring-offset-transparent' : 'w-8 h-8'}`} />
+                        : <div className={`rounded-full flex items-center justify-center font-bold ${
+                            isMe
+                              ? 'w-10 h-10 text-sm bg-indigo-600 text-white ring-2 ring-indigo-400/50 ring-offset-1 ring-offset-transparent shadow-[0_0_12px_rgba(99,102,241,0.5)]'
+                              : 'w-8 h-8 text-xs bg-white/8 text-gray-400'
+                          }`}>
+                            {(r.display_name || '?')[0].toUpperCase()}
+                          </div>
+                      }
+                      {t && (
+                        <span className="absolute -bottom-0.5 -right-0.5 w-[15px] h-[15px] text-[9px] rounded-full border border-[#0a0d12] flex items-center justify-center leading-none pointer-events-none"
+                          style={{ background: TIER_BG[t.color] }} title={t.label}>{t.icon}</span>
+                      )}
                     </div>
-                }
+                  )
+                })()}
 
                 {/* Name + stats row */}
                 <div className="flex-1 min-w-0">

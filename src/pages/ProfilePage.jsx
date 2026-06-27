@@ -67,7 +67,24 @@ function InlineMsg({ status }) {
   )
 }
 
-function AvatarPicker({ src, name, uploading, onFile, ringClass = 'border-indigo-500' }) {
+function AvatarTierBadge({ tier, size = 'lg' }) {
+  if (!tier) return null
+  const BG = { gold: 'linear-gradient(135deg,#78350f,#b45309)', silver: 'linear-gradient(135deg,#1e293b,#475569)', bronze: 'linear-gradient(135deg,#431407,#9a3412)' }
+  const cls = size === 'lg'
+    ? 'absolute bottom-0 left-0 w-6 h-6 text-sm border-2'
+    : 'absolute -bottom-0.5 -right-0.5 w-[15px] h-[15px] text-[9px] border'
+  return (
+    <span
+      className={`${cls} rounded-full border-[#0a0d12] flex items-center justify-center leading-none pointer-events-none`}
+      style={{ background: BG[tier.color] }}
+      title={tier.label}
+    >
+      {tier.icon}
+    </span>
+  )
+}
+
+function AvatarPicker({ src, name, uploading, onFile, ringClass = 'border-indigo-500', tier = null }) {
   const ref = useRef()
   const initial = (name || '?')[0].toUpperCase()
   return (
@@ -90,6 +107,7 @@ function AvatarPicker({ src, name, uploading, onFile, ringClass = 'border-indigo
       >
         <svg width="10" height="10" fill="none" stroke="#fff" strokeWidth="2" viewBox="0 0 24 24"><path d="M11 4H4a2 2 0 00-2 2v14a2 2 0 002 2h14a2 2 0 002-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 013 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>
       </button>
+      <AvatarTierBadge tier={tier} size="lg" />
       <input ref={ref} type="file" accept="image/*" className="hidden" onChange={e => { if (e.target.files[0]) onFile(e.target.files[0]); e.target.value = '' }} />
     </div>
   )
@@ -485,7 +503,7 @@ export default function ProfilePage() {
 
           <div className="relative flex items-center gap-4 mb-4">
             <AvatarPicker src={avatarSrc} name={shownName} uploading={uploadingAv} onFile={handleAvatarFile}
-              ringClass={tier ? tier.avatarRing : 'border-indigo-500'} />
+              ringClass={tier ? tier.avatarRing : 'border-indigo-500'} tier={tier} />
             <div className="min-w-0 flex-1">
               <p className="text-white font-bold text-xl truncate">{shownName}</p>
               <p className="text-gray-500 text-xs truncate">{profile?.email}</p>
