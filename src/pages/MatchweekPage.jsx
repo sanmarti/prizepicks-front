@@ -1110,87 +1110,25 @@ function PicksConfirmModal({ picks, effectiveEvents, totalEnergy, totalAvailable
 }
 
 // ── Future week preview section ───────────────────────────────────────────────
-function FutureWeekSection({ nextGw, nextWeekNum }) {
-  const [nextGwData, setNextGwData] = useState(null)
-  const [nextPicks, setNextPicks]   = useState({})
-  const [submitted, setSubmitted]   = useState(false)
-  const [loading, setLoading]       = useState(false)
-  const [submitting, setSubmitting] = useState(false)
-  const [err, setErr]               = useState('')
-
-  useEffect(() => {
-    if (!nextGw?.id || nextGw.status !== 'PUBLISHED') { setNextGwData(null); return }
-    setLoading(true)
-    getGloryGameweek(nextGw.id)
-      .then(r => {
-        setNextGwData(r.data)
-        if (r.data.my_picks?.length) {
-          const m = {}
-          for (const p of r.data.my_picks) m[p.event_id] = p.event_option_id
-          setNextPicks(m); setSubmitted(true)
-          try { localStorage.removeItem(`draftPicks_${nextGw.id}`) } catch {}
-        } else {
-          try {
-            const draft = JSON.parse(localStorage.getItem(`draftPicks_${nextGw.id}`) || 'null')
-            if (draft && typeof draft === 'object' && Object.keys(draft).length > 0) setNextPicks(draft)
-          } catch {}
-        }
-      })
-      .catch(() => {})
-      .finally(() => setLoading(false))
-  }, [nextGw?.id, nextGw?.status])
-
-  const gw        = nextGwData?.gameweek
-  const isLocked  = nextGwData?.is_locked ?? false
-  const events    = gw?.events || []
-  const pickCount = Object.keys(nextPicks).length
-  const picksLocked = pickCount === 6 && !submitted && !isLocked
-
-  const handleSelect = (eventId, optionId) => {
-    if (isLocked) return
-    if (picksLocked && !nextPicks[eventId]) return
-    setNextPicks(prev => {
-      const n = { ...prev }
-      if (n[eventId] === optionId) delete n[eventId]; else n[eventId] = optionId
-      if (gw?.id) try { localStorage.setItem(`draftPicks_${gw.id}`, JSON.stringify(n)) } catch {}
-      return n
-    })
-    setSubmitted(false); setErr('')
-  }
-
-  const handleSave = async () => {
-    if (!gw?.id || pickCount !== 6 || submitting) return
-    const pickList = Object.entries(nextPicks).map(([event_id, event_option_id]) => ({ event_id, event_option_id }))
-    setSubmitting(true); setErr('')
-    try {
-      await submitGloryPicks(gw.id, pickList)
-      setSubmitted(true)
-      try { localStorage.removeItem(`draftPicks_${gw.id}`) } catch {}
-    } catch (e) {
-      setErr(e.response?.data?.error || e.response?.data?.message || 'Failed to save picks — try again')
-    } finally {
-      setSubmitting(false)
-    }
-  }
-
+function FutureWeekSection({ nextGw, nextWeekNum, onGoToNextWeek }) {
   const divider = (
-    <div className="flex items-center gap-3 mb-4">
+    <div className="flex items-center gap-3">
       <div className="h-px flex-1 bg-white/6" />
-      <span className="text-[10px] font-black tracking-widest text-blue-400/80">WEEK {nextWeekNum} · UPCOMING</span>
+      <span className="text-[10px] font-black tracking-widest text-blue-400/80">NEXT WEEK</span>
       <div className="h-px flex-1 bg-white/6" />
     </div>
   )
 
   if (!nextGw || nextGw.status !== 'PUBLISHED') {
     return (
-      <div className="mt-6 space-y-4">
+      <div className="mt-6 space-y-3">
         {divider}
-        <div className="bg-[#0d1117] border border-white/6 rounded-2xl p-6 text-center space-y-2">
-          <p className="text-2xl">🔜</p>
-          <p className="text-gray-300 font-semibold text-sm">Week {nextWeekNum} not published yet</p>
-          <p className="text-gray-600 text-xs leading-relaxed">
-            The matchweek schedule hasn't been released. Check back soon.
-          </p>
+        <div className="flex items-center gap-3 px-4 py-3.5 bg-[#0d1117] border border-white/6 rounded-2xl">
+          <span className="text-xl flex-shrink-0">🔜</span>
+          <div className="flex-1 min-w-0">
+            <p className="text-gray-400 font-semibold text-sm">Week {nextWeekNum} not published yet</p>
+            <p className="text-gray-600 text-xs mt-0.5">Schedule hasn't been released yet</p>
+          </div>
         </div>
       </div>
     )
@@ -1199,102 +1137,21 @@ function FutureWeekSection({ nextGw, nextWeekNum }) {
   return (
     <div className="mt-6 space-y-3">
       {divider}
-
-      {/* Lock time info */}
-      {gw?.lock_time && (
-        <div className="flex items-center gap-2.5 px-4 py-3 rounded-2xl bg-blue-950/20 border border-blue-500/15">
-          <span className="text-blue-400 text-lg">📅</span>
-          <div className="flex-1 min-w-0">
-            <p className="text-blue-300 font-semibold text-sm">
-              Week {nextWeekNum} picks open
+      <button
+        onClick={onGoToNextWeek}
+        className="w-full flex items-center gap-3 px-4 py-3.5 bg-blue-950/20 border border-blue-500/20 rounded-2xl hover:bg-blue-950/35 hover:border-blue-500/35 active:scale-[0.98] transition-all text-left"
+      >
+        <span className="text-xl flex-shrink-0">📅</span>
+        <div className="flex-1 min-w-0">
+          <p className="text-blue-300 font-bold text-sm">Week {nextWeekNum} — picks open</p>
+          {nextGw.lock_time && (
+            <p className="text-blue-700 text-xs mt-0.5">
+              Closes {fmtFull(nextGw.lock_time)} · {fmtCountdown(nextGw.lock_time)}
             </p>
-            <p className="text-blue-700 text-xs">
-              Closes {fmtFull(gw.lock_time)} · {fmtCountdown(gw.lock_time)}
-            </p>
-          </div>
-          {submitted && <span className="text-green-400 text-xs font-bold flex-shrink-0">✓ Saved</span>}
-        </div>
-      )}
-
-      {loading && (
-        <div className="flex items-center justify-center py-10 gap-2 text-gray-600 text-sm">
-          <div className="w-4 h-4 border border-gray-700 border-t-blue-400 rounded-full animate-spin" />
-          Loading…
-        </div>
-      )}
-
-      {/* Saved banner */}
-      {!loading && submitted && (
-        <div className="flex items-center gap-3 px-4 py-3.5 rounded-2xl bg-green-950/25 border border-green-500/25">
-          <span className="text-green-400 text-xl flex-shrink-0">✅</span>
-          <div className="flex-1 min-w-0">
-            <p className="text-green-300 font-bold text-sm">Week {nextWeekNum} picks saved!</p>
-            <p className="text-green-700 text-xs mt-0.5">Tap any pick to update before the deadline.</p>
-          </div>
-          <span className="text-green-600 font-black text-base flex-shrink-0">{pickCount}/6</span>
-        </div>
-      )}
-
-      {/* Locked banner */}
-      {!loading && isLocked && (
-        <div className="flex items-center gap-2.5 px-4 py-3 rounded-2xl bg-yellow-950/20 border border-yellow-500/20">
-          <span className="text-yellow-400">🔒</span>
-          <p className="text-yellow-300 text-sm font-semibold">Week {nextWeekNum} picks are locked</p>
-        </div>
-      )}
-
-      {/* Events */}
-      {!loading && events.length > 0 && (
-        <div className="space-y-2.5">
-          <p className="text-gray-600 text-[11px] font-medium tracking-wider uppercase px-1">
-            {events.length} events — choose 6 ({pickCount}/6 selected)
-          </p>
-          {events.map(ev => (
-            <EventCard
-              key={ev.id}
-              event={ev}
-              selectedOptionId={nextPicks[ev.id]}
-              onSelect={handleSelect}
-              isLocked={isLocked}
-              dimmed={false}
-              picksLocked={picksLocked}
-            />
-          ))}
-
-          {err && <p className="text-red-400 text-xs px-1">{err}</p>}
-
-          {!isLocked && (
-            <div className="space-y-2 pt-1">
-              <div className="flex gap-1">
-                {Array.from({ length: 6 }, (_, i) => (
-                  <div key={i} className={`h-1.5 flex-1 rounded-full transition-colors ${i < pickCount ? 'bg-blue-500' : 'bg-white/10'}`} />
-                ))}
-              </div>
-              {pickCount === 6 ? (
-                <button
-                  onClick={handleSave}
-                  disabled={submitting}
-                  className="w-full py-4 bg-blue-600 hover:bg-blue-500 active:bg-blue-700 text-white font-black text-base rounded-2xl transition-all active:scale-[0.98] disabled:opacity-50"
-                >
-                  {submitting
-                    ? <span className="flex items-center justify-center gap-2">
-                        <span className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" />
-                        Saving…
-                      </span>
-                    : submitted
-                      ? `✅ Update Week ${nextWeekNum} picks`
-                      : `✅ Save my Week ${nextWeekNum} picks →`
-                  }
-                </button>
-              ) : (
-                <p className="text-center text-gray-600 text-xs py-1">
-                  Select {6 - pickCount} more pick{6 - pickCount !== 1 ? 's' : ''} to save
-                </p>
-              )}
-            </div>
           )}
         </div>
-      )}
+        <span className="text-blue-400 text-base flex-shrink-0">→</span>
+      </button>
     </div>
   )
 }
@@ -2069,6 +1926,7 @@ export default function MatchweekPage() {
                   <FutureWeekSection
                     nextGw={byWeek[currentWeek + 1] || null}
                     nextWeekNum={currentWeek + 1}
+                    onGoToNextWeek={() => setSelectedWeek(currentWeek + 1)}
                   />
                 )}
               </>
