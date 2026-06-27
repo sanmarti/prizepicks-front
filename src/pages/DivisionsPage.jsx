@@ -15,7 +15,7 @@ const getV = d => V[d.display_order] || V[1]
 
 function getPlayerTier(correct, incorrect) {
   const total = (correct || 0) + (incorrect || 0)
-  if (total < 10) return null
+  if (total === 0) return null
   const pct = (correct || 0) / total * 100
   if (pct >= 90) return { icon: '🥇', color: 'gold',   label: 'Gold Predictor' }
   if (pct >= 80) return { icon: '🥈', color: 'silver', label: 'Silver Predictor' }
@@ -23,8 +23,8 @@ function getPlayerTier(correct, incorrect) {
   return null
 }
 const TIER_BG = { gold: 'linear-gradient(135deg,#78350f,#b45309)', silver: 'linear-gradient(135deg,#1e293b,#475569)', bronze: 'linear-gradient(135deg,#431407,#9a3412)' }
-function TierBadgeSm({ correct, incorrect }) {
-  const t = getPlayerTier(correct, incorrect)
+function TierBadgeSm({ row }) {
+  const t = getPlayerTier(row.lifetime_correct ?? row.total_correct_picks, row.lifetime_incorrect ?? row.total_incorrect_picks)
   if (!t) return null
   return (
     <span className="absolute -bottom-0.5 -right-0.5 w-[15px] h-[15px] text-[9px] rounded-full border border-[#0a0d12] flex items-center justify-center leading-none pointer-events-none"
@@ -394,7 +394,7 @@ function RankingsScreen({ div, sprintId, sprintName, myUserId, onOpenPicker, onB
                             {(row.display_name || '?')[0].toUpperCase()}
                           </div>
                       }
-                      <TierBadgeSm correct={row.total_correct_picks} incorrect={row.total_incorrect_picks} />
+                      <TierBadgeSm row={row} />
                     </div>
 
                     <div className="flex-1 min-w-0">
