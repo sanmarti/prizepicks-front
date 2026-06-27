@@ -687,7 +687,7 @@ export default function ProfilePage() {
             {/* ── Current division ── */}
             {div && (
               <div className="relative rounded-2xl overflow-hidden bg-gradient-to-br from-indigo-950 via-violet-900/50 to-indigo-950 border border-indigo-500/25 shadow-[0_0_18px_-6px_rgba(99,102,241,0.3)]">
-                <div className="relative flex items-center justify-between p-4">
+                <div className="relative flex items-center justify-between p-4 pb-3">
                   <div className="flex items-center gap-3">
                     <div className="w-12 h-12 rounded-xl bg-indigo-500/15 border border-indigo-500/25 flex items-center justify-center text-2xl flex-shrink-0">
                       {div.icon}
@@ -706,6 +706,25 @@ export default function ProfilePage() {
                     </div>
                   )}
                 </div>
+                {sprint && prog && (
+                  <div className="relative border-t border-indigo-500/15 mx-4 mb-4 pt-3">
+                    <p className="text-indigo-300/40 text-[10px] font-semibold uppercase tracking-widest mb-2">{sprint.name}</p>
+                    <div className="grid grid-cols-3 gap-2 text-center">
+                      <div className="bg-indigo-500/8 rounded-xl py-2.5">
+                        <p className="text-indigo-400 font-black text-xl leading-none">{prog.total_league_points}</p>
+                        <p className="text-white/25 text-[10px] uppercase tracking-wider mt-1">LP</p>
+                      </div>
+                      <div className="bg-indigo-500/8 rounded-xl py-2.5">
+                        <p className="text-emerald-400 font-black text-xl leading-none">{prog.total_correct_picks}</p>
+                        <p className="text-white/25 text-[10px] uppercase tracking-wider mt-1">Correct</p>
+                      </div>
+                      <div className="bg-indigo-500/8 rounded-xl py-2.5">
+                        <p className="text-yellow-400 font-black text-xl leading-none">{prog.perfect_weeks ?? 0}</p>
+                        <p className="text-white/25 text-[10px] uppercase tracking-wider mt-1">Perfect</p>
+                      </div>
+                    </div>
+                  </div>
+                )}
               </div>
             )}
 
@@ -756,27 +775,6 @@ export default function ProfilePage() {
                 border="border-sky-500/25" textColor="text-sky-300"
               />
             </div>
-
-            {/* ── Current sprint ── */}
-            {sprint && prog && (
-              <div className="bg-[#0d1117] border border-white/8 rounded-2xl p-4">
-                <p className="text-gray-500 text-[10px] font-black uppercase tracking-[0.18em] mb-3">Current sprint · {sprint.name}</p>
-                <div className="grid grid-cols-3 gap-2 text-center">
-                  <div className="bg-white/3 rounded-xl py-3">
-                    <p className="text-indigo-400 font-black text-2xl">{prog.total_league_points}</p>
-                    <p className="text-white/25 text-[10px] uppercase tracking-wider mt-0.5">LP</p>
-                  </div>
-                  <div className="bg-white/3 rounded-xl py-3">
-                    <p className="text-emerald-400 font-black text-2xl">{prog.total_correct_picks}</p>
-                    <p className="text-white/25 text-[10px] uppercase tracking-wider mt-0.5">Correct</p>
-                  </div>
-                  <div className="bg-white/3 rounded-xl py-3">
-                    <p className="text-yellow-400 font-black text-2xl">{prog.perfect_weeks ?? 0}</p>
-                    <p className="text-white/25 text-[10px] uppercase tracking-wider mt-0.5">Perfect</p>
-                  </div>
-                </div>
-              </div>
-            )}
 
             {/* ── Best division reached ── */}
             {glory?.highest_division && (
