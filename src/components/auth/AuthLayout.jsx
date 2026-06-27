@@ -531,22 +531,22 @@ const STEPS = [
   {
     num: '01', accent: '#22c55e', icon: '⚽',
     title: '15 picks, every Monday',
-    desc: 'A curated pool of 15 events goes live each Monday — match outcomes, over/unders, clean sheets and more, drawn from EPL, La Liga, Champions League and major tournaments.',
+    desc: 'A curated pool of 15 events goes live each Monday. Match outcomes, over/unders, clean sheets and more, drawn from EPL, La Liga, Champions League and major tournaments.',
   },
   {
     num: '02', accent: '#a78bfa', icon: '🎯',
     title: 'Pick your 6 before Sunday',
-    desc: 'Choose the 6 you feel most confident about. Each correct pick earns 1 point. Nail all 6 and you get a Perfect Week bonus — +4 extra points.',
+    desc: 'Choose the 6 you feel most confident about. Each correct pick earns 1 point. Nail all 6 and you get a Perfect Week bonus of +4 extra points.',
   },
   {
     num: '03', accent: '#f59e0b', icon: '📅',
     title: 'Sprints of 4–5 matchweeks',
-    desc: 'Each sprint runs 4 to 5 weeks. Points accumulate on the division leaderboard — finish in the top tier and you get promoted at the end of the sprint.',
+    desc: 'Each sprint runs about a month. Points accumulate on the division leaderboard. Finish in the top tier and you get promoted at the end of the sprint.',
   },
   {
     num: '04', accent: '#38bdf8', icon: '🏆',
     title: 'Rise through the divisions',
-    desc: 'Top predictors get promoted, weakest get relegated. Climb from Academy all the way to Hall of Legends. Your accuracy badge follows you.',
+    desc: 'Top predictors get promoted, weakest get relegated. Climb from Academy all the way to Hall of Legends. Your accuracy badge follows you every step.',
   },
 ]
 
@@ -726,7 +726,7 @@ function HeroPanel({ onTryIt, gwData }) {
             </span>
           </h1>
           <p style={{ fontSize: 16, color: 'rgba(255,255,255,0.45)', fontFamily: "'IBM Plex Mono', monospace", margin: 0, lineHeight: 1.6 }}>
-            6 picks · ⚡25 energy · 4-week sprints · one shot at glory
+            6 picks · ⚡25 energy · monthly sprints · one shot at glory
           </p>
         </div>
 
