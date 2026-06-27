@@ -535,6 +535,12 @@ export default function ProfilePage() {
   const sprint    = status?.sprint
   const prog      = status?.sprint_progress
   const sprintsInDiv = glory?.sprint_history?.filter(s => s.division_name === div?.division_name).length ?? 0
+
+  const badgeEarnedMap   = Object.fromEntries((glory?.badges ?? []).map(b => [b.code, b]))
+  const badgeList        = glory?.badges?.length
+    ? glory.badges
+    : ALL_BADGES_STATIC.map(b => ({ ...b, earned_count: 0, last_earned_at: null }))
+  const badgeEarnedCount = badgeList.filter(b => (badgeEarnedMap[b.code]?.earned_count ?? b.earned_count ?? 0) > 0).length
   const tier      = getAccuracyTier(stats?.accuracy_pct)
 
   const TABS = [
@@ -862,47 +868,40 @@ export default function ProfilePage() {
             </Section>
 
             {/* 3. Achievement badges — always shown, earned colorful / unearned dim */}
-            {(() => {
-              const earnedMap = Object.fromEntries((glory?.badges ?? []).map(b => [b.code, b]))
-              const badgeList = glory?.badges?.length ? glory.badges : ALL_BADGES_STATIC.map(b => ({ ...b, earned_count: 0, last_earned_at: null }))
-              const earnedCount = badgeList.filter(b => (earnedMap[b.code]?.earned_count ?? b.earned_count ?? 0) > 0).length
-              return (
-                <Section title={`Achievements (${earnedCount}/${badgeList.length})`}>
-                  <div className="grid grid-cols-2 gap-2">
-                    {badgeList.map((b, i) => {
-                      const live = earnedMap[b.code] ?? b
-                      const count = live.earned_count ?? 0
-                      const earned = count > 0
-                      const ac = BADGE_ACCENTS[b.code] ?? { glow: '#6366f1', border: 'rgba(99,102,241,0.35)', text: 'text-indigo-400' }
-                      return (
-                        <div key={i} className="relative rounded-2xl overflow-hidden p-3"
-                          style={{
-                            background: earned ? 'rgba(255,255,255,0.055)' : 'rgba(255,255,255,0.02)',
-                            border: `1px solid ${earned ? ac.border : 'rgba(255,255,255,0.06)'}`,
-                            boxShadow: earned ? `0 0 18px -5px ${ac.glow}55` : 'none',
-                            opacity: earned ? 1 : 0.38,
-                          }}>
-                          {earned && <div className="absolute -top-4 -right-4 w-20 h-20 rounded-full blur-2xl pointer-events-none" style={{ background: ac.glow, opacity: 0.28 }} />}
-                          <div className="relative flex items-start gap-2.5">
-                            <span className="text-2xl flex-shrink-0 leading-none mt-0.5">{b.icon}</span>
-                            <div className="min-w-0 flex-1">
-                              <div className="flex items-center justify-between gap-1">
-                                <p className={`text-xs font-bold leading-tight truncate ${earned ? 'text-white' : 'text-white/35'}`}>{b.name}</p>
-                                {count > 1 && <span className={`text-[10px] font-black flex-shrink-0 ${ac.text}`}>×{count}</span>}
-                              </div>
-                              <p className={`text-[10px] leading-snug mt-0.5 ${earned ? 'text-white/40' : 'text-white/20'}`}>{b.description}</p>
-                              {earned && live.last_earned_at && (
-                                <p className={`text-[9px] mt-1 ${ac.text} opacity-60`}>{new Date(live.last_earned_at).toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' })}</p>
-                              )}
-                            </div>
+            <Section title={`Achievements (${badgeEarnedCount}/${badgeList.length})`}>
+              <div className="grid grid-cols-2 gap-2">
+                {badgeList.map((b, i) => {
+                  const live   = badgeEarnedMap[b.code] ?? b
+                  const count  = live.earned_count ?? 0
+                  const earned = count > 0
+                  const ac     = BADGE_ACCENTS[b.code] ?? { glow: '#6366f1', border: 'rgba(99,102,241,0.35)', text: 'text-indigo-400' }
+                  return (
+                    <div key={i} className="relative rounded-2xl overflow-hidden p-3"
+                      style={{
+                        background: earned ? 'rgba(255,255,255,0.055)' : 'rgba(255,255,255,0.025)',
+                        border: `1px solid ${earned ? ac.border : 'rgba(255,255,255,0.08)'}`,
+                        boxShadow: earned ? `0 0 18px -5px ${ac.glow}55` : 'none',
+                        opacity: earned ? 1 : 0.55,
+                      }}>
+                      {earned && <div className="absolute -top-4 -right-4 w-20 h-20 rounded-full blur-2xl pointer-events-none" style={{ background: ac.glow, opacity: 0.28 }} />}
+                      <div className="relative flex items-start gap-2.5">
+                        <span className="text-2xl flex-shrink-0 leading-none mt-0.5">{b.icon}</span>
+                        <div className="min-w-0 flex-1">
+                          <div className="flex items-center justify-between gap-1">
+                            <p className={`text-xs font-bold leading-tight truncate ${earned ? 'text-white' : 'text-white/40'}`}>{b.name}</p>
+                            {count > 1 && <span className={`text-[10px] font-black flex-shrink-0 ${ac.text}`}>×{count}</span>}
                           </div>
+                          <p className={`text-[10px] leading-snug mt-0.5 ${earned ? 'text-white/40' : 'text-white/25'}`}>{b.description}</p>
+                          {earned && live.last_earned_at && (
+                            <p className={`text-[9px] mt-1 ${ac.text} opacity-60`}>{new Date(live.last_earned_at).toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' })}</p>
+                          )}
                         </div>
-                      )
-                    })}
-                  </div>
-                </Section>
-              )
-            })()}
+                      </div>
+                    </div>
+                  )
+                })}
+              </div>
+            </Section>
 
             {/* 4. Division champion badges */}
             {!!glory?.division_championships?.length && (
