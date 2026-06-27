@@ -84,6 +84,66 @@ function AvatarTierBadge({ tier, size = 'lg' }) {
   )
 }
 
+const AWARD_BADGES = [
+  {
+    key: 'perfect',
+    icon: '⭐',
+    label: 'Perfect\nweeks',
+    bg: 'linear-gradient(135deg, #1a1200, #2d1f00, #1a0e00)',
+    border: 'rgba(250,204,21,0.45)',
+    shadow: '0 0 18px -4px rgba(250,204,21,0.4)',
+    numColor: '#fde047',
+    shine: 'rgba(250,204,21,0.08)',
+  },
+  {
+    key: 'sprints',
+    icon: '🏆',
+    label: 'Sprints\ncompleted',
+    bg: 'linear-gradient(135deg, #050d1a, #0c1f3a, #060f1f)',
+    border: 'rgba(56,189,248,0.45)',
+    shadow: '0 0 18px -4px rgba(56,189,248,0.4)',
+    numColor: '#7dd3fc',
+    shine: 'rgba(56,189,248,0.08)',
+  },
+  {
+    key: 'matchweeks',
+    icon: '📅',
+    label: 'Matchweeks\nplayed',
+    bg: 'linear-gradient(135deg, #0d0520, #1a0a3a, #0a041a)',
+    border: 'rgba(167,139,250,0.45)',
+    shadow: '0 0 18px -4px rgba(167,139,250,0.4)',
+    numColor: '#c4b5fd',
+    shine: 'rgba(167,139,250,0.08)',
+  },
+]
+
+function AwardBadge({ cfg, count }) {
+  return (
+    <div className="relative flex-shrink-0 flex flex-col items-center justify-center gap-1 rounded-2xl overflow-hidden"
+      style={{
+        width: 78, paddingTop: 14, paddingBottom: 14,
+        background: cfg.bg,
+        border: `1px solid ${cfg.border}`,
+        boxShadow: cfg.shadow,
+      }}>
+      {/* glow blob */}
+      <div className="absolute inset-0 pointer-events-none"
+        style={{ background: `radial-gradient(ellipse at 50% 0%, ${cfg.shine} 0%, transparent 70%)` }} />
+      {/* notch at top (medal ribbon feel) */}
+      <div className="absolute top-0 left-1/2 -translate-x-1/2 w-5 h-[3px] rounded-b-full"
+        style={{ background: cfg.border }} />
+      <span className="relative text-2xl leading-none">{cfg.icon}</span>
+      <span className="relative font-black text-xl leading-none tabular-nums" style={{ color: cfg.numColor }}>
+        {count ?? 0}
+      </span>
+      <span className="relative text-center leading-tight whitespace-pre-line"
+        style={{ fontSize: 8, fontWeight: 700, color: 'rgba(255,255,255,0.28)', letterSpacing: '0.05em', textTransform: 'uppercase' }}>
+        {cfg.label}
+      </span>
+    </div>
+  )
+}
+
 function AvatarPicker({ src, name, uploading, onFile, ringClass = 'border-indigo-500', tier = null }) {
   const ref = useRef()
   const initial = (name || '?')[0].toUpperCase()
@@ -553,6 +613,13 @@ export default function ProfilePage() {
               </div>
             </div>
           )}
+        </div>
+
+        {/* Award badges strip */}
+        <div className="flex gap-2 overflow-x-auto scrollbar-none -mx-4 px-4">
+          <AwardBadge cfg={AWARD_BADGES[0]} count={stats?.total_perfect_weeks} />
+          <AwardBadge cfg={AWARD_BADGES[1]} count={stats?.sprints_played} />
+          <AwardBadge cfg={AWARD_BADGES[2]} count={stats?.matchweeks_played} />
         </div>
 
         {/* Tab nav */}
