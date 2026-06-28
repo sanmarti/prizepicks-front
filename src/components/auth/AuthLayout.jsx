@@ -212,7 +212,7 @@ const KEYFRAMES = `
 .auth-desktop-cta { display: block !important; }
 .auth-mobile-cta { display: block !important; }
 @media (max-width: 899px) {
-  .auth-outer { height: auto !important; overflow: visible !important; }
+  .auth-outer { height: 100dvh !important; overflow-x: hidden !important; overflow-y: auto !important; }
   .auth-inner { overflow: visible !important; height: auto !important; flex: none !important; }
   .auth-right-panel { overflow: visible !important; height: auto !important; }
   .auth-desktop-cta { display: none !important; }
