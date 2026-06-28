@@ -209,11 +209,10 @@ const KEYFRAMES = `
 .auth-hero { display: none !important; }
 .auth-mobile-logo { display: flex !important; }
 .auth-mobile-steps { display: block !important; }
-.auth-right-panel { overflow-x: hidden !important; }
 @media (max-width: 899px) {
   .auth-outer { height: auto !important; overflow: visible !important; }
-  .auth-inner { overflow: visible !important; height: auto !important; }
-  .auth-right-panel { overflow-y: visible !important; height: auto !important; }
+  .auth-inner { overflow: visible !important; height: auto !important; flex: none !important; }
+  .auth-right-panel { overflow: visible !important; height: auto !important; }
 }
 @media (min-width: 900px) {
   .auth-hero { display: flex !important; }
@@ -780,7 +779,7 @@ export default function AuthLayout({ heading, subheading, children }) {
         <div className="auth-right-panel" style={{
           flex: 1, display: 'flex', flexDirection: 'column',
           alignItems: 'center', justifyContent: 'flex-start',
-          padding: '60px 24px 40px', position: 'relative', overflowY: 'auto',
+          padding: '60px 24px 40px', position: 'relative', overflowY: 'auto', overflowX: 'hidden',
         }}>
           <div style={{
             position: 'absolute', top: 0, right: 0, width: 260, height: 260,
