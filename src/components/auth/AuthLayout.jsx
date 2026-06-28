@@ -577,13 +577,13 @@ const STEPS = [
   },
   {
     num: '04', accent: '#38bdf8', icon: '🏆',
-    title: 'Beat your mates. Climb the divisions.',
-    desc: 'Start in Academy and rise Sprint by Sprint — all the way to Hall of Legends.',
+    title: 'Climb the divisions. Build your legacy.',
+    desc: 'Rise from Academy to Hall of Legends Sprint by Sprint — earn badges for Perfect Weeks, promotions and accuracy.',
   },
   {
-    num: '05', accent: '#f43f5e', icon: '🎖️',
-    title: 'Build your football legacy.',
-    desc: 'Earn badges for Perfect Weeks, promotions and accuracy — your record is public.',
+    num: '05', accent: '#facc15', icon: '⚡',
+    title: 'Spend your energy wisely.',
+    desc: 'Each week you get 30⚡ to spread across your 6 picks. Riskier outcomes cost more — manage your energy to maximise your score.',
   },
 ]
 
