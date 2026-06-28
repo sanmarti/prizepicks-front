@@ -8,13 +8,13 @@ export default function OnboardingPage() {
   const user = useAuthStore((s) => s.user)
 
   useEffect(() => {
-    if (localStorage.getItem('oddrivals_onboarding_done')) {
+    if (localStorage.getItem('oddsrivals_onboarding_done')) {
       navigate('/', { replace: true })
     }
   }, [navigate])
 
   function finish() {
-    localStorage.setItem('oddrivals_onboarding_done', '1')
+    localStorage.setItem('oddsrivals_onboarding_done', '1')
     navigate('/', { replace: true })
   }
 

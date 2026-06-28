@@ -877,7 +877,7 @@ export default function AuthLayout({ heading, subheading, children }) {
                   letterSpacing: '0.04em',
                   background: 'linear-gradient(90deg, #22c55e, #a78bfa, #fff)',
                   WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent',
-                }}>ODDRIVALS</span>
+                }}>ODDSRIVALS</span>
               </div>
               <p style={{
                 fontSize: 10, color: 'rgba(255,255,255,0.22)',

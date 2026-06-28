@@ -4,7 +4,7 @@ export const SLIDES = [
   {
     icon: '⚽',
     accent: '#22c55e',
-    title: 'Welcome to OddRivals',
+    title: 'Welcome to OddsRivals',
     body: "A football prediction game where every pick counts. No bets, no luck — just football knowledge, yours against everyone else's.",
     sub: "Let's walk you through how it works.",
   },

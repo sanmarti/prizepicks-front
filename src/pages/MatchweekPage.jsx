@@ -1423,7 +1423,7 @@ export default function MatchweekPage() {
         {/* Sprint header */}
         <div className="flex items-start justify-between">
           <div>
-            <p className="text-indigo-400 text-[13px] font-bold tracking-wide">{sprint?.name || 'OddRivals'}</p>
+            <p className="text-indigo-400 text-[13px] font-bold tracking-wide">{sprint?.name || 'OddsRivals'}</p>
             <h1 className="text-white text-xl font-bold mt-0.5">{div?.icon} {div?.division_name || 'Academy'}</h1>
           </div>
           <div className="flex flex-col items-end gap-2">

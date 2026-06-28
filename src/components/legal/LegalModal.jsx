@@ -3,7 +3,7 @@ import { PRIVACY_POLICY, TERMS_OF_USE } from '../../legal/legalContent'
 
 // ── Cookie preference helpers ─────────────────────────────────────────────────
 
-const COOKIE_KEY = 'oddrivals_cookie_prefs'
+const COOKIE_KEY = 'oddsrivals_cookie_prefs'
 
 function loadCookiePrefs() {
   try {
@@ -200,7 +200,7 @@ function CookieContent({ onSave, onReject }) {
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
       <p style={{ margin: '0 0 8px', fontSize: 14, color: 'rgba(255,255,255,0.5)', lineHeight: 1.7, fontFamily: "'IBM Plex Mono', monospace" }}>
-        OddRivals uses essential cookies and similar technologies to keep the Service working securely. Optional analytics and marketing technologies are only used where permitted and based on user choice.
+        OddsRivals uses essential cookies and similar technologies to keep the Service working securely. Optional analytics and marketing technologies are only used where permitted and based on user choice.
       </p>
 
       <CookieCard
@@ -215,7 +215,7 @@ function CookieContent({ onSave, onReject }) {
       <CookieCard
         id="cookie-analytics"
         title="Analytics Cookies"
-        desc="Help us understand how players use OddRivals so we can improve performance, gameplay flows and user experience."
+        desc="Help us understand how players use OddsRivals so we can improve performance, gameplay flows and user experience."
         checked={prefs.analytics}
         onChange={toggle('analytics')}
       />

@@ -933,7 +933,7 @@ export default function ProfilePage() {
             {/* Header */}
             <div className="text-center pt-1 pb-2">
               <p className="text-white font-black text-xl">How to play</p>
-              <p className="text-gray-600 text-xs mt-1">OddRivals · season format</p>
+              <p className="text-gray-600 text-xs mt-1">OddsRivals · season format</p>
             </div>
 
             {/* Step 1 — Make picks */}

@@ -381,7 +381,8 @@ function RankingsScreen({ div, sprintId, sprintName, myUserId, onOpenPicker, onB
                       isMe ? '' : rank === 1 ? 'text-yellow-400' : rank === 2 ? 'text-gray-300' : rank === 3 ? 'text-amber-600' : 'text-gray-600'
                     }`} style={isMe ? { color: v.accent } : {}}>{rank}</span>
 
-                    <div className="relative flex-shrink-0">
+                    <div className="relative flex-shrink-0 cursor-pointer"
+                      onClick={() => navigate(`/users/${row.user_id}`)}>
                       {row.avatar_url
                         ? <img src={row.avatar_url} alt="" className={`rounded-full object-cover ${isMe ? 'w-11 h-11' : 'w-8 h-8'}`}
                             style={isMe ? { boxShadow: `0 0 0 2px ${v.accent}99, 0 0 16px ${v.glow}66` } : {}} />

@@ -440,7 +440,7 @@ export default function EnergyStorePage() {
 
         {/* Header */}
         <div className="mb-6">
-          <p className="text-indigo-400 text-[13px] font-bold tracking-wide uppercase">OddRivals</p>
+          <p className="text-indigo-400 text-[13px] font-bold tracking-wide uppercase">OddsRivals</p>
           <h1 className="text-white font-black text-2xl mt-0.5">Energy Store</h1>
           <p className="text-gray-500 text-sm mt-1">Add bonus energy to your wallet and unlock more picks</p>
         </div>

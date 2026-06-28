@@ -52,7 +52,7 @@ export default function LoginPage() {
   }
 
   return (
-    <AuthLayout heading="Welcome back" subheading="Sign in to your league dashboard">
+    <AuthLayout heading="Welcome back" subheading="Make your picks, outsmart your mates and climb the divisions.">
       <form onSubmit={handleSubmit} style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
 
         {/* Email */}
@@ -98,9 +98,9 @@ export default function LoginPage() {
         fontSize: 12, textAlign: 'center', marginTop: 20,
         color: 'rgba(255,255,255,0.22)', fontFamily: "'IBM Plex Mono', monospace",
       }}>
-        No account?{' '}
+        New here?{' '}
         <Link to="/register" style={{ color: '#7c6ef5', textDecoration: 'none' }}>
-          Register free
+          Start free
         </Link>
       </p>
     </AuthLayout>

@@ -44,7 +44,7 @@ export default function RegisterPage() {
     try {
       const { data } = await apiRegister(form)
       authLogin(data)
-      navigate('/')
+      navigate('/onboarding')
     } catch (err) {
       setError(err.response?.data?.error ?? err.response?.data?.message ?? 'Registration failed')
     } finally {
@@ -61,7 +61,7 @@ export default function RegisterPage() {
           <Icon><UserIcon/></Icon>
           <input
             type="text" value={form.name} onChange={set('name')}
-            required placeholder="Joan Sanmarti"
+            required placeholder="Your name"
             style={INPUT} onFocus={onFocus} onBlur={onBlur}
           />
         </Field>
