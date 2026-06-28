@@ -1,6 +1,8 @@
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useRef } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { getPublicGameweek } from '../../api/competitions'
+import OnboardingModal from '../onboarding/OnboardingModal'
+import LegalModal from '../legal/LegalModal'
 
 // ── SVG Icons ─────────────────────────────────────────────────────────────────
 
@@ -170,6 +172,10 @@ const KEYFRAMES = `
 @keyframes auth-fade-up {
   from { opacity: 0; transform: translateY(20px); }
   to   { opacity: 1; transform: translateY(0); }
+}
+@keyframes auth-fade-in {
+  from { opacity: 0; }
+  to   { opacity: 1; }
 }
 @keyframes auth-shimmer {
   0%   { background-position: 200% center; }
@@ -530,29 +536,34 @@ function GamePreviewModal({ onClose, onSignUp, onLogin, gwData }) {
 const STEPS = [
   {
     num: '01', accent: '#22c55e', icon: '⚽',
-    title: '15 picks, every Monday',
-    desc: 'A curated pool of 15 events goes live each Monday. Match outcomes, over/unders, clean sheets and more, drawn from EPL, La Liga, Champions League and major tournaments.',
+    title: '15 events. Your 6 picks.',
+    desc: 'A new Gameweek opens every Monday with 15 football predictions from the biggest matches of the week. Choose the 6 calls you trust most — match winners, goals, clean sheets and more.',
   },
   {
     num: '02', accent: '#a78bfa', icon: '🎯',
-    title: 'Pick your 6 before Sunday',
-    desc: 'Choose the 6 you feel most confident about. Each correct pick earns 1 point. Nail all 6 and you get a Perfect Week bonus of +4 extra points.',
+    title: 'Prove you know football.',
+    desc: 'Every correct pick earns 1 League Point. Nail all 6 and unlock a Perfect Week: 6 points for your picks, plus a +4 bonus. 6/6 = 10 LEAGUE POINTS. Your football knowledge is on the line.',
   },
   {
     num: '03', accent: '#f59e0b', icon: '📅',
-    title: 'Sprints of 4–5 matchweeks',
-    desc: 'Each sprint runs about a month. Points accumulate on the division leaderboard. Finish in the top tier and you get promoted at the end of the sprint.',
+    title: 'Monthly Sprints',
+    desc: 'Each Sprint runs for one calendar month and includes 4 or 5 Gameweeks, depending on the month. Your League Points build throughout the Sprint. Every Gameweek can push you toward promotion or put your division under pressure.',
   },
   {
     num: '04', accent: '#38bdf8', icon: '🏆',
-    title: 'Rise through the divisions',
-    desc: 'Top predictors get promoted, weakest get relegated. Climb from Academy all the way to Hall of Legends. Your accuracy badge follows you every step.',
+    title: 'Beat your mates. Climb the divisions.',
+    desc: "Start in Academy and prove yourself week after week. Hit your division's promotion target to move up. Fall short and you could be relegated. From Academy to Hall of Legends, your rank shows who really knows football.",
+  },
+  {
+    num: '05', accent: '#f43f5e', icon: '🎖️',
+    title: 'Build your football legacy.',
+    desc: 'Unlock badges for Perfect Weeks, promotions, accuracy and consistency. Your best Sprints, highest division and biggest moments stay on your profile — ready to show your mates.',
   },
 ]
 
 // ── Left Hero Panel ────────────────────────────────────────────────────────────
 
-function HeroPanel({ onTryIt, gwData }) {
+function HeroPanel({ onTryIt, gwData, onHowItWorks }) {
   return (
     <div className="auth-hero" style={{
       flex: '0 0 52%',
@@ -709,7 +720,7 @@ function HeroPanel({ onTryIt, gwData }) {
           </div>
           <div style={{ display: 'flex', alignItems: 'center', gap: 5, background: 'rgba(34,197,94,0.08)', border: '1px solid rgba(34,197,94,0.25)', borderRadius: 99, padding: '3px 9px' }}>
             <span style={{ width: 5, height: 5, borderRadius: '50%', background: '#22c55e', display: 'block', animation: 'auth-pulse-ring 1.4s ease-out infinite', boxShadow: '0 0 6px #22c55e' }}/>
-            <span style={{ color: '#22c55e', fontSize: 9, letterSpacing: '0.14em', fontFamily: "'IBM Plex Mono', monospace", fontWeight: 600 }}>SEASON LIVE</span>
+            <span style={{ color: '#22c55e', fontSize: 9, letterSpacing: '0.14em', fontFamily: "'IBM Plex Mono', monospace", fontWeight: 600 }}>{gwData?.sprint?.name ?? 'SEASON LIVE'}</span>
           </div>
         </div>
 
@@ -726,11 +737,11 @@ function HeroPanel({ onTryIt, gwData }) {
             </span>
           </h1>
           <p style={{ fontSize: 16, color: 'rgba(255,255,255,0.45)', fontFamily: "'IBM Plex Mono', monospace", margin: 0, lineHeight: 1.6 }}>
-            6 picks · ⚡25 energy · monthly sprints · one shot at glory
+            A football prediction game where every pick counts. Choose 6 events each week, beat your mates and climb from Academy to Legend.
           </p>
         </div>
 
-        {/* HOW TO PLAY — compact 2×2 grid */}
+        {/* HOW TO PLAY */}
         <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 10 }}>
           <span style={{ fontSize: 8, letterSpacing: '0.2em', color: 'rgba(255,255,255,0.18)', fontFamily: "'IBM Plex Mono', monospace", fontWeight: 700 }}>HOW TO PLAY</span>
           <div style={{ flex: 1, height: 1, background: 'rgba(255,255,255,0.05)' }}/>
@@ -763,62 +774,22 @@ function HeroPanel({ onTryIt, gwData }) {
           ))}
         </div>
 
-        {/* ── Current Sprint card + CTA ── */}
-        <div style={{
-          background: 'linear-gradient(135deg, rgba(124,110,245,0.08) 0%, rgba(34,197,94,0.06) 100%)',
-          border: '1px solid rgba(124,110,245,0.2)',
-          borderRadius: 14, padding: '12px 14px', marginBottom: 10,
-        }}>
-          {gwData && (
-            <>
-              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 8 }}>
-                <div>
-                  <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 3 }}>
-                    <span style={{ fontSize: 9, letterSpacing: '0.14em', color: '#a78bfa', fontFamily: "'IBM Plex Mono', monospace", fontWeight: 700 }}>
-                      {gwData.sprint.name}
-                    </span>
-                    <span style={{ background: 'rgba(34,197,94,0.12)', border: '1px solid rgba(34,197,94,0.25)', borderRadius: 99, padding: '1px 7px', fontSize: 8, color: '#22c55e', letterSpacing: '0.1em', fontFamily: "'IBM Plex Mono', monospace" }}>
-                      {gwData.sprint.status === 'live' ? 'LIVE' : 'ACTIVE'}
-                    </span>
-                  </div>
-                  <div style={{ fontFamily: "'Syne', sans-serif", fontWeight: 700, fontSize: 15, color: '#fff' }}>
-                    Gameweek {gwData.gameweek.sprint_week}
-                  </div>
-                </div>
-                {gwData.gameweek.days_left !== null && (
-                  <div style={{ textAlign: 'right' }}>
-                    <div style={{ fontFamily: "'Syne', sans-serif", fontWeight: 700, fontSize: 22, color: gwData.gameweek.days_left <= 1 ? '#f87171' : '#f59e0b', textShadow: `0 0 20px ${gwData.gameweek.days_left <= 1 ? 'rgba(248,113,113,0.5)' : 'rgba(245,158,11,0.5)'}` }}>
-                      {gwData.gameweek.days_left}
-                    </div>
-                    <div style={{ fontSize: 8, color: 'rgba(255,255,255,0.25)', letterSpacing: '0.12em', fontFamily: "'IBM Plex Mono', monospace" }}>
-                      DAYS LEFT
-                    </div>
-                  </div>
-                )}
-              </div>
+        {/* How it works button */}
+        <button onClick={onHowItWorks} style={{
+          alignSelf: 'flex-start',
+          background: 'rgba(255,255,255,0.04)', border: '1px solid rgba(255,255,255,0.1)',
+          borderRadius: 99, padding: '8px 18px', cursor: 'pointer',
+          fontSize: 11, letterSpacing: '0.1em', color: 'rgba(255,255,255,0.45)',
+          fontFamily: "'IBM Plex Mono', monospace", fontWeight: 600,
+          display: 'flex', alignItems: 'center', gap: 7,
+          transition: 'background 0.2s, color 0.2s, border-color 0.2s',
+        }}
+          onMouseEnter={e => { e.currentTarget.style.background = 'rgba(255,255,255,0.08)'; e.currentTarget.style.color = '#fff'; e.currentTarget.style.borderColor = 'rgba(255,255,255,0.2)' }}
+          onMouseLeave={e => { e.currentTarget.style.background = 'rgba(255,255,255,0.04)'; e.currentTarget.style.color = 'rgba(255,255,255,0.45)'; e.currentTarget.style.borderColor = 'rgba(255,255,255,0.1)' }}
+        >
+          <span style={{ fontSize: 13 }}>📖</span> HOW IT WORKS
+        </button>
 
-            </>
-          )}
-
-          {/* Button always visible */}
-          <button onClick={onTryIt} style={{
-            width: '100%', padding: '12px 0', borderRadius: 12, border: 'none',
-            cursor: 'pointer', fontFamily: "'Syne', sans-serif", fontWeight: 700,
-            fontSize: 13, letterSpacing: '0.06em', color: '#fff',
-            background: 'linear-gradient(90deg, #7c6ef5 0%, #a78bfa 50%, #7c6ef5 100%)',
-            backgroundSize: '200% auto', animation: 'auth-shimmer 3s linear infinite',
-            boxShadow: '0 4px 20px rgba(124,110,245,0.35)', transition: 'transform 0.15s, box-shadow 0.15s',
-          }}
-            onMouseEnter={e => { e.currentTarget.style.transform = 'translateY(-1px)'; e.currentTarget.style.boxShadow = '0 6px 28px rgba(124,110,245,0.5)' }}
-            onMouseLeave={e => { e.currentTarget.style.transform = 'translateY(0)'; e.currentTarget.style.boxShadow = '0 4px 20px rgba(124,110,245,0.35)' }}
-          >
-            ⚡ Try this gameweek →
-          </button>
-        </div>
-
-        <p style={{ textAlign: 'center', fontSize: 9, color: 'rgba(255,255,255,0.15)', fontFamily: "'IBM Plex Mono', monospace", letterSpacing: '0.08em' }}>
-          Demo mode — sign up to play for real
-        </p>
       </div>
 
       {/* Right edge fade */}
@@ -835,8 +806,13 @@ function HeroPanel({ onTryIt, gwData }) {
 
 export default function AuthLayout({ heading, subheading, children }) {
   const [showPreview, setShowPreview] = useState(false)
+  const [showGuide, setShowGuide]     = useState(false)
+  const [legalModal, setLegalModal]   = useState(null) // 'privacy' | 'terms' | 'cookies'
   const [gwData, setGwData]           = useState(null)
   const navigate = useNavigate()
+  const privacyRef  = useRef(null)
+  const termsRef    = useRef(null)
+  const cookiesRef  = useRef(null)
 
   useEffect(() => {
     function fetchGw() {
@@ -860,14 +836,15 @@ export default function AuthLayout({ heading, subheading, children }) {
     <>
       <style>{KEYFRAMES}</style>
 
-      <div style={{ minHeight: '100dvh', display: 'flex', background: '#060a10' }}>
-        <HeroPanel onTryIt={() => setShowPreview(true)} gwData={gwData}/>
+      <div style={{ height: '100dvh', display: 'flex', flexDirection: 'column', background: '#060a10', overflow: 'hidden' }}>
+      <div style={{ flex: 1, display: 'flex', overflow: 'hidden' }}>
+        <HeroPanel onTryIt={() => setShowPreview(true)} gwData={gwData} onHowItWorks={() => setShowGuide(true)}/>
 
         {/* Right panel */}
         <div style={{
           flex: 1, display: 'flex', flexDirection: 'column',
-          alignItems: 'center', justifyContent: 'center',
-          padding: '40px 24px', position: 'relative', overflowY: 'auto',
+          alignItems: 'center', justifyContent: 'flex-start',
+          padding: '60px 24px 40px', position: 'relative', overflowY: 'auto',
         }}>
           <div style={{
             position: 'absolute', top: -100, right: -100, width: 340, height: 340,
@@ -882,7 +859,7 @@ export default function AuthLayout({ heading, subheading, children }) {
             pointerEvents: 'none',
           }}/>
 
-          <div style={{ width: '100%', maxWidth: 390, animation: 'auth-fade-up 0.6s ease both' }}>
+          <div style={{ width: '100%', maxWidth: 390, animation: 'auth-fade-in 0.5s ease both' }}>
             {/* Mobile-only logo */}
             <div className="auth-mobile-logo" style={{
               textAlign: 'center', marginBottom: 28,
@@ -900,12 +877,12 @@ export default function AuthLayout({ heading, subheading, children }) {
                   letterSpacing: '0.04em',
                   background: 'linear-gradient(90deg, #22c55e, #a78bfa, #fff)',
                   WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent',
-                }}>6TOGLORY</span>
+                }}>ODDRIVALS</span>
               </div>
               <p style={{
                 fontSize: 10, color: 'rgba(255,255,255,0.22)',
                 letterSpacing: '0.1em', fontFamily: "'IBM Plex Mono', monospace",
-              }}>PICK · EARN · CLIMB</p>
+              }}>PREDICT · PROVE IT · CLIMB</p>
             </div>
 
             {/* Glass card */}
@@ -929,14 +906,61 @@ export default function AuthLayout({ heading, subheading, children }) {
               {children}
             </div>
 
-            <p style={{
-              textAlign: 'center', marginTop: 18, fontSize: 10,
-              color: 'rgba(255,255,255,0.14)', letterSpacing: '0.08em',
-              fontFamily: "'IBM Plex Mono', monospace",
-            }}>FREE TO PLAY · NO CREDIT CARD REQUIRED</p>
+            {/* ── Make your picks CTA — always visible below the auth card ── */}
+            <div style={{ marginTop: 16 }}>
+              <div style={{
+                background: 'linear-gradient(135deg, rgba(124,110,245,0.08) 0%, rgba(34,197,94,0.06) 100%)',
+                border: '1px solid rgba(124,110,245,0.2)',
+                borderRadius: 16, padding: '14px 16px',
+              }}>
+                <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 10, minHeight: 20, opacity: gwData ? 1 : 0, transition: 'opacity 0.3s' }}>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: 7 }}>
+                    <span style={{ fontSize: 9, letterSpacing: '0.14em', color: '#a78bfa', fontFamily: "'IBM Plex Mono', monospace", fontWeight: 700 }}>
+                      {gwData?.sprint?.name}
+                    </span>
+                    <span style={{ background: 'rgba(34,197,94,0.12)', border: '1px solid rgba(34,197,94,0.25)', borderRadius: 99, padding: '1px 7px', fontSize: 8, color: '#22c55e', letterSpacing: '0.1em', fontFamily: "'IBM Plex Mono', monospace" }}>
+                      LIVE
+                    </span>
+                  </div>
+                  <span style={{ fontSize: 10, color: 'rgba(255,255,255,0.3)', fontFamily: "'IBM Plex Mono', monospace" }}>
+                    GW{gwData?.gameweek?.sprint_week} · 15 events
+                  </span>
+                </div>
+                <button
+                  onClick={() => setShowPreview(true)}
+                  style={{
+                    width: '100%', padding: '13px 0', borderRadius: 12, border: 'none',
+                    cursor: 'pointer', fontFamily: "'Syne', sans-serif", fontWeight: 700,
+                    fontSize: 14, letterSpacing: '0.08em', color: '#fff',
+                    background: 'linear-gradient(90deg, #16a34a 0%, #22c55e 50%, #16a34a 100%)',
+                    backgroundSize: '200% auto', animation: 'auth-shimmer 3s linear infinite',
+                    boxShadow: '0 4px 20px rgba(34,197,94,0.35)',
+                  }}
+                >
+                  MAKE YOUR PICKS →
+                </button>
+              </div>
+              <p style={{
+                textAlign: 'center', marginTop: 10, fontSize: 10,
+                color: 'rgba(255,255,255,0.45)', letterSpacing: '0.08em',
+                fontFamily: "'IBM Plex Mono', monospace",
+              }}>FREE TO PLAY · NO CARD REQUIRED TO START</p>
+            </div>
 
-            {/* ── Mobile-only: How to play + Try gameweek ── */}
+            {/* ── Mobile-only: How to play ── */}
             <div className="auth-mobile-steps" style={{ marginTop: 40 }}>
+
+              {/* How it works button — mobile */}
+              <button onClick={() => setShowGuide(true)} style={{
+                width: '100%', marginBottom: 20,
+                background: 'rgba(255,255,255,0.04)', border: '1px solid rgba(255,255,255,0.1)',
+                borderRadius: 12, padding: '12px 0', cursor: 'pointer',
+                fontSize: 12, letterSpacing: '0.1em', color: 'rgba(255,255,255,0.5)',
+                fontFamily: "'IBM Plex Mono', monospace", fontWeight: 600,
+                display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8,
+              }}>
+                <span style={{ fontSize: 14 }}>📖</span> HOW IT WORKS
+              </button>
 
               {/* Divider */}
               <div style={{ display: 'flex', alignItems: 'center', gap: 12, marginBottom: 24 }}>
@@ -946,7 +970,7 @@ export default function AuthLayout({ heading, subheading, children }) {
               </div>
 
               {/* Steps */}
-              <div style={{ display: 'flex', flexDirection: 'column', gap: 10, marginBottom: 28 }}>
+              <div style={{ display: 'flex', flexDirection: 'column', gap: 10, marginBottom: 40 }}>
                 {STEPS.map(({ num, accent, icon, title, desc }) => (
                   <div key={num} style={{
                     display: 'flex', gap: 14, alignItems: 'flex-start',
@@ -973,47 +997,44 @@ export default function AuthLayout({ heading, subheading, children }) {
                 ))}
               </div>
 
-              {/* Try this gameweek button */}
-              <div style={{
-                background: 'linear-gradient(135deg, rgba(124,110,245,0.08) 0%, rgba(34,197,94,0.06) 100%)',
-                border: '1px solid rgba(124,110,245,0.2)',
-                borderRadius: 16, padding: '16px 18px', marginBottom: 40,
-              }}>
-                {gwData && (
-                  <div style={{ marginBottom: 14 }}>
-                    <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 6 }}>
-                      <span style={{ fontSize: 9, letterSpacing: '0.14em', color: '#a78bfa', fontFamily: "'IBM Plex Mono', monospace", fontWeight: 700 }}>
-                        {gwData.sprint?.name}
-                      </span>
-                      <span style={{ background: 'rgba(34,197,94,0.12)', border: '1px solid rgba(34,197,94,0.25)', borderRadius: 99, padding: '1px 7px', fontSize: 8, color: '#22c55e', letterSpacing: '0.1em', fontFamily: "'IBM Plex Mono', monospace" }}>
-                        LIVE
-                      </span>
-                    </div>
-                    <div style={{ fontFamily: "'Syne', sans-serif", fontWeight: 700, fontSize: 15, color: '#fff' }}>
-                      Gameweek {gwData.gameweek?.sprint_week}
-                    </div>
-                  </div>
-                )}
-                <button
-                  onClick={() => setShowPreview(true)}
-                  style={{
-                    width: '100%', padding: '13px 0', borderRadius: 12, border: 'none',
-                    cursor: 'pointer', fontFamily: "'Syne', sans-serif", fontWeight: 700,
-                    fontSize: 14, letterSpacing: '0.06em', color: '#fff',
-                    background: 'linear-gradient(90deg, #7c6ef5 0%, #a78bfa 50%, #7c6ef5 100%)',
-                    backgroundSize: '200% auto', animation: 'auth-shimmer 3s linear infinite',
-                    boxShadow: '0 4px 20px rgba(124,110,245,0.35)',
-                  }}
-                >
-                  ⚡ Try this gameweek →
-                </button>
-              </div>
-
             </div>
             {/* end mobile steps */}
 
           </div>
         </div>
+      </div>
+
+      {/* ── Footer ── */}
+      <div style={{
+        borderTop: '1px solid rgba(255,255,255,0.05)',
+        background: 'rgba(0,0,0,0.3)',
+        padding: '14px 24px',
+        display: 'flex', alignItems: 'center', justifyContent: 'center',
+        gap: 24, flexWrap: 'wrap',
+      }}>
+        <span style={{ fontSize: 9, color: 'rgba(255,255,255,0.18)', fontFamily: "'IBM Plex Mono', monospace", letterSpacing: '0.1em' }}>
+          © {new Date().getFullYear()} ODD RIVALS
+        </span>
+        {[
+          { label: 'PRIVACY POLICY',     type: 'privacy',  ref: privacyRef },
+          { label: 'TERMS OF USE',       type: 'terms',    ref: termsRef },
+          { label: 'COOKIE SETTINGS',    type: 'cookies',  ref: cookiesRef },
+        ].map(({ label, type, ref }) => (
+          <button
+            key={type}
+            ref={ref}
+            onClick={() => setLegalModal(type)}
+            style={{
+              background: 'none', border: 'none', padding: 0, cursor: 'pointer',
+              fontSize: 9, color: 'rgba(255,255,255,0.3)',
+              fontFamily: "'IBM Plex Mono', monospace", letterSpacing: '0.08em',
+              transition: 'color 0.15s',
+            }}
+            onMouseEnter={e => e.currentTarget.style.color = 'rgba(255,255,255,0.65)'}
+            onMouseLeave={e => e.currentTarget.style.color = 'rgba(255,255,255,0.3)'}
+          >{label}</button>
+        ))}
+      </div>
       </div>
 
       {showPreview && (
@@ -1022,6 +1043,26 @@ export default function AuthLayout({ heading, subheading, children }) {
           onClose={() => setShowPreview(false)}
           onSignUp={() => { setShowPreview(false); navigate('/register') }}
           onLogin={() => { setShowPreview(false); navigate('/login') }}
+        />
+      )}
+
+      {showGuide && (
+        <OnboardingModal
+          onClose={() => setShowGuide(false)}
+          onFinish={() => { setShowGuide(false); navigate('/register') }}
+          finalLabel="GET STARTED →"
+          finalGreen
+        />
+      )}
+
+      {legalModal && (
+        <LegalModal
+          type={legalModal}
+          onClose={() => setLegalModal(null)}
+          triggerRef={
+            legalModal === 'privacy' ? privacyRef :
+            legalModal === 'terms'   ? termsRef   : cookiesRef
+          }
         />
       )}
     </>

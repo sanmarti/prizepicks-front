@@ -555,9 +555,7 @@ function WeekRoleBadge({ role, weekHasPicks, weekNum }) {
 function WeekSelector({ selectedWeek, gwCount, byWeek, currentWeek, weekHasPicks, onSelect }) {
   const prevW  = selectedWeek - 1
   const nextW  = selectedWeek + 1
-  const prevGw = byWeek[prevW]
-  const nextGw = byWeek[nextW]
-  const hasPrev = selectedWeek > 1 && prevGw && prevGw.status !== 'DRAFT'
+  const hasPrev = selectedWeek > 1
   const hasNext = selectedWeek < gwCount
 
   const contextLabel = selectedWeek === currentWeek ? 'THIS WEEK' :
@@ -599,7 +597,7 @@ function WeekSelector({ selectedWeek, gwCount, byWeek, currentWeek, weekHasPicks
             {Array.from({ length: gwCount }, (_, i) => i + 1).map(w => (
               <button
                 key={w}
-                onClick={() => { const g = byWeek[w]; if (!g || g.status === 'DRAFT') return; onSelect(w) }}
+                onClick={() => onSelect(w)}
                 className="p-0.5"
               >
                 <div className={`rounded-full transition-all duration-200 h-1.5 ${
@@ -1033,7 +1031,7 @@ function SprintLeaderboard({ myUserId, data }) {
         </div>
       )}
 
-      <a href="/scores"
+      <a href="/divisions"
         className="flex items-center justify-center gap-2 px-4 py-3 border-t border-white/5 text-indigo-400 hover:text-indigo-300 hover:bg-white/3 transition-colors text-xs font-semibold">
         View full ranking
         <svg width="14" height="14" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
@@ -1245,7 +1243,7 @@ export default function MatchweekPage() {
     if (!status || selectedWeek === null) return
     const gw = (status.sprint?.gameweeks || []).find(g => g.sprint_week === selectedWeek)
     if (gw?.id && gw.status !== 'DRAFT') loadGw(gw.id)
-    else { setGwData(null) }
+    else { setGwData(null); setGwLoading(false) }
   }, [selectedWeek]) // eslint-disable-line react-hooks/exhaustive-deps
 
   const sprint   = status?.sprint
@@ -1425,7 +1423,7 @@ export default function MatchweekPage() {
         {/* Sprint header */}
         <div className="flex items-start justify-between">
           <div>
-            <p className="text-indigo-400 text-[13px] font-bold tracking-wide">{sprint?.name || '6 to Glory'}</p>
+            <p className="text-indigo-400 text-[13px] font-bold tracking-wide">{sprint?.name || 'OddRivals'}</p>
             <h1 className="text-white text-xl font-bold mt-0.5">{div?.icon} {div?.division_name || 'Academy'}</h1>
           </div>
           <div className="flex flex-col items-end gap-2">
@@ -1477,6 +1475,33 @@ export default function MatchweekPage() {
                 <p className="text-gray-600 text-[11px]">Locks {fmtFull(gw.lock_time)}</p>
               )}
             </div>
+
+            {/* Did not participate card (finished/locked week, no entry) */}
+            {!gwLoading && !effectiveEntry && gw && (gw.status === 'FINISHED' || gw.status === 'LOCKED') && (
+              <div className="rounded-2xl px-4 py-3 bg-white/4 border border-white/8">
+                <div className="flex items-center justify-between">
+                  <div>
+                    <p className="text-gray-500 font-bold text-sm">Did not participate</p>
+                    <p className="text-gray-700 text-[11px]">No picks submitted</p>
+                  </div>
+                  <div className="text-right">
+                    <p className="text-gray-600 font-black text-xl tabular-nums">+0 pts</p>
+                    <p className="text-gray-700 text-[10px] -mt-0.5">this week</p>
+                  </div>
+                </div>
+                <div className="flex items-center justify-between mt-2 pt-2 border-t border-white/6">
+                  <p className="text-gray-500 text-[11px]">Sprint total</p>
+                  <div className="flex items-center gap-2">
+                    <p className="text-gray-300 font-bold text-sm tabular-nums">{lp} pts</p>
+                    {myRank && (
+                      <span className="text-[11px] bg-indigo-900/40 text-indigo-300 border border-indigo-500/30 px-2 py-0.5 rounded-full font-bold">
+                        #{myRank}{divSize > 0 ? ` / ${divSize}` : ''}
+                      </span>
+                    )}
+                  </div>
+                </div>
+              </div>
+            )}
 
             {/* Entry results card (settled weeks) */}
             {!gwLoading && effectiveEntry?.status === 'completed' && (
@@ -1601,15 +1626,15 @@ export default function MatchweekPage() {
               </div>
             )}
 
-            {/* Week not available yet (DRAFT or no data) */}
+            {/* Week not available (DRAFT or no gameweek defined) */}
             {!gwLoading && weekRole === 'unavailable' && (
               <div className="flex flex-col items-center justify-center py-16 gap-5">
                 <div className="w-16 h-16 rounded-full bg-white/4 border border-white/8 flex items-center justify-center">
                   <span className="text-3xl">📅</span>
                 </div>
                 <div className="text-center space-y-1.5 px-4">
-                  <p className="text-white font-bold text-base">Week {selectedWeek} picks not available yet</p>
-                  <p className="text-gray-500 text-sm">The schedule for this week hasn't been published. Check back soon.</p>
+                  <p className="text-white font-bold text-base">Matchweek {selectedWeek} unavailable</p>
+                  <p className="text-gray-500 text-sm">No picks have been defined for this week.</p>
                 </div>
               </div>
             )}

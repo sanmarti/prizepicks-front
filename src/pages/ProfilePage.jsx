@@ -131,15 +131,21 @@ const ALL_BADGES_STATIC = [
 ]
 
 const BADGE_ACCENTS = {
-  FIRST_GAMEWEEK:    { glow: '#34d399', border: 'rgba(52,211,153,0.35)',  text: 'text-emerald-400' },
-  PERFECT_WEEK:      { glow: '#facc15', border: 'rgba(250,204,21,0.4)',   text: 'text-yellow-400'  },
-  CONSISTENT_PLAYER: { glow: '#fb923c', border: 'rgba(251,146,60,0.35)',  text: 'text-orange-400'  },
-  PERFECT_MONTH:     { glow: '#fbbf24', border: 'rgba(251,191,36,0.35)',  text: 'text-amber-400'   },
-  FIRST_PROMOTION:   { glow: '#818cf8', border: 'rgba(129,140,248,0.35)', text: 'text-indigo-400'  },
-  COMEBACK:          { glow: '#fb7185', border: 'rgba(251,113,133,0.35)', text: 'text-rose-400'    },
-  THREE_PROMOTIONS:  { glow: '#a78bfa', border: 'rgba(167,139,250,0.35)', text: 'text-violet-400'  },
-  REACHED_DIV1:      { glow: '#38bdf8', border: 'rgba(56,189,248,0.35)',  text: 'text-sky-400'     },
-  REACHED_CHAMPIONS: { glow: '#fde047', border: 'rgba(253,224,71,0.45)', text: 'text-yellow-300'  },
+  FIRST_GAMEWEEK:      { glow: '#34d399', border: 'rgba(52,211,153,0.35)',  text: 'text-emerald-400' },
+  PERFECT_WEEK:        { glow: '#facc15', border: 'rgba(250,204,21,0.4)',   text: 'text-yellow-400'  },
+  CONSISTENT_PLAYER:   { glow: '#fb923c', border: 'rgba(251,146,60,0.35)',  text: 'text-orange-400'  },
+  PERFECT_MONTH:       { glow: '#fbbf24', border: 'rgba(251,191,36,0.35)',  text: 'text-amber-400'   },
+  FIRST_PROMOTION:     { glow: '#818cf8', border: 'rgba(129,140,248,0.35)', text: 'text-indigo-400'  },
+  COMEBACK:            { glow: '#fb7185', border: 'rgba(251,113,133,0.35)', text: 'text-rose-400'    },
+  THREE_PROMOTIONS:    { glow: '#a78bfa', border: 'rgba(167,139,250,0.35)', text: 'text-violet-400'  },
+  REACHED_DIV1:        { glow: '#38bdf8', border: 'rgba(56,189,248,0.35)',  text: 'text-sky-400'     },
+  REACHED_CHAMPIONS:   { glow: '#fde047', border: 'rgba(253,224,71,0.45)', text: 'text-yellow-300'  },
+  DIV_CHAMP_ACADEMY:   { glow: '#6ee7b7', border: 'rgba(110,231,183,0.35)', text: 'text-emerald-300' },
+  DIV_CHAMP_SUNDAY:    { glow: '#fca5a5', border: 'rgba(252,165,165,0.35)', text: 'text-red-300'     },
+  DIV_CHAMP_DIV3:      { glow: '#cd7f32', border: 'rgba(205,127,50,0.45)',  text: 'text-amber-600'   },
+  DIV_CHAMP_DIV2:      { glow: '#94a3b8', border: 'rgba(148,163,184,0.45)', text: 'text-slate-300'   },
+  DIV_CHAMP_DIV1:      { glow: '#fbbf24', border: 'rgba(251,191,36,0.45)',  text: 'text-yellow-400'  },
+  DIV_CHAMP_CHAMPIONS: { glow: '#fde047', border: 'rgba(253,224,71,0.55)',  text: 'text-yellow-200'  },
 }
 
 function AwardBadge({ cfg, count }) {
@@ -534,18 +540,30 @@ export default function ProfilePage() {
   const stats     = glory?.lifetime_stats
   const sprint    = status?.sprint
   const prog      = status?.sprint_progress
+  const divRank   = status?.division_rank
+  const divTotal  = status?.division_total
   const sprintsInDiv = glory?.sprint_history?.filter(s => s.division_name === div?.division_name).length ?? 0
 
   const badgeEarnedMap   = Object.fromEntries((glory?.badges ?? []).map(b => [b.code, b]))
-  const badgeList        = glory?.badges?.length
+  const DIV_BADGE_ORDER  = ['DIV_CHAMP_ACADEMY','DIV_CHAMP_SUNDAY','DIV_CHAMP_DIV3','DIV_CHAMP_DIV2','DIV_CHAMP_DIV1','DIV_CHAMP_CHAMPIONS']
+  const rawBadgeList     = glory?.badges?.length
     ? glory.badges
     : ALL_BADGES_STATIC.map(b => ({ ...b, earned_count: 0, last_earned_at: null }))
+  const badgeList = [...rawBadgeList].sort((a, b) => {
+    const ai = DIV_BADGE_ORDER.indexOf(a.code), bi = DIV_BADGE_ORDER.indexOf(b.code)
+    const aDivision = ai !== -1, bDivision = bi !== -1
+    if (aDivision && bDivision) return ai - bi       // both division: fixed tier order
+    if (aDivision) return 1                          // division goes after non-division
+    if (bDivision) return -1
+    const ae = (a.earned_count ?? 0) > 0 ? 0 : 1    // non-division: earned first
+    const be = (b.earned_count ?? 0) > 0 ? 0 : 1
+    return ae - be
+  })
   const badgeEarnedCount = badgeList.filter(b => (badgeEarnedMap[b.code]?.earned_count ?? b.earned_count ?? 0) > 0).length
   const tier      = getAccuracyTier(stats?.accuracy_pct)
 
   const TABS = [
-    { id: 'stats',   label: 'Stats' },
-    { id: 'badges',  label: 'Badges' },
+    { id: 'stats',   label: 'My Stats' },
     { id: 'wallet',  label: 'Wallet' },
     { id: 'guide',   label: 'Guide' },
     { id: 'account', label: 'Account' },
@@ -616,26 +634,6 @@ export default function ProfilePage() {
             )}
           </div>
           <InlineMsg status={avatarMsg} />
-
-          {/* Current sprint mini */}
-          {sprint && prog && (
-            <div className="relative bg-white/4 rounded-xl px-3 py-2 flex items-center justify-between"
-              style={tier ? { background: `${tier.accentColor}10`, border: `1px solid ${tier.accentColor}20` } : {}}>
-              <p className="text-gray-400 text-xs">{sprint.name}</p>
-              <div className="flex items-center gap-3 text-xs">
-                <span className="text-indigo-400 font-bold">{prog.total_league_points} LP</span>
-                <span className="text-gray-600">{prog.total_correct_picks} correct</span>
-                {prog.perfect_weeks > 0 && <span className="text-yellow-400">{prog.perfect_weeks}⭐</span>}
-              </div>
-            </div>
-          )}
-        </div>
-
-        {/* Award badges strip */}
-        <div className="flex gap-2 overflow-x-auto scrollbar-none -mx-4 px-4">
-          <AwardBadge cfg={AWARD_BADGES[0]} count={stats?.total_perfect_weeks} />
-          <AwardBadge cfg={AWARD_BADGES[1]} count={stats?.sprints_played} />
-          <AwardBadge cfg={AWARD_BADGES[2]} count={stats?.matchweeks_played} />
         </div>
 
         {/* Tab nav */}
@@ -725,7 +723,7 @@ export default function ProfilePage() {
                 {sprint && prog && (
                   <div className="relative border-t border-indigo-500/15 mx-4 mb-4 pt-3">
                     <p className="text-indigo-300/40 text-[10px] font-semibold uppercase tracking-widest mb-2">{sprint.name}</p>
-                    <div className="grid grid-cols-3 gap-2 text-center">
+                    <div className="grid grid-cols-4 gap-2 text-center">
                       <div className="bg-indigo-500/8 rounded-xl py-2.5">
                         <p className="text-indigo-400 font-black text-xl leading-none">{prog.total_league_points}</p>
                         <p className="text-white/25 text-[10px] uppercase tracking-wider mt-1">LP</p>
@@ -737,6 +735,14 @@ export default function ProfilePage() {
                       <div className="bg-indigo-500/8 rounded-xl py-2.5">
                         <p className="text-yellow-400 font-black text-xl leading-none">{prog.perfect_weeks ?? 0}</p>
                         <p className="text-white/25 text-[10px] uppercase tracking-wider mt-1">Perfect</p>
+                      </div>
+                      <div className="bg-indigo-500/8 rounded-xl py-2.5">
+                        <p className="text-white font-black text-xl leading-none">
+                          {divRank != null ? `#${divRank}` : '—'}
+                        </p>
+                        <p className="text-white/25 text-[10px] uppercase tracking-wider mt-1">
+                          {divTotal != null ? `of ${divTotal}` : 'Rank'}
+                        </p>
                       </div>
                     </div>
                   </div>
@@ -808,93 +814,38 @@ export default function ProfilePage() {
                 </div>
               </div>
             )}
-          </div>
-        )}
 
-        {/* Badges tab */}
-        {activeTab === 'badges' && (
-          <div className="space-y-3">
-
-            {/* 1. Accuracy tier — always first */}
-            <div
-              className="relative rounded-2xl overflow-hidden"
-              style={tier
-                ? { background: tier.badgeBg, border: `1px solid ${tier.badgeBorder}`, boxShadow: tier.badgeShadow }
-                : { background: 'rgba(255,255,255,0.02)', border: '1px solid rgba(255,255,255,0.06)', opacity: 0.45 }
-              }
-            >
-              <div className="absolute -top-6 -right-6 w-32 h-32 rounded-full blur-3xl pointer-events-none"
-                style={{ background: tier ? tier.accentColor : '#6366f1', opacity: tier ? 0.2 : 0.06 }} />
-              <div className="relative flex items-center gap-4 p-4">
-                <span className="text-5xl flex-shrink-0">{tier ? tier.icon : '🏅'}</span>
-                <div className="min-w-0">
-                  <p className={`font-black text-lg ${tier ? tier.badgeText : 'text-white/25'}`}>{tier ? tier.label : 'Prediction Tier'}</p>
-                  <p className="text-white/50 text-xs mt-0.5">
-                    {tier ? `${stats?.accuracy_pct}% prediction accuracy` : 'Reach 70% accuracy with 10+ picks to unlock'}
-                  </p>
-                  {tier && <p className="text-white/25 text-[10px] mt-1">{tier.desc}</p>}
-                </div>
-                <div className="flex-shrink-0 text-[10px] font-semibold uppercase tracking-widest" style={{ color: tier ? 'rgba(255,255,255,0.2)' : 'rgba(255,255,255,0.12)' }}>
-                  {tier ? 'earned' : 'locked'}
-                </div>
-              </div>
-            </div>
-
-            {/* 2. Trophies — always shown, dim if 0 */}
-            <Section title="Trophies">
-              <div className="grid grid-cols-3 gap-2">
-                {[
-                  { icon: '⭐', label: 'Perfect\nWeeks',     count: stats?.total_perfect_weeks, color: '#facc15', border: 'rgba(250,204,21,0.35)' },
-                  { icon: '🏆', label: 'Sprints\nPlayed',    count: stats?.sprints_played,       color: '#7dd3fc', border: 'rgba(56,189,248,0.35)'  },
-                  { icon: '📅', label: 'Matchweeks\nPlayed', count: stats?.matchweeks_played,    color: '#c4b5fd', border: 'rgba(167,139,250,0.35)' },
-                ].map((t, i) => {
-                  const on = (t.count ?? 0) > 0
-                  return (
-                    <div key={i} className="relative rounded-2xl overflow-hidden flex flex-col items-center text-center py-3 px-2"
-                      style={{
-                        background: on ? 'rgba(255,255,255,0.05)' : 'rgba(255,255,255,0.015)',
-                        border: `1px solid ${on ? t.border : 'rgba(255,255,255,0.05)'}`,
-                        boxShadow: on ? `0 0 18px -5px ${t.color}50` : 'none',
-                        opacity: on ? 1 : 0.4,
-                      }}>
-                      {on && <div className="absolute -top-3 -right-3 w-14 h-14 rounded-full blur-xl pointer-events-none" style={{ background: t.color, opacity: 0.22 }} />}
-                      <span className="relative text-2xl mb-1 leading-none">{t.icon}</span>
-                      <p className="relative font-black text-2xl leading-none tabular-nums" style={{ color: on ? t.color : 'rgba(255,255,255,0.25)' }}>{t.count ?? 0}</p>
-                      <p className="relative mt-1 whitespace-pre-line text-center" style={{ fontSize: 9, color: 'rgba(255,255,255,0.3)', textTransform: 'uppercase', letterSpacing: '0.05em', lineHeight: 1.35 }}>{t.label}</p>
-                    </div>
-                  )
-                })}
-              </div>
-            </Section>
-
-            {/* 3. Achievement badges — always shown, earned colorful / unearned dim */}
+            {/* Achievement badges — always shown, earned colorful / unearned dim */}
             <Section title={`Achievements (${badgeEarnedCount}/${badgeList.length})`}>
-              <div className="grid grid-cols-2 gap-2">
+              <div className="space-y-2">
                 {badgeList.map((b, i) => {
                   const live   = badgeEarnedMap[b.code] ?? b
                   const count  = live.earned_count ?? 0
                   const earned = count > 0
                   const ac     = BADGE_ACCENTS[b.code] ?? { glow: '#6366f1', border: 'rgba(99,102,241,0.35)', text: 'text-indigo-400' }
                   return (
-                    <div key={i} className="relative rounded-2xl overflow-hidden p-3"
+                    <div key={i} className="relative rounded-2xl overflow-hidden"
                       style={{
-                        background: earned ? 'rgba(255,255,255,0.055)' : 'rgba(255,255,255,0.025)',
-                        border: `1px solid ${earned ? ac.border : 'rgba(255,255,255,0.08)'}`,
-                        boxShadow: earned ? `0 0 18px -5px ${ac.glow}55` : 'none',
-                        opacity: earned ? 1 : 0.55,
+                        background: earned ? 'rgba(255,255,255,0.055)' : 'rgba(255,255,255,0.02)',
+                        border: `1px solid ${earned ? ac.border : 'rgba(255,255,255,0.06)'}`,
+                        boxShadow: earned ? `0 0 26px -4px ${ac.glow}55` : 'none',
+                        opacity: earned ? 1 : 0.45,
                       }}>
-                      {earned && <div className="absolute -top-4 -right-4 w-20 h-20 rounded-full blur-2xl pointer-events-none" style={{ background: ac.glow, opacity: 0.28 }} />}
-                      <div className="relative flex items-start gap-2.5">
-                        <span className="text-2xl flex-shrink-0 leading-none mt-0.5">{b.icon}</span>
+                      {earned && <div className="absolute -top-6 -right-6 w-32 h-32 rounded-full blur-3xl pointer-events-none" style={{ background: ac.glow, opacity: 0.2 }} />}
+                      <div className="relative flex items-center gap-4 p-4">
+                        <span className="text-5xl flex-shrink-0 leading-none">{b.icon}</span>
                         <div className="min-w-0 flex-1">
-                          <div className="flex items-center justify-between gap-1">
-                            <p className={`text-xs font-bold leading-tight truncate ${earned ? 'text-white' : 'text-white/40'}`}>{b.name}</p>
-                            {count > 1 && <span className={`text-[10px] font-black flex-shrink-0 ${ac.text}`}>×{count}</span>}
-                          </div>
-                          <p className={`text-[10px] leading-snug mt-0.5 ${earned ? 'text-white/40' : 'text-white/25'}`}>{b.description}</p>
+                          <p className={`font-black text-lg leading-tight ${earned ? 'text-white' : 'text-white/25'}`}>{b.name}</p>
+                          <p className="text-white/50 text-xs mt-0.5">{b.description}</p>
                           {earned && live.last_earned_at && (
-                            <p className={`text-[9px] mt-1 ${ac.text} opacity-60`}>{new Date(live.last_earned_at).toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' })}</p>
+                            <p className={`text-[10px] mt-1 ${ac.text} opacity-70`}>{new Date(live.last_earned_at).toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' })}</p>
                           )}
+                        </div>
+                        <div className="flex-shrink-0 flex flex-col items-end gap-1">
+                          <span className="text-[10px] font-semibold uppercase tracking-widest" style={{ color: earned ? 'rgba(255,255,255,0.2)' : 'rgba(255,255,255,0.12)' }}>
+                            {earned ? 'earned' : 'locked'}
+                          </span>
+                          {count > 1 && <span className={`text-xs font-black ${ac.text}`}>×{count}</span>}
                         </div>
                       </div>
                     </div>
@@ -936,29 +887,24 @@ export default function ProfilePage() {
             {/* 5. Competition badges */}
             {!!glory?.competition_stats?.length && (
               <Section title={`Competition Badges (${glory.competition_stats.length})`}>
-                <div className="grid grid-cols-2 gap-2">
+                <div className="space-y-2">
                   {glory.competition_stats.map((comp, i) => {
                     const LEAGUE_FLAGS = { 1:'🌍', 2:'⭐', 3:'🏅', 848:'🥉', 5:'🌐', 39:'🏴󠁧󠁢󠁥󠁮󠁧󠁿', 140:'🇪🇸', 78:'🇩🇪', 135:'🇮🇹', 61:'🇫🇷', 88:'🇳🇱', 94:'🇵🇹', 144:'🇧🇪', 179:'🏴󠁧󠁢󠁳󠁣󠁴󠁿', 45:'🏴󠁧󠁢󠁥󠁮󠁧󠁿', 143:'🇪🇸', 137:'🇮🇹', 15:'🌐', 253:'🇺🇸' }
                     const flag = LEAGUE_FLAGS[comp.api_league_id] ?? '🏆'
                     const accuracy = comp.total > 0 ? Math.round((comp.correct / comp.total) * 100) : 0
                     return (
-                      <div key={i} className="relative rounded-2xl overflow-hidden p-3"
-                        style={{ background: 'rgba(255,255,255,0.05)', border: '1px solid rgba(52,211,153,0.25)', boxShadow: '0 0 18px -5px rgba(52,211,153,0.3)' }}>
-                        <div className="absolute -top-4 -right-4 w-20 h-20 rounded-full blur-2xl pointer-events-none bg-emerald-400/15" />
-                        <div className="relative">
-                          <div className="flex items-center gap-2 mb-2">
-                            <span className="text-2xl leading-none">{flag}</span>
-                            <p className="text-white text-[11px] font-bold leading-tight truncate">{comp.competition_name}</p>
+                      <div key={i} className="relative rounded-2xl overflow-hidden"
+                        style={{ background: 'rgba(255,255,255,0.055)', border: '1px solid rgba(52,211,153,0.25)', boxShadow: '0 0 26px -4px rgba(52,211,153,0.3)' }}>
+                        <div className="absolute -top-6 -right-6 w-32 h-32 rounded-full blur-3xl pointer-events-none bg-emerald-400/15" />
+                        <div className="relative flex items-center gap-4 p-4">
+                          <span className="text-5xl flex-shrink-0 leading-none">{flag}</span>
+                          <div className="min-w-0 flex-1">
+                            <p className="font-black text-lg leading-tight text-white">{comp.competition_name}</p>
+                            <p className="text-white/50 text-xs mt-0.5">{comp.correct} correct picks · {comp.total} total</p>
                           </div>
-                          <div className="flex items-end justify-between">
-                            <div>
-                              <p className="text-emerald-400 font-black text-xl leading-none">{comp.correct}</p>
-                              <p className="text-emerald-600/60 text-[10px]">correct picks</p>
-                            </div>
-                            <div className="text-right">
-                              <p className="text-white font-bold text-sm leading-none">{accuracy}%</p>
-                              <p className="text-gray-600 text-[10px]">accuracy</p>
-                            </div>
+                          <div className="flex-shrink-0 text-right">
+                            <p className="text-emerald-400 font-black text-xl leading-none tabular-nums">{accuracy}%</p>
+                            <p className="text-[10px] font-semibold uppercase tracking-widest text-white/20 mt-0.5">accuracy</p>
                           </div>
                         </div>
                       </div>
@@ -987,7 +933,7 @@ export default function ProfilePage() {
             {/* Header */}
             <div className="text-center pt-1 pb-2">
               <p className="text-white font-black text-xl">How to play</p>
-              <p className="text-gray-600 text-xs mt-1">6 to Glory · season format</p>
+              <p className="text-gray-600 text-xs mt-1">OddRivals · season format</p>
             </div>
 
             {/* Step 1 — Make picks */}
