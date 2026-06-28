@@ -593,18 +593,6 @@ function HeroPanel({ onTryIt, gwData, onHowItWorks }) {
       flexDirection: 'column',
       background: 'linear-gradient(160deg, #05080f 0%, #070c14 60%, #040810 100%)',
     }}>
-      {/* Analysis image background */}
-      <div style={{
-        position: 'absolute', inset: 0, pointerEvents: 'none',
-        backgroundImage: 'url(/images/analysis.png)',
-        backgroundSize: 'cover', backgroundPosition: 'center center',
-        opacity: 0.45,
-      }}/>
-      {/* Dark overlay to darken the bg image */}
-      <div style={{
-        position: 'absolute', inset: 0, pointerEvents: 'none',
-        background: 'linear-gradient(160deg, rgba(5,8,15,0.78) 0%, rgba(7,12,20,0.55) 50%, rgba(4,8,16,0.82) 100%)',
-      }}/>
 
       {/* Grid texture */}
       <div style={{
