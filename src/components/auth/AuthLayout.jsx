@@ -729,6 +729,15 @@ function HeroPanel({ onTryIt, gwData, onHowItWorks }) {
           <span style={{ fontSize: 13 }}>📖</span> HOW IT WORKS
         </button>
 
+        {/* Footballer image — desktop hero */}
+        <div style={{ marginTop: 24, borderRadius: 16, overflow: 'hidden', border: '1px solid rgba(255,255,255,0.06)' }}>
+          <img
+            src="/images/footballer.png"
+            alt=""
+            style={{ width: '100%', display: 'block', objectFit: 'cover' }}
+          />
+        </div>
+
       </div>
 
       {/* Right edge fade */}
@@ -986,6 +995,15 @@ export default function AuthLayout({ heading, subheading, children }) {
                   color: 'rgba(255,255,255,0.45)', letterSpacing: '0.08em',
                   fontFamily: "'IBM Plex Mono', monospace",
                 }}>FREE TO PLAY · NO CARD REQUIRED TO START</p>
+              </div>
+
+              {/* Footballer image — mobile, after CTA */}
+              <div style={{ marginBottom: 20, borderRadius: 16, overflow: 'hidden', border: '1px solid rgba(255,255,255,0.06)' }}>
+                <img
+                  src="/images/footballer.png"
+                  alt=""
+                  style={{ width: '100%', display: 'block', objectFit: 'cover' }}
+                />
               </div>
 
             </div>
