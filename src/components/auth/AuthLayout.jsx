@@ -210,6 +210,11 @@ const KEYFRAMES = `
 .auth-mobile-logo { display: flex !important; }
 .auth-mobile-steps { display: block !important; }
 .auth-right-panel { overflow-x: hidden !important; }
+@media (max-width: 899px) {
+  .auth-outer { height: auto !important; overflow: visible !important; }
+  .auth-inner { overflow: visible !important; height: auto !important; }
+  .auth-right-panel { overflow-y: visible !important; height: auto !important; }
+}
 @media (min-width: 900px) {
   .auth-hero { display: flex !important; }
   .auth-mobile-logo { display: none !important; }
@@ -678,12 +683,6 @@ function HeroPanel({ onTryIt, gwData, onHowItWorks }) {
           </p>
         </div>
 
-        {/* HOW TO PLAY */}
-        <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 10 }}>
-          <span style={{ fontSize: 8, letterSpacing: '0.2em', color: 'rgba(255,255,255,0.18)', fontFamily: "'IBM Plex Mono', monospace", fontWeight: 700 }}>HOW TO PLAY</span>
-          <div style={{ flex: 1, height: 1, background: 'rgba(255,255,255,0.05)' }}/>
-        </div>
-
         <div style={{ display: 'flex', flexDirection: 'column', gap: 10, marginBottom: 20 }}>
           {STEPS.map(({ num, accent, icon, title, desc }) => (
             <div key={num} style={{
@@ -773,8 +772,8 @@ export default function AuthLayout({ heading, subheading, children }) {
     <>
       <style>{KEYFRAMES}</style>
 
-      <div style={{ height: '100dvh', display: 'flex', flexDirection: 'column', background: '#060a10', overflow: 'hidden' }}>
-      <div style={{ flex: 1, display: 'flex', overflow: 'hidden' }}>
+      <div className="auth-outer" style={{ height: '100dvh', display: 'flex', flexDirection: 'column', background: '#060a10', overflow: 'hidden' }}>
+      <div className="auth-inner" style={{ flex: 1, display: 'flex', overflow: 'hidden' }}>
         <HeroPanel onTryIt={() => setShowPreview(true)} gwData={gwData} onHowItWorks={() => setShowGuide(true)}/>
 
         {/* Right panel */}
@@ -902,13 +901,6 @@ export default function AuthLayout({ heading, subheading, children }) {
                 <span style={{ fontSize: 14 }}>📖</span> HOW IT WORKS
               </button>
 
-              {/* Divider */}
-              <div style={{ display: 'flex', alignItems: 'center', gap: 12, marginBottom: 24 }}>
-                <div style={{ flex: 1, height: 1, background: 'rgba(255,255,255,0.07)' }}/>
-                <span style={{ fontSize: 9, letterSpacing: '0.2em', color: 'rgba(255,255,255,0.2)', fontFamily: "'IBM Plex Mono', monospace", fontWeight: 700 }}>HOW TO PLAY</span>
-                <div style={{ flex: 1, height: 1, background: 'rgba(255,255,255,0.07)' }}/>
-              </div>
-
               {/* Steps */}
               <div style={{ display: 'flex', flexDirection: 'column', gap: 10, marginBottom: 40 }}>
                 {STEPS.map(({ num, accent, icon, title, desc }) => (
@@ -953,7 +945,7 @@ export default function AuthLayout({ heading, subheading, children }) {
         gap: 24, flexWrap: 'wrap',
       }}>
         <span style={{ fontSize: 9, color: 'rgba(255,255,255,0.18)', fontFamily: "'IBM Plex Mono', monospace", letterSpacing: '0.1em' }}>
-          © {new Date().getFullYear()} ODD RIVALS
+          © {new Date().getFullYear()} ODDS RIVALS
         </span>
         {[
           { label: 'PRIVACY POLICY',     type: 'privacy',  ref: privacyRef },
