@@ -128,6 +128,7 @@ const ALL_BADGES_STATIC = [
   { code: 'THREE_PROMOTIONS',  name: 'Rising Star',         description: 'Promoted 3 times total',                               icon: '🚀' },
   { code: 'REACHED_DIV1',      name: 'Elite Climber',       description: 'Reached Division 1',                                   icon: '🏅' },
   { code: 'REACHED_CHAMPIONS', name: 'Champion',            description: 'Reached Champions / Legend',                           icon: '👑' },
+  { code: 'CORRECT_STREAK',    name: 'Hot Streak',          description: 'Longest run of consecutive correct picks (lifetime)',  icon: '🔥' },
 ]
 
 const BADGE_ACCENTS = {
@@ -140,6 +141,7 @@ const BADGE_ACCENTS = {
   THREE_PROMOTIONS:    { glow: '#a78bfa', border: 'rgba(167,139,250,0.35)', text: 'text-violet-400'  },
   REACHED_DIV1:        { glow: '#38bdf8', border: 'rgba(56,189,248,0.35)',  text: 'text-sky-400'     },
   REACHED_CHAMPIONS:   { glow: '#fde047', border: 'rgba(253,224,71,0.45)', text: 'text-yellow-300'  },
+  CORRECT_STREAK:      { glow: '#f97316', border: 'rgba(249,115,22,0.4)',  text: 'text-orange-400'  },
   DIV_CHAMP_ACADEMY:   { glow: '#6ee7b7', border: 'rgba(110,231,183,0.35)', text: 'text-emerald-300' },
   DIV_CHAMP_SUNDAY:    { glow: '#fca5a5', border: 'rgba(252,165,165,0.35)', text: 'text-red-300'     },
   DIV_CHAMP_DIV3:      { glow: '#cd7f32', border: 'rgba(205,127,50,0.45)',  text: 'text-amber-600'   },
@@ -854,7 +856,42 @@ export default function ProfilePage() {
               </div>
             </Section>
 
-            {/* 4. Division champion badges */}
+            {/* 4. Longest correct streak */}
+            <Section title="Best Streak">
+              <div className="relative rounded-2xl overflow-hidden p-4"
+                style={{
+                  background: (glory?.longest_correct_streak ?? 0) > 0
+                    ? 'rgba(249,115,22,0.08)'
+                    : 'rgba(255,255,255,0.02)',
+                  border: `1px solid ${(glory?.longest_correct_streak ?? 0) > 0 ? 'rgba(249,115,22,0.4)' : 'rgba(255,255,255,0.06)'}`,
+                  boxShadow: (glory?.longest_correct_streak ?? 0) > 0
+                    ? '0 0 30px -6px rgba(249,115,22,0.4)'
+                    : 'none',
+                  opacity: (glory?.longest_correct_streak ?? 0) > 0 ? 1 : 0.45,
+                }}>
+                {(glory?.longest_correct_streak ?? 0) > 0 && (
+                  <div className="absolute -top-6 -right-6 w-36 h-36 rounded-full blur-3xl pointer-events-none bg-orange-500/20" />
+                )}
+                <div className="relative flex items-center gap-4">
+                  <span className="text-5xl leading-none flex-shrink-0">🔥</span>
+                  <div className="flex-1 min-w-0">
+                    <p className="text-white/40 text-[10px] font-black uppercase tracking-widest mb-1">Longest Correct Streak</p>
+                    <p className={`font-black text-4xl leading-none tabular-nums ${(glory?.longest_correct_streak ?? 0) > 0 ? 'text-orange-400' : 'text-white/20'}`}>
+                      {glory?.longest_correct_streak ?? 0}
+                    </p>
+                    <p className="text-white/35 text-xs mt-1">consecutive correct picks</p>
+                  </div>
+                  <div className="flex-shrink-0 text-right">
+                    <span className="text-[10px] font-semibold uppercase tracking-widest"
+                      style={{ color: (glory?.longest_correct_streak ?? 0) > 0 ? 'rgba(249,115,22,0.5)' : 'rgba(255,255,255,0.12)' }}>
+                      {(glory?.longest_correct_streak ?? 0) > 0 ? 'record' : 'locked'}
+                    </span>
+                  </div>
+                </div>
+              </div>
+            </Section>
+
+            {/* 6. Division champion badges */}
             {!!glory?.division_championships?.length && (
               <Section title={`Division Champion (${glory.division_championships.length})`}>
                 <div className="grid grid-cols-2 gap-2">
@@ -884,7 +921,7 @@ export default function ProfilePage() {
               </Section>
             )}
 
-            {/* 5. Competition badges */}
+            {/* 7. Competition badges */}
             {!!glory?.competition_stats?.length && (
               <Section title={`Competition Badges (${glory.competition_stats.length})`}>
                 <div className="space-y-2">

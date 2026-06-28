@@ -41,17 +41,14 @@ function DivisionsListScreen({ divisions, divStats, myDivId, activeDiv, onSelect
     <div className="fixed inset-0 z-50 bg-[#0a0d12] flex flex-col">
       {/* Header */}
       <div className="border-b border-white/6 flex-shrink-0">
-        <div className="max-w-md mx-auto flex items-center gap-3 px-4 pt-12 pb-4">
+        <div className="max-w-md mx-auto flex items-center px-4 pt-12 pb-4">
           <button
             onClick={onClose}
-            className="w-9 h-9 flex items-center justify-center rounded-xl bg-white/6 border border-white/10 text-white text-sm flex-shrink-0"
+            className="flex items-center gap-2 text-white"
           >
-            ←
+            <span className="text-base">←</span>
+            <span className="font-bold text-base">Back to my division rankings</span>
           </button>
-          <div>
-            <p className="text-white font-bold text-base">All Divisions</p>
-            <p className="text-gray-500 text-xs">{divisions.length} divisions · from highest to lowest</p>
-          </div>
         </div>
       </div>
 
@@ -238,7 +235,7 @@ function DivisionsListScreen({ divisions, divStats, myDivId, activeDiv, onSelect
 }
 
 // ── Rankings screen ────────────────────────────────────────────────────────────
-function RankingsScreen({ div, sprintId, sprintName, myUserId, onOpenPicker, onBack, totalPlayers }) {
+function RankingsScreen({ div, sprintId, sprintName, myUserId, myDivId, onOpenPicker, onBack, totalPlayers }) {
   const navigate = useNavigate()
   const v        = getV(div)
   const coverSrc = div.badge_url || v.image
@@ -279,11 +276,19 @@ function RankingsScreen({ div, sprintId, sprintName, myUserId, onOpenPicker, onB
           onError={e => { e.target.style.display = 'none' }} />
         <div className="absolute inset-0 bg-gradient-to-t from-[#0a0d12] via-[#0a0d12]/30 to-transparent" />
 
-        <button onClick={onOpenPicker}
-          className="absolute top-12 right-4 flex items-center gap-1.5 backdrop-blur-sm border text-sm font-bold px-3 py-2 rounded-xl"
-          style={{ background: v.bg, borderColor: v.border, color: v.accent }}>
-          See all Divisions
-        </button>
+        {div.id === myDivId ? (
+          <button onClick={onOpenPicker}
+            className="absolute top-12 right-4 flex items-center gap-1.5 backdrop-blur-sm border text-sm font-bold px-3 py-2 rounded-xl"
+            style={{ background: v.bg, borderColor: v.border, color: v.accent }}>
+            See all Divisions
+          </button>
+        ) : (
+          <button onClick={onBack}
+            className="absolute top-12 left-4 w-9 h-9 flex items-center justify-center rounded-xl backdrop-blur-sm border border-white/10 text-white text-sm"
+            style={{ background: 'rgba(0,0,0,0.40)' }}>
+            ←
+          </button>
+        )}
 
         <div className="absolute bottom-3 left-4 flex items-end gap-3">
           <div className="w-9 h-9 rounded-xl flex items-center justify-center text-lg border"
@@ -357,21 +362,26 @@ function RankingsScreen({ div, sprintId, sprintName, myUserId, onOpenPicker, onB
                   )}
 
                   <div className={`w-full flex items-center gap-3 border-b relative transition-colors ${
-                    isMe    ? 'px-4 py-4' : 'px-4 py-2.5'
+                    isMe ? 'px-4 py-3' : 'px-4 py-2.5'
                   } ${
-                    !isMe && isPromo ? 'bg-green-950/50 border-green-900/60' :
-                    !isMe && isRel   ? 'bg-red-950/45 border-red-900/50' :
-                    !isMe            ? 'border-white/4' : ''
+                    isPromo ? 'bg-green-950/50 border-green-900/60' :
+                    isRel   ? 'bg-red-950/45 border-red-900/50' :
+                    !isMe   ? 'border-white/4' : ''
                   }`}
                     style={isMe ? {
-                      background: `linear-gradient(90deg, ${v.bg}ee 0%, ${v.bg}99 60%, ${v.bg}44 100%)`,
-                      borderColor: v.border,
-                      boxShadow: `inset 0 0 40px -10px ${v.glow}44`,
+                      background: isPromo
+                        ? `linear-gradient(90deg, rgba(5,46,22,0.95) 0%, ${v.bg}88 60%, ${v.bg}33 100%)`
+                        : isRel
+                        ? `linear-gradient(90deg, rgba(69,10,10,0.95) 0%, ${v.bg}88 60%, ${v.bg}33 100%)`
+                        : `linear-gradient(90deg, ${v.bg}ee 0%, ${v.bg}99 60%, ${v.bg}44 100%)`,
+                      borderColor: isPromo ? 'rgba(34,197,94,0.4)' : isRel ? 'rgba(239,68,68,0.4)' : v.border,
+                      boxShadow: `inset 0 0 40px -10px ${isPromo ? 'rgba(34,197,94,0.2)' : isRel ? 'rgba(239,68,68,0.2)' : v.glow}44`,
                     } : {}}
                   >
-                    {/* Left accent bar */}
+                    {/* Left accent bar — zone color takes priority over division color */}
                     {isMe
-                      ? <span className="absolute left-0 top-0 bottom-0 w-1 rounded-r-full" style={{ background: `linear-gradient(180deg, ${v.accent}, ${v.accent}88)` }} />
+                      ? <span className="absolute left-0 top-0 bottom-0 w-1 rounded-r-full"
+                          style={{ background: isPromo ? '#22c55e' : isRel ? '#ef4444' : `linear-gradient(180deg, ${v.accent}, ${v.accent}88)` }} />
                       : (isPromo || isRel) && <span className={`absolute left-0 top-0 bottom-0 w-0.5 ${isPromo ? 'bg-green-500' : 'bg-red-500'}`} />
                     }
 
@@ -384,9 +394,9 @@ function RankingsScreen({ div, sprintId, sprintName, myUserId, onOpenPicker, onB
                     <div className="relative flex-shrink-0 cursor-pointer"
                       onClick={() => navigate(`/users/${row.user_id}`)}>
                       {row.avatar_url
-                        ? <img src={row.avatar_url} alt="" className={`rounded-full object-cover ${isMe ? 'w-11 h-11' : 'w-8 h-8'}`}
+                        ? <img src={row.avatar_url} alt="" className={`rounded-full object-cover ${isMe ? 'w-9 h-9' : 'w-8 h-8'}`}
                             style={isMe ? { boxShadow: `0 0 0 2px ${v.accent}99, 0 0 16px ${v.glow}66` } : {}} />
-                        : <div className={`rounded-full flex items-center justify-center font-bold ${isMe ? 'w-11 h-11 text-base' : 'w-8 h-8 text-sm'}`}
+                        : <div className={`rounded-full flex items-center justify-center font-bold ${isMe ? 'w-9 h-9 text-sm' : 'w-8 h-8 text-sm'}`}
                             style={{
                               background: isMe ? v.bg : 'rgba(255,255,255,0.08)',
                               color: isMe ? v.accent : '#9ca3af',
@@ -400,7 +410,7 @@ function RankingsScreen({ div, sprintId, sprintName, myUserId, onOpenPicker, onB
 
                     <div className="flex-1 min-w-0">
                       <div className="flex items-center gap-1.5 flex-wrap">
-                        <p className={`font-semibold truncate ${isMe ? 'text-white text-base' : 'text-gray-400 text-sm'}`}>
+                        <p className={`font-semibold truncate ${isMe ? 'text-white text-sm' : 'text-gray-400 text-sm'}`}>
                           {row.display_name || 'Player'}
                         </p>
                         {isMe && (
@@ -429,9 +439,9 @@ function RankingsScreen({ div, sprintId, sprintName, myUserId, onOpenPicker, onB
                       {isPromo && <span className="text-green-400 text-xs">⬆</span>}
                       {isRel   && <span className="text-red-400 text-xs">⬇</span>}
                       <div className="text-right">
-                        <span className={`font-black tabular-nums ${isMe ? 'text-2xl' : 'text-base'}`}
+                        <span className={`font-black tabular-nums ${isMe ? 'text-lg' : 'text-base'}`}
                           style={{
-                            color: isMe ? '#fff' : isPromo ? '#4ade80' : isRel ? '#f87171' : '#818cf8',
+                            color: isPromo ? '#4ade80' : isRel ? '#f87171' : isMe ? '#fff' : '#818cf8',
                             ...(isMe ? { textShadow: `0 0 16px ${v.glow}` } : {}),
                           }}>
                           {row.total_league_points}
@@ -558,6 +568,7 @@ export default function DivisionsPage() {
         sprintId={sprintId}
         sprintName={sprintName}
         myUserId={myUserId}
+        myDivId={myDivId}
         onOpenPicker={() => setListOpen(true)}
         onBack={() => setListOpen(true)}
         totalPlayers={totalPlayers}
