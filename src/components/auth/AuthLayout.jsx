@@ -576,7 +576,7 @@ const STEPS = [
   {
     num: '03', accent: '#facc15', icon: '⚡',
     title: 'Spend your energy wisely.',
-    desc: 'Each week you get 30⚡ to spread across your 6 picks. Safer outcomes cost less — manage your energy to maximise your score.',
+    desc: 'Each week you get 30⚡ to spread across your 6 picks. Safer outcomes cost more — manage your energy to maximise your score.',
   },
   {
     num: '04', accent: '#f59e0b', icon: '📅',
