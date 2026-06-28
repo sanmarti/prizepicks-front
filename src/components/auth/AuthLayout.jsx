@@ -647,9 +647,17 @@ function HeroPanel({ onTryIt, gwData, onHowItWorks }) {
               filter: 'drop-shadow(0 0 10px rgba(34,197,94,0.4)) drop-shadow(0 0 20px rgba(124,110,245,0.2))',
             }}
           />
-          <div style={{ display: 'flex', alignItems: 'center', gap: 5, background: 'rgba(34,197,94,0.08)', border: '1px solid rgba(34,197,94,0.25)', borderRadius: 99, padding: '3px 9px' }}>
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 4 }}>
+            <span style={{
+              fontFamily: "'Syne', sans-serif", fontWeight: 700, fontSize: 20,
+              letterSpacing: '0.04em', lineHeight: 1,
+              background: 'linear-gradient(90deg, #fff 0%, rgba(255,255,255,0.75) 100%)',
+              WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent',
+            }}>ODDS RIVALS</span>
+            <div style={{ display: 'flex', alignItems: 'center', gap: 5, background: 'rgba(34,197,94,0.08)', border: '1px solid rgba(34,197,94,0.25)', borderRadius: 99, padding: '2px 8px', alignSelf: 'flex-start' }}>
             <span style={{ width: 5, height: 5, borderRadius: '50%', background: '#22c55e', display: 'block', animation: 'auth-pulse-ring 1.4s ease-out infinite', boxShadow: '0 0 6px #22c55e' }}/>
             <span style={{ color: '#22c55e', fontSize: 9, letterSpacing: '0.14em', fontFamily: "'IBM Plex Mono', monospace", fontWeight: 600 }}>{gwData?.sprint?.name ?? 'SEASON LIVE'}</span>
+          </div>
           </div>
         </div>
 
@@ -792,21 +800,29 @@ export default function AuthLayout({ heading, subheading, children }) {
             {/* Mobile-only logo */}
             <div className="auth-mobile-logo" style={{
               textAlign: 'center', marginBottom: 28,
-              flexDirection: 'column', alignItems: 'center', gap: 6,
+              flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 12,
             }}>
               <img
                 src="/images/logo.png"
                 alt="OddsRivals"
                 style={{
-                  height: 64, width: 64,
-                  borderRadius: 16, objectFit: 'cover',
+                  height: 52, width: 52,
+                  borderRadius: 12, objectFit: 'cover',
                   filter: 'drop-shadow(0 0 10px rgba(34,197,94,0.4)) drop-shadow(0 0 20px rgba(124,110,245,0.2))',
                 }}
               />
-              <p style={{
-                fontSize: 10, color: 'rgba(255,255,255,0.22)',
-                letterSpacing: '0.1em', fontFamily: "'IBM Plex Mono', monospace", marginTop: 6,
-              }}>PREDICT · PROVE IT · CLIMB</p>
+              <div style={{ display: 'flex', flexDirection: 'column', gap: 3, textAlign: 'left' }}>
+                <span style={{
+                  fontFamily: "'Syne', sans-serif", fontWeight: 700, fontSize: 20,
+                  letterSpacing: '0.04em', lineHeight: 1,
+                  background: 'linear-gradient(90deg, #fff 0%, rgba(255,255,255,0.75) 100%)',
+                  WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent',
+                }}>ODDS RIVALS</span>
+                <p style={{
+                  fontSize: 9, color: 'rgba(255,255,255,0.22)',
+                  letterSpacing: '0.1em', fontFamily: "'IBM Plex Mono', monospace", margin: 0,
+                }}>PREDICT · PROVE IT · CLIMB</p>
+              </div>
             </div>
 
             {/* Glass card */}
