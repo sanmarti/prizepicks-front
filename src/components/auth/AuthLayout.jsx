@@ -697,7 +697,7 @@ function HeroPanel({ onTryIt, gwData, onHowItWorks }) {
                   <span style={{ fontSize: 11, color: accent, fontFamily: "'IBM Plex Mono', monospace", fontWeight: 700, letterSpacing: '0.12em', opacity: 0.85 }}>{num}</span>
                   <span style={{ fontSize: 22, fontFamily: "'Syne', sans-serif", fontWeight: 700, color: '#fff', lineHeight: 1.15 }}>{title}</span>
                 </div>
-                <p style={{ fontSize: 12, color: 'rgba(255,255,255,0.45)', fontFamily: "'IBM Plex Mono', monospace", lineHeight: 1.4, margin: 0, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{desc}</p>
+                <p style={{ fontSize: 12, color: 'rgba(255,255,255,0.45)', fontFamily: "'IBM Plex Mono', monospace", lineHeight: 1.5, margin: 0 }}>{desc}</p>
               </div>
             </div>
           ))}
@@ -915,7 +915,7 @@ export default function AuthLayout({ heading, subheading, children }) {
                         <span style={{ fontSize: 11, color: accent, fontFamily: "'IBM Plex Mono', monospace", fontWeight: 700, letterSpacing: '0.12em', opacity: 0.85 }}>{num}</span>
                         <span style={{ fontSize: 22, fontFamily: "'Syne', sans-serif", fontWeight: 700, color: '#fff', lineHeight: 1.15 }}>{title}</span>
                       </div>
-                      <p style={{ fontSize: 12, color: 'rgba(255,255,255,0.45)', fontFamily: "'IBM Plex Mono', monospace", lineHeight: 1.4, margin: 0, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{desc}</p>
+                      <p style={{ fontSize: 12, color: 'rgba(255,255,255,0.45)', fontFamily: "'IBM Plex Mono', monospace", lineHeight: 1.5, margin: 0 }}>{desc}</p>
                     </div>
                   </div>
                 ))}
