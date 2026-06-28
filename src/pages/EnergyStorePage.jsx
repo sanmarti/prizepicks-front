@@ -306,100 +306,24 @@ function WalletCard({ walletBalance }) {
   const weeksAvailable = walletBalance > 0 ? Math.floor(walletBalance / 5) : 0
 
   return (
-    <div className={`relative rounded-2xl overflow-hidden mb-8 ${
+    <div className={`relative rounded-xl overflow-hidden mb-6 flex items-center gap-3 px-4 py-3 border ${
       hasPurchased
-        ? 'bg-gradient-to-br from-orange-950 via-red-900/60 to-yellow-950 shadow-[0_0_40px_-8px_rgba(251,146,60,0.55)]'
-        : 'bg-gradient-to-br from-[#130d06] via-[#100c06] to-[#0a0804] shadow-[0_0_40px_-8px_rgba(251,146,60,0.15)]'
+        ? 'bg-yellow-500/8 border-yellow-500/25 shadow-[0_0_18px_-4px_rgba(250,204,21,0.3)]'
+        : 'bg-white/3 border-white/8'
     }`}>
-      {/* Glow blob top-right */}
-      <div className={`absolute -top-10 -right-10 w-56 h-56 rounded-full blur-3xl pointer-events-none ${
-        hasPurchased ? 'bg-yellow-500/25' : 'bg-orange-600/10'
-      }`} />
-      {/* Scan lines */}
-      <div className="absolute inset-0 opacity-[0.03] pointer-events-none"
-        style={{ backgroundImage: 'repeating-linear-gradient(0deg, transparent, transparent 2px, white 2px, white 3px)', backgroundSize: '100% 3px' }} />
-
-      <div className={`relative border rounded-2xl p-5 ${
-        hasPurchased ? 'border-orange-500/30' : 'border-orange-900/40'
-      }`}>
-        {/* Balance row */}
-        <div className="flex items-start justify-between mb-5">
-          <div>
-            <p className="text-[10px] font-black uppercase tracking-[0.2em] mb-1 text-white/50">Bonus Energy Wallet</p>
-            <div className="flex items-end gap-2">
-              <span className={`font-black leading-none ${
-                hasPurchased
-                  ? 'text-5xl text-yellow-400 drop-shadow-[0_0_22px_rgba(250,204,21,0.7)]'
-                  : 'text-5xl text-white/20'
-              }`}>{walletBalance}</span>
-              <span className={`text-xl mb-0.5 ${hasPurchased ? 'text-yellow-400/80' : 'text-white/20'}`}>⚡</span>
-            </div>
-            {hasPurchased && weeksAvailable > 0 && (
-              <p className="text-white/50 text-xs mt-1">≈ {weeksAvailable} matchweek{weeksAvailable !== 1 ? 's' : ''} covered</p>
-            )}
-          </div>
-          {/* Battery visual */}
-          <div className={`relative flex flex-col justify-end gap-[3px] p-2 rounded-xl border ${
-            hasPurchased ? 'bg-yellow-400/10 border-yellow-400/25' : 'bg-orange-950/60 border-orange-800/30'
-          }`} style={{ width: 34, height: 50 }}>
-            {[1,2,3,4].map(i => (
-              <div key={i} className={`w-full rounded-sm ${
-                hasPurchased && i <= Math.max(1, Math.ceil((Math.min(walletBalance, 100) / 100) * 4))
-                  ? 'bg-yellow-400 shadow-[0_0_8px_rgba(250,204,21,0.9)]'
-                  : 'bg-orange-950'
-              }`} style={{ height: 7 }} />
-            ))}
-            <div className={`absolute -top-1.5 left-1/2 -translate-x-1/2 w-2.5 h-1.5 rounded-t-sm ${
-              hasPurchased ? 'bg-yellow-400/60' : 'bg-orange-900/50'
-            }`} />
-          </div>
-        </div>
-
-        {/* Value props */}
-        <div className="space-y-2">
-          {/* Mini pick demo */}
-          <div className={`rounded-xl px-3 py-3 border ${
-            hasPurchased ? 'bg-purple-500/10 border-purple-500/20' : 'bg-white/4 border-white/6'
-          }`}>
-            <p className="text-xs font-semibold text-white mb-2">🔒 Unlock the pick you actually want</p>
-            <div className="flex gap-1.5 items-center">
-              <div className="flex flex-col items-center justify-center rounded-lg px-3 py-1.5 bg-white/5 border border-white/10 min-w-[52px]">
-                <span className="text-xs font-mono text-gray-300">Home</span>
-                <span className="text-[10px] text-gray-500 mt-0.5">3⚡</span>
-              </div>
-              <div className="flex flex-col items-center justify-center rounded-lg px-3 py-1.5 bg-white/5 border border-white/10 min-w-[52px]">
-                <span className="text-xs font-mono text-gray-300">Draw</span>
-                <span className="text-[10px] text-gray-500 mt-0.5">6⚡</span>
-              </div>
-              <div className="flex flex-col items-center justify-center rounded-lg px-3 py-1.5 min-w-[52px] border border-white/10" style={{ background: 'rgba(15,15,20,0.6)' }}>
-                <span className="text-base">🔒</span>
-                <span className="text-[9px] text-gray-600 mt-0.5">Away 8⚡</span>
-              </div>
-            </div>
-            <p className="text-[11px] text-white/40 mt-2">
-              Safer outcomes cost more energy. Run out and the best picks get locked.
-            </p>
-          </div>
-
-          <div className={`flex items-center gap-2.5 rounded-xl px-3 py-2.5 border ${
-            hasPurchased ? 'bg-violet-500/10 border-violet-500/20' : 'bg-white/4 border-white/6'
-          }`}>
-            <span className="text-lg flex-shrink-0">🎯</span>
-            <div>
-              <p className="text-xs font-semibold text-white">Back all 6 events every week</p>
-              <p className="text-[11px] text-white/40">{ENERGY_BUDGET} base energy fills fast. Bonus energy keeps you in the game for every pick.</p>
-            </div>
-          </div>
-
-          <div className="flex items-center gap-2.5 rounded-xl px-3 py-2.5 border border-yellow-400/25 bg-yellow-400/8">
-            <span className="text-lg flex-shrink-0">♾️</span>
-            <div>
-              <p className="text-yellow-300 text-xs font-semibold">Never expires · use up to +5⚡ per matchweek</p>
-              <p className="text-yellow-500/70 text-[11px]">Stays in your wallet until you need it — no rush, no deadline.</p>
-            </div>
-          </div>
-        </div>
+      <span className={`text-2xl leading-none flex-shrink-0 ${hasPurchased ? '' : 'opacity-30'}`}>⚡</span>
+      <div className="flex-1 min-w-0">
+        <p className="text-[10px] font-black uppercase tracking-widest text-white/40">Bonus wallet</p>
+        <p className={`font-black text-lg leading-tight ${hasPurchased ? 'text-yellow-400' : 'text-white/25'}`}>
+          {walletBalance} ⚡
+          {hasPurchased && weeksAvailable > 0 && (
+            <span className="text-white/40 font-normal text-xs ml-2">≈ {weeksAvailable} matchweek{weeksAvailable !== 1 ? 's' : ''}</span>
+          )}
+        </p>
       </div>
+      {!hasPurchased && (
+        <p className="text-white/25 text-[11px] flex-shrink-0">Buy a pack below</p>
+      )}
     </div>
   )
 }
