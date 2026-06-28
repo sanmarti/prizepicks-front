@@ -213,11 +213,11 @@ const KEYFRAMES = `
   .auth-hero { display: flex !important; }
   .auth-mobile-logo { display: none !important; }
   .auth-mobile-steps { display: none !important; }
+  .auth-right-panel { overflow: hidden !important; }
 }
 `
 
 const MAX_PICKS    = 6
-const TOTAL_ENERGY = 25
 
 // ── Game Preview Modal ─────────────────────────────────────────────────────────
 // picks: { eventId: { optionId, label, energyCost } }
@@ -226,6 +226,7 @@ function GamePreviewModal({ onClose, onSignUp, onLogin, gwData }) {
   const [picks, setPicks]         = useState({})
   const [submitted, setSubmitted] = useState(false)
 
+  const TOTAL_ENERGY = gwData?.gameweek?.base_energy ?? 30
   const events     = gwData?.events ?? []
   const pickCount  = Object.keys(picks).length
   const energyUsed = Object.values(picks).reduce((s, p) => s + (p.energyCost ?? 0), 0)
@@ -248,21 +249,22 @@ function GamePreviewModal({ onClose, onSignUp, onLogin, gwData }) {
   }
 
   function getTeams(ev) {
-    const parts = (ev.fixture_name || '').split(' vs ')
-    return { home: parts[0] || ev.home_team || '?', away: parts[1] || ev.away_team || '?' }
+    const cleanName = (ev.fixture_name || '').replace(/^Who qualifies\?\s*/i, '')
+    const parts = cleanName.split(' vs ')
+    return { home: parts[0]?.trim() || ev.home_team || '?', away: parts[1]?.trim() || ev.away_team || '?' }
   }
 
   function sortedOptions(opts, home, away) {
+    const KEY_ORDER = { HOME_WIN: 0, HOME_QUALIFIES: 0, DRAW: 1, AWAY_WIN: 2, AWAY_QUALIFIES: 2 }
     const rank = (opt) => {
+      if (opt.result_key && KEY_ORDER[opt.result_key] !== undefined) return KEY_ORDER[opt.result_key]
       const lbl = (opt.label || '').toLowerCase()
       if (lbl.includes('draw') || lbl === 'x') return 1
       const h = (home || '').toLowerCase()
       const a = (away || '').toLowerCase()
-      // Match first word of team name to handle "Ecuador Win" → "Ecuador"
       const firstWord = (s) => s.split(' ')[0]
       if (h && lbl.includes(firstWord(h))) return 0
       if (a && lbl.includes(firstWord(a))) return 2
-      // Fallback: assume DB order is home/draw/away already
       return 3
     }
     return [...opts].sort((a, b) => rank(a) - rank(b))
@@ -394,14 +396,32 @@ function GamePreviewModal({ onClose, onSignUp, onLogin, gwData }) {
                       {ev.competition || ev.event_type}
                     </div>
                     <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 8 }}>
-                      {(ev.home_logo || ev.fixture_home_logo) && (
-                        <img src={ev.home_logo || ev.fixture_home_logo} alt="" style={{ width: 18, height: 18, objectFit: 'contain', flexShrink: 0 }} onError={e => { e.target.style.display='none' }}/>
-                      )}
-                      <span style={{ flex: 1, fontSize: 12, fontFamily: "'Syne', sans-serif", fontWeight: 700, color: 'rgba(255,255,255,0.8)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{home}</span>
-                      <span style={{ fontSize: 9, color: 'rgba(255,255,255,0.2)', fontFamily: "'IBM Plex Mono', monospace", flexShrink: 0 }}>vs</span>
-                      <span style={{ flex: 1, textAlign: 'right', fontSize: 12, fontFamily: "'Syne', sans-serif", fontWeight: 700, color: 'rgba(255,255,255,0.8)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{away}</span>
-                      {(ev.away_logo || ev.fixture_away_logo) && (
-                        <img src={ev.away_logo || ev.fixture_away_logo} alt="" style={{ width: 18, height: 18, objectFit: 'contain', flexShrink: 0 }} onError={e => { e.target.style.display='none' }}/>
+                      {ev.event_type === 'WHO_QUALIFIES' ? (
+                        <>
+                          {(ev.home_logo || ev.fixture_home_logo)
+                            ? <img src={ev.home_logo || ev.fixture_home_logo} alt="" style={{ width: 18, height: 18, objectFit: 'contain', flexShrink: 0 }} onError={e => { e.target.style.display='none' }}/>
+                            : null
+                          }
+                          <span style={{ flex: 1, fontSize: 12, fontFamily: "'Syne', sans-serif", fontWeight: 700, color: 'rgba(255,255,255,0.8)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{home}</span>
+                          <span style={{ fontSize: 14, flexShrink: 0 }}>💥</span>
+                          <span style={{ flex: 1, textAlign: 'right', fontSize: 12, fontFamily: "'Syne', sans-serif", fontWeight: 700, color: 'rgba(255,255,255,0.8)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{away}</span>
+                          {(ev.away_logo || ev.fixture_away_logo)
+                            ? <img src={ev.away_logo || ev.fixture_away_logo} alt="" style={{ width: 18, height: 18, objectFit: 'contain', flexShrink: 0 }} onError={e => { e.target.style.display='none' }}/>
+                            : null
+                          }
+                        </>
+                      ) : (
+                        <>
+                          {(ev.home_logo || ev.fixture_home_logo) && (
+                            <img src={ev.home_logo || ev.fixture_home_logo} alt="" style={{ width: 18, height: 18, objectFit: 'contain', flexShrink: 0 }} onError={e => { e.target.style.display='none' }}/>
+                          )}
+                          <span style={{ flex: 1, fontSize: 12, fontFamily: "'Syne', sans-serif", fontWeight: 700, color: 'rgba(255,255,255,0.8)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{home}</span>
+                          <span style={{ fontSize: 9, color: 'rgba(255,255,255,0.2)', fontFamily: "'IBM Plex Mono', monospace", flexShrink: 0 }}>vs</span>
+                          <span style={{ flex: 1, textAlign: 'right', fontSize: 12, fontFamily: "'Syne', sans-serif", fontWeight: 700, color: 'rgba(255,255,255,0.8)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{away}</span>
+                          {(ev.away_logo || ev.fixture_away_logo) && (
+                            <img src={ev.away_logo || ev.fixture_away_logo} alt="" style={{ width: 18, height: 18, objectFit: 'contain', flexShrink: 0 }} onError={e => { e.target.style.display='none' }}/>
+                          )}
+                        </>
                       )}
                     </div>
                     <div style={{ display: 'flex', gap: 8 }}>
@@ -537,27 +557,27 @@ const STEPS = [
   {
     num: '01', accent: '#22c55e', icon: '⚽',
     title: '15 events. Your 6 picks.',
-    desc: 'A new Gameweek opens every Monday with 15 football predictions from the biggest matches of the week. Choose the 6 calls you trust most — match winners, goals, clean sheets and more.',
+    desc: '15 prediction events every Monday — pick your 6 before the weekly deadline.',
   },
   {
     num: '02', accent: '#a78bfa', icon: '🎯',
     title: 'Prove you know football.',
-    desc: 'Every correct pick earns 1 League Point. Nail all 6 and unlock a Perfect Week: 6 points for your picks, plus a +4 bonus. 6/6 = 10 LEAGUE POINTS. Your football knowledge is on the line.',
+    desc: '1 League Point per correct pick. Nail all 6 and earn a Perfect Week (+4 bonus).',
   },
   {
     num: '03', accent: '#f59e0b', icon: '📅',
     title: 'Monthly Sprints',
-    desc: 'Each Sprint runs for one calendar month and includes 4 or 5 Gameweeks, depending on the month. Your League Points build throughout the Sprint. Every Gameweek can push you toward promotion or put your division under pressure.',
+    desc: 'Each calendar month is a Sprint — your League Points decide promotion or relegation.',
   },
   {
     num: '04', accent: '#38bdf8', icon: '🏆',
     title: 'Beat your mates. Climb the divisions.',
-    desc: "Start in Academy and prove yourself week after week. Hit your division's promotion target to move up. Fall short and you could be relegated. From Academy to Hall of Legends, your rank shows who really knows football.",
+    desc: 'Start in Academy and rise Sprint by Sprint — all the way to Hall of Legends.',
   },
   {
     num: '05', accent: '#f43f5e', icon: '🎖️',
     title: 'Build your football legacy.',
-    desc: 'Unlock badges for Perfect Weeks, promotions, accuracy and consistency. Your best Sprints, highest division and biggest moments stay on your profile — ready to show your mates.',
+    desc: 'Earn badges for Perfect Weeks, promotions and accuracy — your record is public.',
   },
 ]
 
@@ -572,12 +592,25 @@ function HeroPanel({ onTryIt, gwData, onHowItWorks }) {
       flexDirection: 'column',
       background: 'linear-gradient(160deg, #05080f 0%, #070c14 60%, #040810 100%)',
     }}>
+      {/* Analysis image background */}
+      <div style={{
+        position: 'absolute', inset: 0, pointerEvents: 'none',
+        backgroundImage: 'url(/images/analysis.png)',
+        backgroundSize: 'cover', backgroundPosition: 'center top',
+        opacity: 0.13,
+      }}/>
+      {/* Dark gradient over the bg image */}
+      <div style={{
+        position: 'absolute', inset: 0, pointerEvents: 'none',
+        background: 'linear-gradient(160deg, rgba(5,8,15,0.82) 0%, rgba(7,12,20,0.65) 50%, rgba(4,8,16,0.88) 100%)',
+      }}/>
+
       {/* Grid texture */}
       <div style={{
         position: 'absolute', inset: 0, pointerEvents: 'none',
         backgroundImage: `
-          linear-gradient(rgba(124,110,245,0.04) 1px, transparent 1px),
-          linear-gradient(90deg, rgba(124,110,245,0.04) 1px, transparent 1px)
+          linear-gradient(rgba(124,110,245,0.03) 1px, transparent 1px),
+          linear-gradient(90deg, rgba(124,110,245,0.03) 1px, transparent 1px)
         `,
         backgroundSize: '40px 40px',
       }}/>
@@ -606,89 +639,6 @@ function HeroPanel({ onTryIt, gwData, onHowItWorks }) {
         pointerEvents: 'none',
       }}/>
 
-      {/* Ball 1 — ⚽ emoji (top-right, grande) */}
-      <div style={{
-        position: 'absolute', top: '6%', right: '10%',
-        animation: 'auth-float-a 9s ease-in-out infinite',
-        fontSize: 72,
-        filter: 'drop-shadow(0 0 20px rgba(34,197,94,0.35)) drop-shadow(0 14px 30px rgba(0,0,0,0.85))',
-        pointerEvents: 'none', lineHeight: 1,
-      }}>
-        ⚽
-      </div>
-
-      {/* Ball 2 — ⚽ emoji genérico (center-left, grande) */}
-      <div style={{
-        position: 'absolute', top: '30%', left: '4%',
-        animation: 'auth-float-b 12s ease-in-out infinite 1.8s',
-        fontSize: 58,
-        filter: 'drop-shadow(0 10px 24px rgba(0,0,0,0.75)) drop-shadow(0 0 14px rgba(34,197,94,0.2))',
-        pointerEvents: 'none', lineHeight: 1,
-        opacity: 0.9,
-      }}>
-        ⚽
-      </div>
-
-      {/* Ball 3 — ⚽ emoji (bottom-right, mediano) */}
-      <div style={{
-        position: 'absolute', bottom: '12%', right: '7%',
-        animation: 'auth-float-c 14s ease-in-out infinite 3.5s',
-        fontSize: 44,
-        filter: 'drop-shadow(0 8px 20px rgba(0,0,0,0.7)) drop-shadow(0 0 12px rgba(124,110,245,0.3))',
-        pointerEvents: 'none', lineHeight: 1,
-        opacity: 0.8,
-      }}>
-        ⚽
-      </div>
-
-      {/* Energy 1 — ⚡ (top-left, grande) */}
-      <div style={{
-        position: 'absolute', top: '8%', left: '8%',
-        animation: 'auth-float-d 10s ease-in-out infinite 0.7s',
-        fontSize: 64,
-        filter: 'drop-shadow(0 0 22px rgba(250,204,21,0.55)) drop-shadow(0 12px 28px rgba(0,0,0,0.8))',
-        pointerEvents: 'none', lineHeight: 1,
-        opacity: 0.85,
-      }}>
-        ⚡
-      </div>
-
-      {/* Energy 2 — ⚡ (center-right, mediano) */}
-      <div style={{
-        position: 'absolute', top: '48%', right: '5%',
-        animation: 'auth-float-e 13s ease-in-out infinite 2.3s',
-        fontSize: 48,
-        filter: 'drop-shadow(0 0 18px rgba(250,204,21,0.45)) drop-shadow(0 10px 22px rgba(0,0,0,0.7))',
-        pointerEvents: 'none', lineHeight: 1,
-        opacity: 0.75,
-      }}>
-        ⚡
-      </div>
-
-      {/* Energy 3 — ⚡ (bottom-left, pequeño) */}
-      <div style={{
-        position: 'absolute', bottom: '20%', left: '6%',
-        animation: 'auth-float-d 11s ease-in-out infinite 4.1s',
-        fontSize: 36,
-        filter: 'drop-shadow(0 0 14px rgba(250,204,21,0.4)) drop-shadow(0 8px 18px rgba(0,0,0,0.65))',
-        pointerEvents: 'none', lineHeight: 1,
-        opacity: 0.7,
-      }}>
-        ⚡
-      </div>
-
-      {/* Energy 4 — ⚡ (center, muy sutil) */}
-      <div style={{
-        position: 'absolute', top: '70%', right: '18%',
-        animation: 'auth-float-e 16s ease-in-out infinite 5.5s',
-        fontSize: 30,
-        filter: 'drop-shadow(0 0 10px rgba(250,204,21,0.35)) drop-shadow(0 6px 14px rgba(0,0,0,0.6))',
-        pointerEvents: 'none', lineHeight: 1,
-        opacity: 0.6,
-      }}>
-        ⚡
-      </div>
-
       {/* Content */}
       <div style={{
         position: 'relative', zIndex: 2,
@@ -697,27 +647,16 @@ function HeroPanel({ onTryIt, gwData, onHowItWorks }) {
         overflowY: 'auto',
         animation: 'auth-fade-up 0.8s ease both 0.15s',
       }}>
-        {/* Brand */}
-        <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 20 }}>
-          <div style={{
-            background: 'linear-gradient(135deg, #22c55e 0%, #16a34a 100%)',
-            borderRadius: 8, width: 26, height: 26,
-            display: 'flex', alignItems: 'center', justifyContent: 'center',
-            fontSize: 13, boxShadow: '0 0 14px rgba(34,197,94,0.4)',
-          }}>⚽</div>
-          <div>
-            {['6', 'TO', 'GLORY'].map((t, i) => (
-              <span key={t} style={{
-                fontFamily: "'Syne', sans-serif", fontWeight: 700, fontSize: 19, letterSpacing: '0.02em',
-                background: [
-                  'linear-gradient(90deg, #fff, rgba(255,255,255,0.7))',
-                  'linear-gradient(90deg, #22c55e, #a78bfa)',
-                  'linear-gradient(90deg, #a78bfa, #fff)',
-                ][i],
-                WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent',
-              }}>{t}</span>
-            ))}
-          </div>
+        {/* Brand — logo top-left */}
+        <div style={{ display: 'flex', alignItems: 'center', gap: 12, marginBottom: 20 }}>
+          <img
+            src="/images/logo.png"
+            alt="OddsRivals"
+            style={{
+              height: 48, width: 48, borderRadius: 12, flexShrink: 0,
+              filter: 'drop-shadow(0 0 12px rgba(34,197,94,0.35))',
+            }}
+          />
           <div style={{ display: 'flex', alignItems: 'center', gap: 5, background: 'rgba(34,197,94,0.08)', border: '1px solid rgba(34,197,94,0.25)', borderRadius: 99, padding: '3px 9px' }}>
             <span style={{ width: 5, height: 5, borderRadius: '50%', background: '#22c55e', display: 'block', animation: 'auth-pulse-ring 1.4s ease-out infinite', boxShadow: '0 0 6px #22c55e' }}/>
             <span style={{ color: '#22c55e', fontSize: 9, letterSpacing: '0.14em', fontFamily: "'IBM Plex Mono', monospace", fontWeight: 600 }}>{gwData?.sprint?.name ?? 'SEASON LIVE'}</span>
@@ -739,6 +678,16 @@ function HeroPanel({ onTryIt, gwData, onHowItWorks }) {
           <p style={{ fontSize: 16, color: 'rgba(255,255,255,0.45)', fontFamily: "'IBM Plex Mono', monospace", margin: 0, lineHeight: 1.6 }}>
             A football prediction game where every pick counts. Choose 6 events each week, beat your mates and climb from Academy to Legend.
           </p>
+        </div>
+
+        {/* Picks preview image */}
+        <div style={{ marginBottom: 20, borderRadius: 16, overflow: 'hidden', flexShrink: 0,
+          border: '1px solid rgba(124,110,245,0.2)',
+          boxShadow: '0 0 0 1px rgba(255,255,255,0.04), 0 16px 48px rgba(0,0,0,0.6), 0 0 32px -8px rgba(124,110,245,0.25)',
+        }}>
+          <img src="/images/picks-preview.png" alt="Make your picks"
+            style={{ width: '100%', height: 220, objectFit: 'cover', objectPosition: 'center 20%', display: 'block' }}
+          />
         </div>
 
         {/* HOW TO PLAY */}
@@ -764,11 +713,11 @@ function HeroPanel({ onTryIt, gwData, onHowItWorks }) {
                 fontSize: 17, boxShadow: `0 0 10px ${accent}20`,
               }}>{icon}</div>
               <div style={{ minWidth: 0, flex: 1 }}>
-                <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 4 }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 3 }}>
                   <span style={{ fontSize: 11, color: accent, fontFamily: "'IBM Plex Mono', monospace", fontWeight: 700, letterSpacing: '0.12em', opacity: 0.85 }}>{num}</span>
-                  <span style={{ fontSize: 18, fontFamily: "'Syne', sans-serif", fontWeight: 700, color: '#fff', lineHeight: 1.2 }}>{title}</span>
+                  <span style={{ fontSize: 22, fontFamily: "'Syne', sans-serif", fontWeight: 700, color: '#fff', lineHeight: 1.15 }}>{title}</span>
                 </div>
-                <p style={{ fontSize: 14, color: 'rgba(255,255,255,0.5)', fontFamily: "'IBM Plex Mono', monospace", lineHeight: 1.6, margin: 0 }}>{desc}</p>
+                <p style={{ fontSize: 12, color: 'rgba(255,255,255,0.45)', fontFamily: "'IBM Plex Mono', monospace", lineHeight: 1.4, margin: 0, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{desc}</p>
               </div>
             </div>
           ))}
@@ -841,7 +790,7 @@ export default function AuthLayout({ heading, subheading, children }) {
         <HeroPanel onTryIt={() => setShowPreview(true)} gwData={gwData} onHowItWorks={() => setShowGuide(true)}/>
 
         {/* Right panel */}
-        <div style={{
+        <div className="auth-right-panel" style={{
           flex: 1, display: 'flex', flexDirection: 'column',
           alignItems: 'center', justifyContent: 'flex-start',
           padding: '60px 24px 40px', position: 'relative', overflowY: 'auto',
@@ -865,23 +814,14 @@ export default function AuthLayout({ heading, subheading, children }) {
               textAlign: 'center', marginBottom: 28,
               flexDirection: 'column', alignItems: 'center', gap: 6,
             }}>
-              <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-                <div style={{
-                  background: 'linear-gradient(135deg, #22c55e 0%, #16a34a 100%)',
-                  borderRadius: 7, width: 26, height: 26,
-                  display: 'flex', alignItems: 'center', justifyContent: 'center',
-                  fontSize: 13, boxShadow: '0 0 12px rgba(34,197,94,0.4)',
-                }}>⚽</div>
-                <span style={{
-                  fontFamily: "'Syne', sans-serif", fontWeight: 700, fontSize: 20,
-                  letterSpacing: '0.04em',
-                  background: 'linear-gradient(90deg, #22c55e, #a78bfa, #fff)',
-                  WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent',
-                }}>ODDSRIVALS</span>
-              </div>
+              <img
+                src="/images/logo.png"
+                alt="OddsRivals"
+                style={{ height: 56, width: 56, borderRadius: 14, filter: 'drop-shadow(0 0 10px rgba(34,197,94,0.35))' }}
+              />
               <p style={{
                 fontSize: 10, color: 'rgba(255,255,255,0.22)',
-                letterSpacing: '0.1em', fontFamily: "'IBM Plex Mono', monospace",
+                letterSpacing: '0.1em', fontFamily: "'IBM Plex Mono', monospace", marginTop: 6,
               }}>PREDICT · PROVE IT · CLIMB</p>
             </div>
 
@@ -987,11 +927,11 @@ export default function AuthLayout({ heading, subheading, children }) {
                       fontSize: 17, boxShadow: `0 0 10px ${accent}20`,
                     }}>{icon}</div>
                     <div style={{ minWidth: 0, flex: 1 }}>
-                      <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 4 }}>
+                      <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 3 }}>
                         <span style={{ fontSize: 11, color: accent, fontFamily: "'IBM Plex Mono', monospace", fontWeight: 700, letterSpacing: '0.12em', opacity: 0.85 }}>{num}</span>
-                        <span style={{ fontSize: 18, fontFamily: "'Syne', sans-serif", fontWeight: 700, color: '#fff', lineHeight: 1.2 }}>{title}</span>
+                        <span style={{ fontSize: 22, fontFamily: "'Syne', sans-serif", fontWeight: 700, color: '#fff', lineHeight: 1.15 }}>{title}</span>
                       </div>
-                      <p style={{ fontSize: 14, color: 'rgba(255,255,255,0.5)', fontFamily: "'IBM Plex Mono', monospace", lineHeight: 1.6, margin: 0 }}>{desc}</p>
+                      <p style={{ fontSize: 12, color: 'rgba(255,255,255,0.45)', fontFamily: "'IBM Plex Mono', monospace", lineHeight: 1.4, margin: 0, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{desc}</p>
                     </div>
                   </div>
                 ))}
