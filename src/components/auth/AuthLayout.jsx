@@ -570,19 +570,19 @@ const STEPS = [
     desc: '1 League Point per correct pick. Nail all 6 and earn a Perfect Week (+4 bonus).',
   },
   {
-    num: '03', accent: '#f59e0b', icon: '📅',
+    num: '03', accent: '#facc15', icon: '⚡',
+    title: 'Spend your energy wisely.',
+    desc: 'Each week you get 30⚡ to spread across your 6 picks. Riskier outcomes cost more — manage your energy to maximise your score.',
+  },
+  {
+    num: '04', accent: '#f59e0b', icon: '📅',
     title: 'Monthly Sprints',
     desc: 'Each calendar month is a Sprint — your League Points decide promotion or relegation.',
   },
   {
-    num: '04', accent: '#38bdf8', icon: '🏆',
+    num: '05', accent: '#38bdf8', icon: '🏆',
     title: 'Climb the divisions. Build your legacy.',
     desc: 'Rise from Academy to Hall of Legends Sprint by Sprint — earn badges for Perfect Weeks, promotions and accuracy.',
-  },
-  {
-    num: '05', accent: '#facc15', icon: '⚡',
-    title: 'Spend your energy wisely.',
-    desc: 'Each week you get 30⚡ to spread across your 6 picks. Riskier outcomes cost more — manage your energy to maximise your score.',
   },
 ]
 
