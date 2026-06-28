@@ -209,6 +209,7 @@ const KEYFRAMES = `
 .auth-hero { display: none !important; }
 .auth-mobile-logo { display: flex !important; }
 .auth-mobile-steps { display: block !important; }
+.auth-right-panel { overflow-x: hidden !important; }
 @media (min-width: 900px) {
   .auth-hero { display: flex !important; }
   .auth-mobile-logo { display: none !important; }
@@ -796,16 +797,16 @@ export default function AuthLayout({ heading, subheading, children }) {
           padding: '60px 24px 40px', position: 'relative', overflowY: 'auto',
         }}>
           <div style={{
-            position: 'absolute', top: -100, right: -100, width: 340, height: 340,
+            position: 'absolute', top: 0, right: 0, width: 260, height: 260,
             borderRadius: '50%',
             background: 'radial-gradient(circle, rgba(34,197,94,0.06) 0%, transparent 70%)',
-            pointerEvents: 'none',
+            pointerEvents: 'none', transform: 'translate(50%, -50%)',
           }}/>
           <div style={{
-            position: 'absolute', bottom: -80, left: -80, width: 280, height: 280,
+            position: 'absolute', bottom: 0, left: 0, width: 220, height: 220,
             borderRadius: '50%',
             background: 'radial-gradient(circle, rgba(124,110,245,0.08) 0%, transparent 70%)',
-            pointerEvents: 'none',
+            pointerEvents: 'none', transform: 'translate(-50%, 50%)',
           }}/>
 
           <div style={{ width: '100%', maxWidth: 390, animation: 'auth-fade-in 0.5s ease both' }}>
