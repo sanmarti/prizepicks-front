@@ -597,13 +597,13 @@ function HeroPanel({ onTryIt, gwData, onHowItWorks }) {
       <div style={{
         position: 'absolute', inset: 0, pointerEvents: 'none',
         backgroundImage: 'url(/images/analysis.png)',
-        backgroundSize: 'cover', backgroundPosition: 'center top',
-        opacity: 0.13,
+        backgroundSize: 'cover', backgroundPosition: 'center center',
+        opacity: 0.45,
       }}/>
-      {/* Dark gradient over the bg image */}
+      {/* Dark overlay to darken the bg image */}
       <div style={{
         position: 'absolute', inset: 0, pointerEvents: 'none',
-        background: 'linear-gradient(160deg, rgba(5,8,15,0.82) 0%, rgba(7,12,20,0.65) 50%, rgba(4,8,16,0.88) 100%)',
+        background: 'linear-gradient(160deg, rgba(5,8,15,0.78) 0%, rgba(7,12,20,0.55) 50%, rgba(4,8,16,0.82) 100%)',
       }}/>
 
       {/* Grid texture */}
@@ -679,16 +679,6 @@ function HeroPanel({ onTryIt, gwData, onHowItWorks }) {
           <p style={{ fontSize: 16, color: 'rgba(255,255,255,0.45)', fontFamily: "'IBM Plex Mono', monospace", margin: 0, lineHeight: 1.6 }}>
             A football prediction game where every pick counts. Choose 6 events each week, beat your mates and climb from Academy to Legend.
           </p>
-        </div>
-
-        {/* Picks preview image */}
-        <div style={{ marginBottom: 20, borderRadius: 16, overflow: 'hidden', flexShrink: 0,
-          border: '1px solid rgba(124,110,245,0.2)',
-          boxShadow: '0 0 0 1px rgba(255,255,255,0.04), 0 16px 48px rgba(0,0,0,0.6), 0 0 32px -8px rgba(124,110,245,0.25)',
-        }}>
-          <img src="/images/picks-preview.png" alt="Make your picks"
-            style={{ width: '100%', height: 220, objectFit: 'cover', objectPosition: 'center 20%', display: 'block' }}
-          />
         </div>
 
         {/* HOW TO PLAY */}
