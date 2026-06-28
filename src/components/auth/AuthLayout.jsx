@@ -654,8 +654,8 @@ function HeroPanel({ onTryIt, gwData, onHowItWorks }) {
             src="/images/logo.png"
             alt="OddsRivals"
             style={{
-              height: 48, width: 48, borderRadius: 12, flexShrink: 0,
-              filter: 'drop-shadow(0 0 12px rgba(34,197,94,0.35))',
+              height: 52, width: 'auto', flexShrink: 0,
+              filter: 'drop-shadow(0 0 10px rgba(34,197,94,0.4)) drop-shadow(0 0 20px rgba(124,110,245,0.2))',
             }}
           />
           <div style={{ display: 'flex', alignItems: 'center', gap: 5, background: 'rgba(34,197,94,0.08)', border: '1px solid rgba(34,197,94,0.25)', borderRadius: 99, padding: '3px 9px' }}>
@@ -818,7 +818,10 @@ export default function AuthLayout({ heading, subheading, children }) {
               <img
                 src="/images/logo.png"
                 alt="OddsRivals"
-                style={{ height: 56, width: 56, borderRadius: 14, filter: 'drop-shadow(0 0 10px rgba(34,197,94,0.35))' }}
+                style={{
+                  height: 64, width: 'auto',
+                  filter: 'drop-shadow(0 0 10px rgba(34,197,94,0.4)) drop-shadow(0 0 20px rgba(124,110,245,0.2))',
+                }}
               />
               <p style={{
                 fontSize: 10, color: 'rgba(255,255,255,0.22)',
