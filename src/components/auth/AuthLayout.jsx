@@ -209,16 +209,20 @@ const KEYFRAMES = `
 .auth-hero { display: none !important; }
 .auth-mobile-logo { display: flex !important; }
 .auth-mobile-steps { display: block !important; }
+.auth-desktop-cta { display: block !important; }
+.auth-mobile-cta { display: block !important; }
 @media (max-width: 899px) {
   .auth-outer { height: auto !important; overflow: visible !important; }
   .auth-inner { overflow: visible !important; height: auto !important; flex: none !important; }
   .auth-right-panel { overflow: visible !important; height: auto !important; }
+  .auth-desktop-cta { display: none !important; }
 }
 @media (min-width: 900px) {
   .auth-hero { display: flex !important; }
   .auth-mobile-logo { display: none !important; }
   .auth-mobile-steps { display: none !important; }
   .auth-right-panel { overflow: hidden !important; }
+  .auth-mobile-cta { display: none !important; }
 }
 `
 
@@ -572,7 +576,7 @@ const STEPS = [
   {
     num: '03', accent: '#facc15', icon: '⚡',
     title: 'Spend your energy wisely.',
-    desc: 'Each week you get 30⚡ to spread across your 6 picks. Riskier outcomes cost more — manage your energy to maximise your score.',
+    desc: 'Each week you get 30⚡ to spread across your 6 picks. Safer outcomes cost less — manage your energy to maximise your score.',
   },
   {
     num: '04', accent: '#f59e0b', icon: '📅',
@@ -859,8 +863,8 @@ export default function AuthLayout({ heading, subheading, children }) {
               {children}
             </div>
 
-            {/* ── Make your picks CTA — always visible below the auth card ── */}
-            <div style={{ marginTop: 16 }}>
+            {/* ── Make your picks CTA — desktop only below the auth card ── */}
+            <div className="auth-desktop-cta" style={{ marginTop: 16 }}>
               <div style={{
                 background: 'linear-gradient(135deg, rgba(124,110,245,0.08) 0%, rgba(34,197,94,0.06) 100%)',
                 border: '1px solid rgba(124,110,245,0.2)',
@@ -941,6 +945,47 @@ export default function AuthLayout({ heading, subheading, children }) {
                     </div>
                   </div>
                 ))}
+              </div>
+
+              {/* Make your picks CTA — mobile only, after the step cards */}
+              <div className="auth-mobile-cta" style={{ marginBottom: 40 }}>
+                <div style={{
+                  background: 'linear-gradient(135deg, rgba(124,110,245,0.08) 0%, rgba(34,197,94,0.06) 100%)',
+                  border: '1px solid rgba(124,110,245,0.2)',
+                  borderRadius: 16, padding: '14px 16px',
+                }}>
+                  <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 10, minHeight: 20, opacity: gwData ? 1 : 0, transition: 'opacity 0.3s' }}>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: 7 }}>
+                      <span style={{ fontSize: 9, letterSpacing: '0.14em', color: '#a78bfa', fontFamily: "'IBM Plex Mono', monospace", fontWeight: 700 }}>
+                        {gwData?.sprint?.name}
+                      </span>
+                      <span style={{ background: 'rgba(34,197,94,0.12)', border: '1px solid rgba(34,197,94,0.25)', borderRadius: 99, padding: '1px 7px', fontSize: 8, color: '#22c55e', letterSpacing: '0.1em', fontFamily: "'IBM Plex Mono', monospace" }}>
+                        LIVE
+                      </span>
+                    </div>
+                    <span style={{ fontSize: 10, color: 'rgba(255,255,255,0.3)', fontFamily: "'IBM Plex Mono', monospace" }}>
+                      GW{gwData?.gameweek?.sprint_week} · 15 events
+                    </span>
+                  </div>
+                  <button
+                    onClick={() => setShowPreview(true)}
+                    style={{
+                      width: '100%', padding: '13px 0', borderRadius: 12, border: 'none',
+                      cursor: 'pointer', fontFamily: "'Syne', sans-serif", fontWeight: 700,
+                      fontSize: 14, letterSpacing: '0.08em', color: '#fff',
+                      background: 'linear-gradient(90deg, #16a34a 0%, #22c55e 50%, #16a34a 100%)',
+                      backgroundSize: '200% auto', animation: 'auth-shimmer 3s linear infinite',
+                      boxShadow: '0 4px 20px rgba(34,197,94,0.35)',
+                    }}
+                  >
+                    MAKE YOUR PICKS →
+                  </button>
+                </div>
+                <p style={{
+                  textAlign: 'center', marginTop: 10, fontSize: 10,
+                  color: 'rgba(255,255,255,0.45)', letterSpacing: '0.08em',
+                  fontFamily: "'IBM Plex Mono', monospace",
+                }}>FREE TO PLAY · NO CARD REQUIRED TO START</p>
               </div>
 
             </div>
