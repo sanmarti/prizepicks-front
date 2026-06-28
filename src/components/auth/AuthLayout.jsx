@@ -797,9 +797,10 @@ export default function AuthLayout({ heading, subheading, children }) {
 
           <div style={{ width: '100%', maxWidth: 390, animation: 'auth-fade-in 0.5s ease both' }}>
             {/* Mobile-only logo */}
+            {/* Mobile logo + name */}
             <div className="auth-mobile-logo" style={{
-              textAlign: 'center', marginBottom: 28,
               flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 12,
+              marginBottom: 20,
             }}>
               <img
                 src="/images/logo.png"
@@ -810,18 +811,32 @@ export default function AuthLayout({ heading, subheading, children }) {
                   filter: 'drop-shadow(0 0 10px rgba(34,197,94,0.4)) drop-shadow(0 0 20px rgba(124,110,245,0.2))',
                 }}
               />
-              <div style={{ display: 'flex', flexDirection: 'column', gap: 3, textAlign: 'left' }}>
-                <span style={{
-                  fontFamily: "'Syne', sans-serif", fontWeight: 700, fontSize: 20,
-                  letterSpacing: '0.04em', lineHeight: 1,
-                  background: 'linear-gradient(90deg, #fff 0%, rgba(255,255,255,0.75) 100%)',
-                  WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent',
-                }}>ODDS RIVALS</span>
-                <p style={{
-                  fontSize: 9, color: 'rgba(255,255,255,0.22)',
-                  letterSpacing: '0.1em', fontFamily: "'IBM Plex Mono', monospace", margin: 0,
-                }}>PREDICT · PROVE IT · CLIMB</p>
-              </div>
+              <span style={{
+                fontFamily: "'Syne', sans-serif", fontWeight: 700, fontSize: 20,
+                letterSpacing: '0.04em', lineHeight: 1,
+                background: 'linear-gradient(90deg, #fff 0%, rgba(255,255,255,0.75) 100%)',
+                WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent',
+              }}>ODDS RIVALS</span>
+            </div>
+
+            {/* Mobile hero text */}
+            <div className="auth-mobile-logo" style={{
+              flexDirection: 'column', alignItems: 'flex-start', gap: 8,
+              marginBottom: 24,
+            }}>
+              <h1 style={{
+                fontFamily: "'Syne', sans-serif", fontWeight: 700,
+                fontSize: 28, lineHeight: 1.1,
+                letterSpacing: '-0.02em', margin: 0, color: '#fff',
+              }}>
+                Pick smarter.{' '}
+                <span style={{ background: 'linear-gradient(90deg, #22c55e 0%, #a78bfa 60%, #f59e0b 100%)', WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent' }}>
+                  Rise through the ranks.
+                </span>
+              </h1>
+              <p style={{ fontSize: 13, color: 'rgba(255,255,255,0.45)', fontFamily: "'IBM Plex Mono', monospace", margin: 0, lineHeight: 1.6 }}>
+                A football prediction game where every pick counts. Choose 6 events each week, beat your mates and climb from Academy to Legend.
+              </p>
             </div>
 
             {/* Glass card */}
