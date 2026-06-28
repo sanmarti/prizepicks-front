@@ -654,7 +654,8 @@ function HeroPanel({ onTryIt, gwData, onHowItWorks }) {
             src="/images/logo.png"
             alt="OddsRivals"
             style={{
-              height: 52, width: 'auto', flexShrink: 0,
+              height: 52, width: 52, flexShrink: 0,
+              borderRadius: 12, objectFit: 'cover',
               filter: 'drop-shadow(0 0 10px rgba(34,197,94,0.4)) drop-shadow(0 0 20px rgba(124,110,245,0.2))',
             }}
           />
@@ -809,7 +810,8 @@ export default function AuthLayout({ heading, subheading, children }) {
                 src="/images/logo.png"
                 alt="OddsRivals"
                 style={{
-                  height: 64, width: 'auto',
+                  height: 64, width: 64,
+                  borderRadius: 16, objectFit: 'cover',
                   filter: 'drop-shadow(0 0 10px rgba(34,197,94,0.4)) drop-shadow(0 0 20px rgba(124,110,245,0.2))',
                 }}
               />
