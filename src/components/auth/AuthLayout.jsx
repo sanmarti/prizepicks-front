@@ -231,6 +231,16 @@ const MAX_PICKS    = 6
 // ── Game Preview Modal ─────────────────────────────────────────────────────────
 // picks: { eventId: { optionId, label, energyCost } }
 
+const EVENT_TYPE_LABELS = {
+  MATCH_RESULT:  { label: 'Match Result',     icon: '⚽' },
+  WHO_QUALIFIES: { label: 'Who Qualifies?',   icon: '💥' },
+  GOALS:         { label: 'Goals Over/Under', icon: '🥅' },
+  CLEAN_SHEET:   { label: 'Clean Sheet',      icon: '🧤' },
+  BTTS:          { label: 'Both Teams Score', icon: '🎯' },
+  PLAYER_SCORE:  { label: 'Player Scores',    icon: '⭐' },
+  CORNER_OVER:   { label: 'Corner Kicks',     icon: '🚩' },
+}
+
 function GamePreviewModal({ onClose, onSignUp, onLogin, gwData }) {
   const [picks, setPicks]         = useState({})
   const [submitted, setSubmitted] = useState(false)
@@ -401,36 +411,32 @@ function GamePreviewModal({ onClose, onSignUp, onLogin, gwData }) {
                     borderRadius: 14, padding: '12px 14px', transition: 'all 0.15s',
                     opacity: locked ? 0.35 : 1,
                   }}>
-                    <div style={{ fontSize: 9, color: 'rgba(255,255,255,0.22)', fontFamily: "'IBM Plex Mono', monospace", marginBottom: 7 }}>
-                      {ev.competition || ev.event_type}
+                    {/* Competition + pick type */}
+                    <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 7 }}>
+                      <span style={{ fontSize: 9, color: 'rgba(255,255,255,0.22)', fontFamily: "'IBM Plex Mono', monospace" }}>
+                        {ev.competition || ''}
+                      </span>
+                      {(() => {
+                        const meta = EVENT_TYPE_LABELS[ev.event_type]
+                        if (!meta) return null
+                        return (
+                          <span style={{ fontSize: 9, color: 'rgba(167,139,250,0.7)', fontFamily: "'IBM Plex Mono', monospace", display: 'flex', alignItems: 'center', gap: 3 }}>
+                            <span style={{ fontSize: 10 }}>{meta.icon}</span>
+                            {meta.label}
+                          </span>
+                        )
+                      })()}
                     </div>
+                    {/* Teams with vs */}
                     <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 8 }}>
-                      {ev.event_type === 'WHO_QUALIFIES' ? (
-                        <>
-                          {(ev.home_logo || ev.fixture_home_logo)
-                            ? <img src={ev.home_logo || ev.fixture_home_logo} alt="" style={{ width: 18, height: 18, objectFit: 'contain', flexShrink: 0 }} onError={e => { e.target.style.display='none' }}/>
-                            : null
-                          }
-                          <span style={{ flex: 1, fontSize: 12, fontFamily: "'Syne', sans-serif", fontWeight: 700, color: 'rgba(255,255,255,0.8)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{home}</span>
-                          <span style={{ fontSize: 14, flexShrink: 0 }}>💥</span>
-                          <span style={{ flex: 1, textAlign: 'right', fontSize: 12, fontFamily: "'Syne', sans-serif", fontWeight: 700, color: 'rgba(255,255,255,0.8)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{away}</span>
-                          {(ev.away_logo || ev.fixture_away_logo)
-                            ? <img src={ev.away_logo || ev.fixture_away_logo} alt="" style={{ width: 18, height: 18, objectFit: 'contain', flexShrink: 0 }} onError={e => { e.target.style.display='none' }}/>
-                            : null
-                          }
-                        </>
-                      ) : (
-                        <>
-                          {(ev.home_logo || ev.fixture_home_logo) && (
-                            <img src={ev.home_logo || ev.fixture_home_logo} alt="" style={{ width: 18, height: 18, objectFit: 'contain', flexShrink: 0 }} onError={e => { e.target.style.display='none' }}/>
-                          )}
-                          <span style={{ flex: 1, fontSize: 12, fontFamily: "'Syne', sans-serif", fontWeight: 700, color: 'rgba(255,255,255,0.8)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{home}</span>
-                          <span style={{ fontSize: 9, color: 'rgba(255,255,255,0.2)', fontFamily: "'IBM Plex Mono', monospace", flexShrink: 0 }}>vs</span>
-                          <span style={{ flex: 1, textAlign: 'right', fontSize: 12, fontFamily: "'Syne', sans-serif", fontWeight: 700, color: 'rgba(255,255,255,0.8)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{away}</span>
-                          {(ev.away_logo || ev.fixture_away_logo) && (
-                            <img src={ev.away_logo || ev.fixture_away_logo} alt="" style={{ width: 18, height: 18, objectFit: 'contain', flexShrink: 0 }} onError={e => { e.target.style.display='none' }}/>
-                          )}
-                        </>
+                      {(ev.home_logo || ev.fixture_home_logo) && (
+                        <img src={ev.home_logo || ev.fixture_home_logo} alt="" style={{ width: 18, height: 18, objectFit: 'contain', flexShrink: 0 }} onError={e => { e.target.style.display='none' }}/>
+                      )}
+                      <span style={{ flex: 1, fontSize: 12, fontFamily: "'Syne', sans-serif", fontWeight: 700, color: 'rgba(255,255,255,0.8)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{home}</span>
+                      <span style={{ fontSize: 9, color: 'rgba(255,255,255,0.25)', fontFamily: "'IBM Plex Mono', monospace", flexShrink: 0 }}>vs</span>
+                      <span style={{ flex: 1, textAlign: 'right', fontSize: 12, fontFamily: "'Syne', sans-serif", fontWeight: 700, color: 'rgba(255,255,255,0.8)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{away}</span>
+                      {(ev.away_logo || ev.fixture_away_logo) && (
+                        <img src={ev.away_logo || ev.fixture_away_logo} alt="" style={{ width: 18, height: 18, objectFit: 'contain', flexShrink: 0 }} onError={e => { e.target.style.display='none' }}/>
                       )}
                     </div>
                     <div style={{ display: 'flex', gap: 8 }}>
@@ -564,12 +570,12 @@ function GamePreviewModal({ onClose, onSignUp, onLogin, gwData }) {
 
 const STEPS = [
   {
-    num: '01', accent: '#22c55e', icon: '⚽',
-    title: '15 events. Your 6 picks.',
+    num: '01', accent: '#22c55e', icon: '🔮',
+    title: '15 weekly events. Predict 6 outcomes.',
     desc: '15 prediction events every Monday — pick your 6 before the weekly deadline.',
   },
   {
-    num: '02', accent: '#a78bfa', icon: '🎯',
+    num: '02', accent: '#a78bfa', icon: '⚽',
     title: 'Prove you know football.',
     desc: '1 League Point per correct pick. Nail all 6 and earn a Perfect Week (+4 bonus).',
   },
@@ -898,9 +904,9 @@ export default function AuthLayout({ heading, subheading, children }) {
                     width: '100%', padding: '13px 0', borderRadius: 12, border: 'none',
                     cursor: 'pointer', fontFamily: "'Syne', sans-serif", fontWeight: 700,
                     fontSize: 14, letterSpacing: '0.08em', color: '#fff',
-                    background: 'linear-gradient(90deg, #16a34a 0%, #22c55e 50%, #16a34a 100%)',
+                    background: 'linear-gradient(90deg, #7c6ef5 0%, #9b8ef8 50%, #7c6ef5 100%)',
                     backgroundSize: '200% auto', animation: 'auth-shimmer 3s linear infinite',
-                    boxShadow: '0 4px 20px rgba(34,197,94,0.35)',
+                    boxShadow: '0 4px 20px rgba(124,110,245,0.35)',
                   }}
                 >
                   MAKE YOUR PICKS →
