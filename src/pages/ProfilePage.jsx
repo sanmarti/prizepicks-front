@@ -84,38 +84,6 @@ function AvatarTierBadge({ tier, size = 'lg' }) {
   )
 }
 
-const AWARD_BADGES = [
-  {
-    key: 'perfect',
-    icon: '⭐',
-    label: 'Perfect\nweeks',
-    bg: 'linear-gradient(135deg, #1a1200, #2d1f00, #1a0e00)',
-    border: 'rgba(250,204,21,0.45)',
-    shadow: '0 0 18px -4px rgba(250,204,21,0.4)',
-    numColor: '#fde047',
-    shine: 'rgba(250,204,21,0.08)',
-  },
-  {
-    key: 'sprints',
-    icon: '🏆',
-    label: 'Sprints\ncompleted',
-    bg: 'linear-gradient(135deg, #050d1a, #0c1f3a, #060f1f)',
-    border: 'rgba(56,189,248,0.45)',
-    shadow: '0 0 18px -4px rgba(56,189,248,0.4)',
-    numColor: '#7dd3fc',
-    shine: 'rgba(56,189,248,0.08)',
-  },
-  {
-    key: 'matchweeks',
-    icon: '📅',
-    label: 'Matchweeks\nplayed',
-    bg: 'linear-gradient(135deg, #0d0520, #1a0a3a, #0a041a)',
-    border: 'rgba(167,139,250,0.45)',
-    shadow: '0 0 18px -4px rgba(167,139,250,0.4)',
-    numColor: '#c4b5fd',
-    shine: 'rgba(167,139,250,0.08)',
-  },
-]
 
 const ALL_BADGES_STATIC = [
   { code: 'FIRST_GAMEWEEK',    name: 'First Gameweek',      description: 'Completed your first Gameweek',                        icon: '🎮' },
@@ -175,32 +143,6 @@ const COMP_ACCENT_DEFAULT = { glow: '#34d399', border: 'rgba(52,211,153,0.35)', 
 
 const LEAGUE_FLAGS = { 1:'🌍', 2:'⭐', 3:'🏅', 848:'🥉', 5:'🌐', 39:'🏴󠁧󠁢󠁥󠁮󠁧󠁿', 140:'🇪🇸', 78:'🇩🇪', 135:'🇮🇹', 61:'🇫🇷', 88:'🇳🇱', 94:'🇵🇹', 144:'🇧🇪', 179:'🏴󠁧󠁢󠁳󠁣󠁴󠁿', 45:'🏴󠁧󠁢󠁥󠁮󠁧󠁿', 143:'🇪🇸', 137:'🇮🇹', 15:'🌐', 253:'🇺🇸' }
 
-function AwardBadge({ cfg, count }) {
-  return (
-    <div className="relative flex-shrink-0 flex flex-col items-center justify-center gap-1 rounded-2xl overflow-hidden"
-      style={{
-        width: 78, paddingTop: 14, paddingBottom: 14,
-        background: cfg.bg,
-        border: `1px solid ${cfg.border}`,
-        boxShadow: cfg.shadow,
-      }}>
-      {/* glow blob */}
-      <div className="absolute inset-0 pointer-events-none"
-        style={{ background: `radial-gradient(ellipse at 50% 0%, ${cfg.shine} 0%, transparent 70%)` }} />
-      {/* notch at top (medal ribbon feel) */}
-      <div className="absolute top-0 left-1/2 -translate-x-1/2 w-5 h-[3px] rounded-b-full"
-        style={{ background: cfg.border }} />
-      <span className="relative text-2xl leading-none">{cfg.icon}</span>
-      <span className="relative font-black text-xl leading-none tabular-nums" style={{ color: cfg.numColor }}>
-        {count ?? 0}
-      </span>
-      <span className="relative text-center leading-tight whitespace-pre-line"
-        style={{ fontSize: 8, fontWeight: 700, color: 'rgba(255,255,255,0.28)', letterSpacing: '0.05em', textTransform: 'uppercase' }}>
-        {cfg.label}
-      </span>
-    </div>
-  )
-}
 
 function AvatarPicker({ src, name, uploading, onFile, ringClass = 'border-indigo-500', tier = null }) {
   const ref = useRef()
@@ -761,7 +703,10 @@ export default function ProfilePage() {
                       : <span className="text-[10px] font-black uppercase tracking-[0.18em] text-amber-500/60">Prediction accuracy</span>
                     }
                   </div>
-                  <span className="text-white/25 text-[10px] font-semibold uppercase tracking-widest">lifetime</span>
+                  <span className="text-[10px] font-black uppercase tracking-widest px-2 py-0.5 rounded-full"
+                    style={{ background: 'rgba(245,158,11,0.12)', color: 'rgba(251,191,36,0.65)', border: '1px solid rgba(245,158,11,0.2)' }}>
+                    lifetime
+                  </span>
                 </div>
                 <p className={`font-black leading-none mb-1 ${tier ? tier.badgeText : 'text-amber-300'}`}
                   style={{ fontSize: 56 }}>
@@ -837,32 +782,47 @@ export default function ProfilePage() {
             <div className="bg-[#0d1117] border border-white/8 rounded-2xl overflow-hidden">
               <div className="px-4 py-3 border-b border-white/5 flex items-center justify-between">
                 <p className="text-gray-500 text-[11px] font-semibold tracking-widest uppercase">Lifetime Stats</p>
-                <span className="text-[9px] text-white/15 font-semibold uppercase tracking-widest">all time</span>
+                <span className="text-[9px] font-black uppercase tracking-widest px-2 py-0.5 rounded-full"
+                  style={{ background: 'rgba(139,92,246,0.12)', color: 'rgba(167,139,250,0.6)', border: '1px solid rgba(139,92,246,0.2)' }}>
+                  lifetime
+                </span>
               </div>
               <div className="p-3 grid grid-cols-3 gap-2">
-                <div className="rounded-xl bg-violet-500/8 border border-violet-500/15 py-3 text-center">
-                  <p className="text-violet-300 font-black text-2xl leading-none">{stats?.lifetime_lp ?? 0}</p>
-                  <p className="text-white/25 text-[9px] uppercase tracking-wider mt-1">LP</p>
+                <div className="relative rounded-xl overflow-hidden py-3 text-center" style={{ background: 'linear-gradient(135deg, #1a0d3a, #2d1a5a)', border: '1px solid rgba(139,92,246,0.3)', boxShadow: '0 0 16px -4px rgba(139,92,246,0.3)' }}>
+                  <div className="absolute -top-3 -right-3 w-12 h-12 rounded-full blur-xl pointer-events-none" style={{ background: '#7c3aed', opacity: 0.3 }} />
+                  <p className="text-base leading-none mb-1">🏅</p>
+                  <p className="text-violet-200 font-black text-2xl leading-none">{stats?.lifetime_lp ?? 0}</p>
+                  <p className="text-violet-400/50 text-[9px] uppercase tracking-wider mt-1">LP</p>
                 </div>
-                <div className="rounded-xl bg-emerald-500/8 border border-emerald-500/15 py-3 text-center">
-                  <p className="text-emerald-300 font-black text-2xl leading-none">{stats?.lifetime_correct ?? 0}</p>
-                  <p className="text-white/25 text-[9px] uppercase tracking-wider mt-1">Correct</p>
+                <div className="relative rounded-xl overflow-hidden py-3 text-center" style={{ background: 'linear-gradient(135deg, #052a1a, #0a3d28)', border: '1px solid rgba(52,211,153,0.3)', boxShadow: '0 0 16px -4px rgba(52,211,153,0.25)' }}>
+                  <div className="absolute -top-3 -right-3 w-12 h-12 rounded-full blur-xl pointer-events-none" style={{ background: '#059669', opacity: 0.3 }} />
+                  <p className="text-base leading-none mb-1">✅</p>
+                  <p className="text-emerald-200 font-black text-2xl leading-none">{stats?.lifetime_correct ?? 0}</p>
+                  <p className="text-emerald-400/50 text-[9px] uppercase tracking-wider mt-1">Correct</p>
                 </div>
-                <div className="rounded-xl bg-rose-500/6 border border-rose-500/12 py-3 text-center">
-                  <p className="text-rose-400 font-black text-2xl leading-none">{stats?.lifetime_incorrect ?? 0}</p>
-                  <p className="text-white/25 text-[9px] uppercase tracking-wider mt-1">Wrong</p>
+                <div className="relative rounded-xl overflow-hidden py-3 text-center" style={{ background: 'linear-gradient(135deg, #2a0a0a, #3d1010)', border: '1px solid rgba(251,113,133,0.3)', boxShadow: '0 0 16px -4px rgba(251,113,133,0.2)' }}>
+                  <div className="absolute -top-3 -right-3 w-12 h-12 rounded-full blur-xl pointer-events-none" style={{ background: '#be123c', opacity: 0.3 }} />
+                  <p className="text-base leading-none mb-1">❌</p>
+                  <p className="text-rose-300 font-black text-2xl leading-none">{stats?.lifetime_incorrect ?? 0}</p>
+                  <p className="text-rose-400/50 text-[9px] uppercase tracking-wider mt-1">Wrong</p>
                 </div>
-                <div className="rounded-xl bg-yellow-500/8 border border-yellow-500/15 py-3 text-center">
-                  <p className="text-yellow-300 font-black text-2xl leading-none">{stats?.total_perfect_weeks ?? 0}</p>
-                  <p className="text-white/25 text-[9px] uppercase tracking-wider mt-1">⭐ Perfect</p>
+                <div className="relative rounded-xl overflow-hidden py-3 text-center" style={{ background: 'linear-gradient(135deg, #1a1200, #2d1f00)', border: '1px solid rgba(250,204,21,0.35)', boxShadow: '0 0 16px -4px rgba(250,204,21,0.25)' }}>
+                  <div className="absolute -top-3 -right-3 w-12 h-12 rounded-full blur-xl pointer-events-none" style={{ background: '#ca8a04', opacity: 0.3 }} />
+                  <p className="text-base leading-none mb-1">⭐</p>
+                  <p className="text-yellow-200 font-black text-2xl leading-none">{stats?.total_perfect_weeks ?? 0}</p>
+                  <p className="text-yellow-400/50 text-[9px] uppercase tracking-wider mt-1">Perfect</p>
                 </div>
-                <div className="rounded-xl bg-sky-500/8 border border-sky-500/15 py-3 text-center">
-                  <p className="text-sky-300 font-black text-2xl leading-none">{stats?.sprints_played ?? 0}</p>
-                  <p className="text-white/25 text-[9px] uppercase tracking-wider mt-1">Sprints</p>
+                <div className="relative rounded-xl overflow-hidden py-3 text-center" style={{ background: 'linear-gradient(135deg, #051520, #0a2535)', border: '1px solid rgba(56,189,248,0.3)', boxShadow: '0 0 16px -4px rgba(56,189,248,0.2)' }}>
+                  <div className="absolute -top-3 -right-3 w-12 h-12 rounded-full blur-xl pointer-events-none" style={{ background: '#0284c7', opacity: 0.3 }} />
+                  <p className="text-base leading-none mb-1">🏁</p>
+                  <p className="text-sky-200 font-black text-2xl leading-none">{stats?.sprints_played ?? 0}</p>
+                  <p className="text-sky-400/50 text-[9px] uppercase tracking-wider mt-1">Sprints</p>
                 </div>
-                <div className="rounded-xl bg-cyan-500/8 border border-cyan-500/15 py-3 text-center">
-                  <p className="text-cyan-300 font-black text-2xl leading-none">{stats?.total_picks ?? 0}</p>
-                  <p className="text-white/25 text-[9px] uppercase tracking-wider mt-1">Picks</p>
+                <div className="relative rounded-xl overflow-hidden py-3 text-center" style={{ background: 'linear-gradient(135deg, #051a1a, #0a2d2d)', border: '1px solid rgba(34,211,238,0.3)', boxShadow: '0 0 16px -4px rgba(34,211,238,0.2)' }}>
+                  <div className="absolute -top-3 -right-3 w-12 h-12 rounded-full blur-xl pointer-events-none" style={{ background: '#0891b2', opacity: 0.3 }} />
+                  <p className="text-base leading-none mb-1">🎯</p>
+                  <p className="text-cyan-200 font-black text-2xl leading-none">{stats?.total_picks ?? 0}</p>
+                  <p className="text-cyan-400/50 text-[9px] uppercase tracking-wider mt-1">Picks</p>
                 </div>
               </div>
             </div>
@@ -935,8 +895,38 @@ export default function ProfilePage() {
                   </>
                 )}
 
-                {/* Divider */}
-                {earnedList.length > 0 && lockedList.length > 0 && (
+                {/* Competition Records — alongside earned badges */}
+                {!!glory?.competition_stats?.length && (
+                  <>
+                    {earnedList.length > 0 && <div className="border-t border-white/5 my-1" />}
+                    <p className="text-[9px] uppercase tracking-widest text-white/25 font-black px-1 mb-1">By competition</p>
+                    {glory.competition_stats.map((comp, i) => {
+                      const flag     = LEAGUE_FLAGS[comp.api_league_id] ?? '🏆'
+                      const accuracy = comp.total > 0 ? Math.ceil((comp.correct / comp.total) * 100) : 0
+                      const ac       = COMP_ACCENTS[comp.api_league_id] ?? COMP_ACCENT_DEFAULT
+                      return (
+                        <div key={i} className="relative rounded-2xl overflow-hidden"
+                          style={{ background: 'rgba(255,255,255,0.04)', border: `1px solid ${ac.border}`, boxShadow: `0 0 20px -6px ${ac.glow}44` }}>
+                          <div className="absolute -top-4 -right-4 w-24 h-24 rounded-full blur-3xl pointer-events-none" style={{ background: ac.glow, opacity: 0.12 }} />
+                          <div className="relative flex items-center gap-3 px-4 py-3">
+                            <span className="text-3xl flex-shrink-0 leading-none">{flag}</span>
+                            <div className="min-w-0 flex-1">
+                              <p className="font-bold text-sm leading-tight text-white">{comp.competition_name}</p>
+                              <p className="text-white/35 text-[11px] mt-0.5">{comp.correct} correct · {comp.total} picks</p>
+                            </div>
+                            <div className="flex-shrink-0 text-right">
+                              <p className={`font-black text-lg tabular-nums ${ac.text}`}>{accuracy}%</p>
+                              <span className="text-[9px] uppercase tracking-widest text-white/15">accuracy</span>
+                            </div>
+                          </div>
+                        </div>
+                      )
+                    })}
+                  </>
+                )}
+
+                {/* Divider before locked */}
+                {(earnedList.length > 0 || !!glory?.competition_stats?.length) && lockedList.length > 0 && (
                   <div className="border-t border-white/5 my-1" />
                 )}
 
@@ -964,39 +954,6 @@ export default function ProfilePage() {
                 )}
               </div>
             </div>
-
-            {/* ── Competition Records ── */}
-            {!!glory?.competition_stats?.length && (
-              <div className="bg-[#0d1117] border border-white/8 rounded-2xl overflow-hidden">
-                <div className="px-4 py-3 border-b border-white/5">
-                  <p className="text-gray-500 text-[11px] font-semibold tracking-widest uppercase">Competition Records</p>
-                </div>
-                <div className="p-3 space-y-2">
-                  {glory.competition_stats.map((comp, i) => {
-                    const flag     = LEAGUE_FLAGS[comp.api_league_id] ?? '🏆'
-                    const accuracy = comp.total > 0 ? Math.ceil((comp.correct / comp.total) * 100) : 0
-                    const ac       = COMP_ACCENTS[comp.api_league_id] ?? COMP_ACCENT_DEFAULT
-                    return (
-                      <div key={i} className="relative rounded-2xl overflow-hidden"
-                        style={{ background: 'rgba(255,255,255,0.04)', border: `1px solid ${ac.border}`, boxShadow: `0 0 20px -6px ${ac.glow}44` }}>
-                        <div className="absolute -top-4 -right-4 w-24 h-24 rounded-full blur-3xl pointer-events-none" style={{ background: ac.glow, opacity: 0.12 }} />
-                        <div className="relative flex items-center gap-3 px-4 py-3">
-                          <span className="text-3xl flex-shrink-0 leading-none">{flag}</span>
-                          <div className="min-w-0 flex-1">
-                            <p className="font-bold text-sm leading-tight text-white">{comp.competition_name}</p>
-                            <p className="text-white/35 text-[11px] mt-0.5">{comp.correct} correct · {comp.total} picks</p>
-                          </div>
-                          <div className="flex-shrink-0 text-right">
-                            <p className={`font-black text-lg tabular-nums ${ac.text}`}>{accuracy}%</p>
-                            <span className="text-[9px] uppercase tracking-widest text-white/15">accuracy</span>
-                          </div>
-                        </div>
-                      </div>
-                    )
-                  })}
-                </div>
-              </div>
-            )}
           </div>
           )
         })()}
