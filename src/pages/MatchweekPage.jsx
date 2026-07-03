@@ -19,6 +19,7 @@ const TIER_BG = { gold: 'linear-gradient(135deg,#78350f,#b45309)', silver: 'line
 
 const EVENT_TYPE_LABELS = {
   MATCH_RESULT:  { label: 'Match Result',       icon: '⚽' },
+  WHO_QUALIFIES: { label: 'Who Qualifies?',     icon: '💥' },
   GOALS:         { label: 'Goals Over/Under',   icon: '🥅' },
   CLEAN_SHEET:   { label: 'Clean Sheet',        icon: '🧤' },
   BTTS:          { label: 'Both Teams Score',   icon: '🎯' },
@@ -88,7 +89,6 @@ function energyStyle(cost) {
   return { cls: 'bg-yellow-600/15 text-yellow-500' }
 }
 
-const BASE_ENERGY      = 25
 const MAX_WEEKLY_EXTRA = 5
 
 const LIVE_STATUSES     = ['1H', 'HT', '2H', 'ET', 'BT', 'P', 'SUSP', 'INT', 'LIVE']
@@ -185,13 +185,25 @@ function computePickLiveStatus(event, pickedOptionId, liveEvent) {
     const label = pickedOpt.label.toLowerCase()
     const homeCS = label.includes('home') || (liveEvent.home_team && label.includes(liveEvent.home_team.toLowerCase()))
     if (rk === 'CS_YES' || pickedOpt.label.toLowerCase() === 'yes') {
-      // Check if any goals conceded — if away team scored (home conceded) or vice versa
       const homeConceded = aGoals > 0
       const awayConceded = hGoals > 0
       const conceded = homeCS ? homeConceded : awayConceded
       if (!conceded) return (isLate && min >= 75) ? 'likely' : 'live_winning'
       return isLate ? 'unlikely' : 'live_neutral'
     }
+  }
+
+  // WHO_QUALIFIES — knockout: being behind is always At Risk regardless of minute
+  if (event.event_type === 'WHO_QUALIFIES') {
+    const isET  = st === 'ET' || st === 'BT' || st === 'P'
+    const margin = Math.abs(hGoals - aGoals)
+    const pickedHomeWinning = rk === 'HOME_QUALIFIES' && hGoals > aGoals
+    const pickedAwayWinning = rk === 'AWAY_QUALIFIES' && aGoals > hGoals
+    const pickedTeamAhead   = pickedHomeWinning || pickedAwayWinning
+    const tied              = hGoals === aGoals
+    if (pickedTeamAhead)  return (isLate || isET) && margin >= 1 ? 'likely' : 'live_winning'
+    if (tied)             return 'live_neutral'
+    return 'unlikely'
   }
 
   // Default for LIVE
@@ -209,13 +221,22 @@ const LIVE_STATUS_STYLES = {
   finished_unknown: { bg: 'bg-gray-800/50',       text: 'text-gray-500',    border: 'border-gray-700/50',    dot: 'bg-gray-500',     label: 'Settled'          },
 }
 
-function LivePickBadge({ status, elapsed }) {
+function LivePickBadge({ status, elapsed, matchTime }) {
   const s = LIVE_STATUS_STYLES[status] || LIVE_STATUS_STYLES.upcoming
   const isLive = ['live_neutral', 'live_winning', 'likely', 'unlikely'].includes(status)
+  let label = s.label
+  if (status === 'upcoming' && matchTime) {
+    const today = new Date()
+    const mt    = new Date(matchTime)
+    const isToday = mt.getFullYear() === today.getFullYear()
+                 && mt.getMonth()    === today.getMonth()
+                 && mt.getDate()     === today.getDate()
+    label = isToday ? 'Starting soon' : 'Upcoming'
+  }
   return (
     <div className={`flex items-center gap-1.5 px-2 py-1 rounded-lg border ${s.bg} ${s.border}`}>
       <span className={`w-1.5 h-1.5 rounded-full flex-shrink-0 ${s.dot} ${isLive ? 'animate-pulse' : ''}`} />
-      <span className={`text-[10px] font-bold ${s.text}`}>{s.label}</span>
+      <span className={`text-[10px] font-bold ${s.text}`}>{label}</span>
       {isLive && elapsed > 0 && (
         <span className={`text-[9px] font-medium ${s.text} opacity-70`}>{elapsed}'</span>
       )}
@@ -523,7 +544,7 @@ const MOCK_PREV_ENTRY = { status:'completed', correct_picks:5, league_points:9, 
 function getWeekRole(gw, isCurrentWeek, weekHasPicks, weekNum) {
   if (!gw || gw.status === 'DRAFT') return 'unavailable'
   if (gw.status === 'FINISHED') return 'results'
-  if (gw.status === 'LOCKED') return 'locked'
+  if (gw.status === 'LOCKED') return isCurrentWeek ? 'locked' : 'past_locked'
   if (gw.status === 'PUBLISHED') return isCurrentWeek ? 'current' : 'open'
   return 'unavailable'
 }
@@ -544,6 +565,9 @@ function WeekRoleBadge({ role, weekHasPicks, weekNum }) {
       <span className="w-1.5 h-1.5 rounded-full bg-yellow-400 animate-pulse inline-block" />
       LOCKED · LIVE
     </span>
+  )
+  if (role === 'past_locked') return (
+    <span className="text-[10px] font-bold tracking-widest text-gray-500">LOCKED</span>
   )
   if (role === 'results') return (
     <span className="text-[10px] font-bold tracking-widest text-purple-400">RESULTS</span>
@@ -644,7 +668,9 @@ function WeekSelector({ selectedWeek, gwCount, byWeek, currentWeek, weekHasPicks
 function EventCard({ event, selectedOptionId, onSelect, isLocked, dimmed, remainingEnergy, picksLocked, liveEv, showInsights }) {
   const [open, setOpen] = useState(!dimmed)
 
-  const [homeTeam, awayTeam] = (event.fixture_name || '').split(' vs ').map(s => s?.trim())
+  const isWhoQualifies = event.event_type === 'WHO_QUALIFIES'
+  const cleanFixtureName = (event.fixture_name || '').replace(/^Who qualifies\?\s*/i, '')
+  const [homeTeam, awayTeam] = cleanFixtureName.split(' vs ').map(s => s?.trim())
   const homeFlag = getFlag(homeTeam)
   const awayFlag = getFlag(awayTeam)
   const compIcon = COMPETITION_ICONS[event.competition] || '🏆'
@@ -687,7 +713,7 @@ function EventCard({ event, selectedOptionId, onSelect, isLocked, dimmed, remain
               pickWon
                 ? <span className="text-[10px] bg-green-900/60 text-green-300 border border-green-500/40 px-2 py-0.5 rounded-full ml-1 font-bold">✓ Correct</span>
                 : pickLost
-                  ? <span className="text-[10px] bg-red-900/40 text-red-400 border border-red-500/30 px-2 py-0.5 rounded-full ml-1 font-bold">✗ Fallo</span>
+                  ? <span className="text-[10px] bg-red-900/40 text-red-400 border border-red-500/30 px-2 py-0.5 rounded-full ml-1 font-bold">✗ Wrong</span>
                   : <span className="text-[10px] bg-indigo-900/50 text-indigo-400 border border-indigo-500/30 px-2 py-0.5 rounded-full ml-1 font-semibold">✓ Your Pick</span>
             )}
           </div>
@@ -729,30 +755,63 @@ function EventCard({ event, selectedOptionId, onSelect, isLocked, dimmed, remain
         ) : (
           /* Normal match header */
           (() => {
-            const hasScore = liveEv?.home_goals != null && liveEv?.away_goals != null
+            const hasScore   = liveEv?.home_goals != null && liveEv?.away_goals != null
             const isLiveMatch = hasScore && LIVE_STATUSES.includes(liveEv?.fixture_status_short)
             const isDoneMatch = hasScore && FINISHED_STATUSES.includes(liveEv?.fixture_status_short)
-            return (
-              <div className="flex items-center gap-2">
-                <div className="flex items-center gap-1.5 flex-1 min-w-0">
-                  <span className="text-2xl flex-shrink-0">{homeFlag}</span>
-                  <span className={`font-bold text-sm leading-tight truncate ${dimmed ? 'text-gray-500' : 'text-white'}`}>{homeTeam}</span>
-                </div>
-                {(isLiveMatch || isDoneMatch) ? (
-                  <div className="flex flex-col items-center flex-shrink-0 min-w-[52px]">
-                    <span className={`font-black text-xl tabular-nums leading-none ${isLiveMatch ? 'text-green-400' : dimmed ? 'text-gray-400' : 'text-white'}`}>
-                      {liveEv.home_goals}–{liveEv.away_goals}
-                    </span>
-                    {isDoneMatch && <span className="text-[9px] text-gray-600 font-semibold uppercase tracking-wide mt-0.5">FT</span>}
-                  </div>
-                ) : (
-                  <span className="text-gray-700 text-xs font-semibold flex-shrink-0">vs</span>
+            const isPen       = liveEv?.fixture_status_short === 'PEN'
+            const ScoreBlock  = () => (isLiveMatch || isDoneMatch) ? (
+              <div className="flex flex-col items-center flex-shrink-0 min-w-[52px]">
+                <span className={`font-black text-xl tabular-nums leading-none ${isLiveMatch ? 'text-green-400' : dimmed ? 'text-gray-400' : 'text-white'}`}>
+                  {liveEv.home_goals}–{liveEv.away_goals}
+                </span>
+                {isDoneMatch && (
+                  <span className="text-[9px] text-gray-600 font-semibold uppercase tracking-wide mt-0.5">
+                    {isPen ? 'pens' : 'FT'}
+                  </span>
                 )}
-                <div className="flex items-center gap-1.5 flex-1 min-w-0 justify-end">
-                  <span className={`font-bold text-sm leading-tight truncate text-right ${dimmed ? 'text-gray-500' : 'text-white'}`}>{awayTeam}</span>
-                  <span className="text-2xl flex-shrink-0">{awayFlag}</span>
-                </div>
+                {isPen && liveEv.pen_home != null && (
+                  <span className="text-[8px] text-gray-700 tabular-nums mt-0.5">
+                    ({liveEv.pen_home}–{liveEv.pen_away})
+                  </span>
+                )}
               </div>
+            ) : (
+              <span className="text-gray-700 text-xs font-semibold flex-shrink-0">vs</span>
+            )
+            return (
+              <>{isWhoQualifies ? (
+                <div className="flex items-center gap-2">
+                  <div className="flex items-center gap-1.5 flex-1 min-w-0">
+                    {event.fixture_home_logo && (
+                      <img src={event.fixture_home_logo} alt="" className="w-5 h-5 object-contain flex-shrink-0" onError={e => { e.target.style.display='none' }} />
+                    )}
+                    <span className={`font-bold text-sm leading-tight truncate ${dimmed ? 'text-gray-500' : 'text-white'}`}>{homeTeam}</span>
+                  </div>
+                  <ScoreBlock />
+                  <div className="flex items-center gap-1.5 flex-1 min-w-0 justify-end">
+                    <span className={`font-bold text-sm leading-tight truncate text-right ${dimmed ? 'text-gray-500' : 'text-white'}`}>{awayTeam}</span>
+                    {event.fixture_away_logo && (
+                      <img src={event.fixture_away_logo} alt="" className="w-5 h-5 object-contain flex-shrink-0" onError={e => { e.target.style.display='none' }} />
+                    )}
+                  </div>
+                </div>
+              ) : (
+                <div className="flex items-center gap-2">
+                  <div className="flex items-center gap-1.5 flex-1 min-w-0">
+                    {event.fixture_home_logo && (
+                      <img src={event.fixture_home_logo} alt="" className="w-5 h-5 object-contain flex-shrink-0" onError={e => { e.target.style.display='none' }} />
+                    )}
+                    <span className={`font-bold text-sm leading-tight truncate ${dimmed ? 'text-gray-500' : 'text-white'}`}>{homeTeam}</span>
+                  </div>
+                  <ScoreBlock />
+                  <div className="flex items-center gap-1.5 flex-1 min-w-0 justify-end">
+                    <span className={`font-bold text-sm leading-tight truncate text-right ${dimmed ? 'text-gray-500' : 'text-white'}`}>{awayTeam}</span>
+                    {event.fixture_away_logo && (
+                      <img src={event.fixture_away_logo} alt="" className="w-5 h-5 object-contain flex-shrink-0" onError={e => { e.target.style.display='none' }} />
+                    )}
+                  </div>
+                </div>
+              )}</>
             )
           })()
         )}
@@ -775,22 +834,22 @@ function EventCard({ event, selectedOptionId, onSelect, isLocked, dimmed, remain
       {(!dimmed || open) && (
         <div className="px-3 pb-3 grid gap-1.5">
           {[...event.options].sort((a, b) => {
-            const ORDER = { HOME_WIN: 0, DRAW: 1, AWAY_WIN: 2 }
+            const ORDER = { HOME_WIN: 0, HOME_QUALIFIES: 0, DRAW: 1, AWAY_WIN: 2, AWAY_QUALIFIES: 2 }
             return (ORDER[a.result_key] ?? 3) - (ORDER[b.result_key] ?? 3)
           }).map(opt => {
             const isSelected = opt.id === selectedOptionId
             const won  = opt.result === 'WON'
             const lost = opt.result === 'LOST'
-            const pct  = !isLocked && event.total_picks > 0 ? Math.round((opt.pick_count || 0) / event.total_picks * 100) : null
+            const pct  = !isLocked && event.total_picks > 0 ? Math.ceil((opt.pick_count || 0) / event.total_picks * 100) : null
             const notEnoughEnergy = !isSelected && !won && !lost && !dimmed
               && remainingEnergy !== undefined && opt.energy_cost != null
               && opt.energy_cost > remainingEnergy
             const lockBlocked = !isSelected && !won && !lost && !dimmed && picksLocked
             const isUnavailable = notEnoughEnergy || lockBlocked
 
-            // Flag: use home/away flag directly for MATCH_RESULT, fall back to label lookup
-            const optFlag = opt.result_key === 'HOME_WIN' ? homeFlag
-              : opt.result_key === 'AWAY_WIN' ? awayFlag
+            // Flag: use home/away flag directly for MATCH_RESULT/WHO_QUALIFIES, fall back to label lookup
+            const optFlag = (opt.result_key === 'HOME_WIN' || opt.result_key === 'HOME_QUALIFIES') ? homeFlag
+              : (opt.result_key === 'AWAY_WIN' || opt.result_key === 'AWAY_QUALIFIES') ? awayFlag
               : opt.result_key === 'DRAW' ? ''
               : (() => { const t = Object.keys(COUNTRY_FLAGS).find(k => opt.label.startsWith(k + ' ')); return t ? COUNTRY_FLAGS[t] : '' })()
             const optLabelClean = opt.label
@@ -1196,7 +1255,16 @@ export default function MatchweekPage() {
         try {
           const draft = JSON.parse(localStorage.getItem(`draftPicks_${gwId}`) || 'null')
           if (draft && typeof draft === 'object' && Object.keys(draft).length > 0) {
-            setPicks(draft)
+            // Validate draft against current events — discard if event IDs are all stale (gameweek republished)
+            const currentEventIds = new Set((r.data.gameweek?.events || []).map(e => e.id))
+            const validDraft = Object.fromEntries(
+              Object.entries(draft).filter(([evId]) => currentEventIds.has(evId))
+            )
+            if (Object.keys(validDraft).length > 0) {
+              setPicks(validDraft)
+            } else {
+              localStorage.removeItem(`draftPicks_${gwId}`)
+            }
           }
         } catch {}
       }
@@ -1217,17 +1285,15 @@ export default function MatchweekPage() {
     loadStatus().then(st => {
       if (!st) { setLoading(false); return }
       const gws = st.sprint?.gameweeks || []
-      // Prefer backend current_gameweek; fallback: active PUBLISHED (future lock), LOCKED, last FINISHED
+      // Prefer backend current_gameweek; fallback mirrors backend logic exactly
       let targetGw = st.current_gameweek
       if (!targetGw || !targetGw.id) {
         const now = new Date()
         const pubRows = gws.filter(g => g.status === 'PUBLISHED')
-        targetGw = pubRows.find(g => new Date(g.lock_time) > now)
-          ?? pubRows[pubRows.length - 1]
-          ?? gws.find(g => g.status === 'LOCKED')
-          ?? [...gws].reverse().find(g => g.status === 'FINISHED')
-          ?? gws[0]
-          ?? null
+        const activePub = pubRows.find(g => new Date(g.lock_time) > now) ?? null
+        const locked    = gws.find(g => g.status === 'LOCKED') ?? null
+        const finished  = [...gws].reverse().find(g => g.status === 'FINISHED') ?? null
+        targetGw = activePub ?? locked ?? finished ?? gws[0] ?? null
       }
       const currentWeek = targetGw?.sprint_week ?? 1
       setSelectedWeek(currentWeek)
@@ -1274,7 +1340,7 @@ export default function MatchweekPage() {
   const weekRole = getWeekRole(gw, selectedWeek === currentWeek, weekHasPicks, selectedWeek)
   const events = gw?.events || []
   const isMockResultsMode = events.length === 0 && weekRole === 'results'
-  const isMockOpenMode    = events.length === 0 && (weekRole === 'current' || weekRole === 'open' || weekRole === 'locked')
+  const isMockOpenMode    = events.length === 0 && (weekRole === 'current' || weekRole === 'open' || weekRole === 'locked' || weekRole === 'past_locked')
   const effectiveEvents   = events.length > 0 ? events :
     isMockResultsMode ? MOCK_RESULTS_EVENTS :
     isMockOpenMode    ? MOCK_GW_EVENTS : []
@@ -1291,8 +1357,9 @@ export default function MatchweekPage() {
     return sum
   }, [picks, effectiveEvents])
 
+  const baseEnergy      = gw?.base_energy ?? 30
   const extraFromWallet = Math.min(MAX_WEEKLY_EXTRA, walletBalance)
-  const totalAvailable  = BASE_ENERGY + extraFromWallet
+  const totalAvailable  = baseEnergy + extraFromWallet
   const remainingEnergy = totalAvailable - totalEnergy
   const picksLocked     = pickCount === 6 && !effectiveIsLocked
 
@@ -1505,36 +1572,58 @@ export default function MatchweekPage() {
 
             {/* Entry results card (settled weeks) */}
             {!gwLoading && effectiveEntry?.status === 'completed' && (
-              <div className={`rounded-2xl px-4 py-3 ${
-                effectiveEntry.is_perfect_week
-                  ? 'bg-yellow-900/20 border border-yellow-500/30'
-                  : 'bg-white/4 border border-white/8'
-              }`}>
-                <div className="flex items-center justify-between">
-                  <div className="flex items-center gap-2">
-                    {effectiveEntry.is_perfect_week && <span className="text-lg">⭐</span>}
-                    <div>
-                      <p className="text-white font-bold text-sm">{effectiveEntry.correct_picks}/6 correct</p>
-                      {effectiveEntry.is_perfect_week && <p className="text-yellow-400 text-[11px]">Perfect week!</p>}
+              effectiveEntry.is_perfect_week ? (
+                /* ── Perfect week — spectacular treatment ── */
+                <div className="rounded-2xl overflow-hidden"
+                  style={{ background: 'linear-gradient(135deg, #1a1200, #2d1f00, #1a0800)', border: '1px solid rgba(250,204,21,0.45)', boxShadow: '0 0 40px -8px rgba(250,204,21,0.55)' }}>
+                  <div className="absolute pointer-events-none inset-0 rounded-2xl"
+                    style={{ background: 'radial-gradient(ellipse at 50% 0%, rgba(250,204,21,0.12) 0%, transparent 65%)' }} />
+                  <div className="relative px-4 pt-4 pb-3">
+                    {/* Badge */}
+                    <div className="flex items-center gap-2 mb-3">
+                      <span className="text-2xl leading-none">⭐</span>
+                      <div>
+                        <p className="text-yellow-300 font-black text-base leading-none">Perfect Week!</p>
+                        <p className="text-yellow-600 text-[10px] font-semibold mt-0.5">6/6 correct · bonus unlocked</p>
+                      </div>
+                      <div className="ml-auto text-right">
+                        <p className="text-yellow-300 font-black text-3xl leading-none tabular-nums">+{effectiveEntry.league_points}</p>
+                        <p className="text-yellow-600 text-[10px] font-semibold mt-0.5">LP this week</p>
+                      </div>
+                    </div>
+                    {/* Breakdown */}
+                    <div className="rounded-xl bg-black/30 border border-yellow-500/15 px-3 py-2.5 space-y-1.5">
+                      <div className="flex items-center justify-between text-xs">
+                        <span className="text-yellow-200/60">6 correct picks</span>
+                        <span className="text-green-400 font-bold">+6 pts</span>
+                      </div>
+                      <div className="flex items-center justify-between text-xs">
+                        <span className="text-yellow-200/60">⭐ Perfect week bonus</span>
+                        <span className="text-yellow-400 font-black">+4 pts</span>
+                      </div>
+                      <div className="h-px bg-yellow-500/15" />
+                      <div className="flex items-center justify-between text-xs">
+                        <span className="text-yellow-300 font-bold">Total this week</span>
+                        <span className="text-yellow-300 font-black">+{effectiveEntry.league_points} LP</span>
+                      </div>
                     </div>
                   </div>
-                  <div className="text-right">
-                    <p className="text-indigo-400 font-black text-xl tabular-nums">+{effectiveEntry.league_points} pts</p>
-                    <p className="text-gray-600 text-[10px] -mt-0.5">this week</p>
+                </div>
+              ) : (
+                /* ── Normal completed week ── */
+                <div className="rounded-2xl px-4 py-3 bg-white/4 border border-white/8">
+                  <div className="flex items-center justify-between">
+                    <div>
+                      <p className="text-white font-bold text-sm">{effectiveEntry.correct_picks}/6 correct</p>
+                      <p className="text-gray-600 text-[10px] mt-0.5">this matchweek</p>
+                    </div>
+                    <div className="text-right">
+                      <p className="text-indigo-400 font-black text-xl tabular-nums">+{effectiveEntry.league_points} pts</p>
+                      <p className="text-gray-600 text-[10px] -mt-0.5">LP earned</p>
+                    </div>
                   </div>
                 </div>
-                <div className="flex items-center justify-between mt-2 pt-2 border-t border-white/6">
-                  <p className="text-gray-500 text-[11px]">Sprint total</p>
-                  <div className="flex items-center gap-2">
-                    <p className="text-gray-300 font-bold text-sm tabular-nums">{lp} pts</p>
-                    {myRank && (
-                      <span className="text-[11px] bg-indigo-900/40 text-indigo-300 border border-indigo-500/30 px-2 py-0.5 rounded-full font-bold">
-                        #{myRank}{divSize > 0 ? ` / ${divSize}` : ''}
-                      </span>
-                    )}
-                  </div>
-                </div>
-              </div>
+              )
             )}
           </>
         )}
@@ -1577,11 +1666,17 @@ export default function MatchweekPage() {
                   </div>
                   <div className="flex items-center gap-2">
                     {totalEnergy > 0 && (
-                      <span className={`text-xs font-mono font-bold ${
-                        remainingEnergy <= 0 ? 'text-red-400' :
-                        remainingEnergy <= 5 ? 'text-amber-400' :
-                        remainingEnergy <= 10 ? 'text-yellow-400' : 'text-yellow-500'
-                      }`}>⚡{remainingEnergy} left</span>
+                      <span
+                        className={`font-black text-xl tabular-nums leading-none ${
+                          remainingEnergy <= 0 ? 'text-red-400' :
+                          remainingEnergy <= 5 ? 'text-amber-300' :
+                          'text-yellow-300'
+                        }`}
+                        style={remainingEnergy > 0 ? { textShadow: '0 0 14px rgba(253,224,71,0.7)' } : {}}
+                      >
+                        ⚡{remainingEnergy}
+                        <span className="text-xs font-semibold opacity-60 ml-1">left</span>
+                      </span>
                     )}
                     {totalEnergy === 0 && (
                       <span className="text-gray-600 text-xs">⚡{totalAvailable} energy</span>
@@ -1642,7 +1737,7 @@ export default function MatchweekPage() {
             {!gwLoading && gw && weekRole !== 'unavailable' && (
               <>
                 {/* ── Lock-time deadline banner (open weeks only) ── */}
-                {!isLocked && gw?.lock_time && (
+                {!isLocked && !submitted && gw?.lock_time && (
                   (() => {
                     const countdown = fmtCountdown(gw.lock_time)
                     const diff = new Date(gw.lock_time) - Date.now()
@@ -1681,22 +1776,6 @@ export default function MatchweekPage() {
                   </div>
                 )}
 
-                {/* ── Picks saved confirmation banner ── */}
-                {submitted && weekRole !== 'locked' && weekRole !== 'results' && (
-                  <div className="flex items-center gap-4 px-4 py-4 rounded-2xl bg-green-950/30 border border-green-500/30">
-                    <span className="text-2xl flex-shrink-0">✅</span>
-                    <div className="flex-1 min-w-0">
-                      <p className="font-bold text-sm text-green-300">Your picks are saved</p>
-                      <p className="text-green-700 text-xs mt-0.5">
-                        {gw?.lock_time
-                          ? `You can update them anytime before ${fmtFull(gw.lock_time)}.`
-                          : 'You can update them anytime before the deadline.'}
-                      </p>
-                    </div>
-                    <span className="text-green-600 font-black text-base flex-shrink-0">{pickCount}/6</span>
-                  </div>
-                )}
-
                 {/* ── Energy availability ── */}
                 {!isLocked && (
                   <div className="flex items-center justify-between px-4 py-3 rounded-2xl bg-yellow-950/20 border border-yellow-500/15">
@@ -1714,7 +1793,7 @@ export default function MatchweekPage() {
                               style={{ width: `${Math.max(0, Math.min(100, (remainingEnergy / totalAvailable) * 100))}%` }}
                             />
                           </div>
-                          <span className="text-gray-600 text-[10px]">{BASE_ENERGY} base{extraFromWallet > 0 ? ` +${extraFromWallet} bonus` : ''}</span>
+                          <span className="text-gray-600 text-[10px]">{baseEnergy} base{extraFromWallet > 0 ? ` +${extraFromWallet} bonus` : ''}</span>
                         </div>
                       </div>
                     </div>
@@ -1722,7 +1801,7 @@ export default function MatchweekPage() {
                       onClick={saveAndGoToStore}
                       className="text-yellow-400 text-xs font-bold border border-yellow-500/30 px-3 py-1.5 rounded-xl bg-yellow-950/30 hover:bg-yellow-950/50 transition-colors flex-shrink-0"
                     >
-                      Buy more →
+                      Get more →
                     </button>
                   </div>
                 )}
@@ -1736,22 +1815,21 @@ export default function MatchweekPage() {
                           ✓ Confirmed picks ({myPickedEvents.length})
                         </p>
                         {[...myPickedEvents]
-                          .sort((a, b) => {
-                            const PRIO = { likely: 0, live_winning: 1, live_neutral: 2, unlikely: 3, upcoming: 4, won: 5, lost: 6, finished_unknown: 7 }
-                            const as_ = computePickLiveStatus(a, displayPicks[a.id], liveData[a.id])
-                            const bs_ = computePickLiveStatus(b, displayPicks[b.id], liveData[b.id])
-                            return (PRIO[as_] ?? 4) - (PRIO[bs_] ?? 4) || new Date(a.match_time) - new Date(b.match_time)
-                          })
+                          .sort((a, b) => new Date(a.match_time) - new Date(b.match_time))
                           .map(ev => {
                             const liveStatus = computePickLiveStatus(ev, displayPicks[ev.id], liveData[ev.id])
                             const liveEv = liveData[ev.id]
                             return (
                               <div key={ev.id} className="space-y-1">
                                 <div className="flex items-center justify-between px-1">
-                                  <LivePickBadge status={liveStatus} elapsed={liveEv?.fixture_elapsed} />
-                                  {liveEv?.home_goals != null && liveEv?.away_goals != null && LIVE_STATUSES.includes(liveEv.fixture_status_short) && (
+                                  <LivePickBadge status={liveStatus} elapsed={liveEv?.fixture_elapsed} matchTime={ev.match_time} />
+                                  {liveEv?.home_goals != null && liveEv?.away_goals != null &&
+                                   (LIVE_STATUSES.includes(liveEv.fixture_status_short) || FINISHED_STATUSES.includes(liveEv.fixture_status_short)) && (
                                     <span className="text-[11px] text-gray-400 font-mono font-bold">
                                       {liveEv.home_team?.split(' ').pop() || 'H'} {liveEv.home_goals}–{liveEv.away_goals} {liveEv.away_team?.split(' ').pop() || 'A'}
+                                      {liveEv.fixture_status_short === 'PEN' && liveEv.pen_home != null && (
+                                        <span className="text-gray-600 font-normal"> ({liveEv.pen_home}–{liveEv.pen_away} pens)</span>
+                                      )}
                                     </span>
                                   )}
                                 </div>
@@ -1854,12 +1932,7 @@ export default function MatchweekPage() {
 
                         <p className="text-gray-400 text-xs font-semibold tracking-wider uppercase px-1">Your picks</p>
                         {[...myPickedEvents]
-                          .sort((a, b) => {
-                            const PRIO = { won: 0, likely: 1, live_winning: 2, live_neutral: 3, upcoming: 4, unlikely: 5, lost: 6, finished_unknown: 7 }
-                            const as_ = computePickLiveStatus(a, displayPicks[a.id], liveData[a.id])
-                            const bs_ = computePickLiveStatus(b, displayPicks[b.id], liveData[b.id])
-                            return (PRIO[as_] ?? 4) - (PRIO[bs_] ?? 4) || new Date(a.match_time) - new Date(b.match_time)
-                          })
+                          .sort((a, b) => new Date(a.match_time) - new Date(b.match_time))
                           .map(ev => {
                             const liveEvData = liveData[ev.id]
                             const liveStatus = computePickLiveStatus(ev, displayPicks[ev.id], liveEvData)
@@ -1879,16 +1952,32 @@ export default function MatchweekPage() {
                                         <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-green-400 opacity-75" />
                                         <span className="relative inline-flex rounded-full h-2 w-2 bg-green-400" />
                                       </span>
-                                      <span className="text-green-400 font-black text-[11px] tracking-widest uppercase">Live</span>
-                                      {liveEvData.fixture_elapsed > 0 && (
+                                      <span className="text-green-400 font-black text-[11px] tracking-widest uppercase">
+                                        {liveEvData.fixture_status_short === 'P' ? 'Penalties' :
+                                         liveEvData.fixture_status_short === 'ET' || liveEvData.fixture_status_short === 'BT' ? 'Extra Time' :
+                                         liveEvData.fixture_status_short === 'HT' ? 'Half Time' : 'Live'}
+                                      </span>
+                                      {liveEvData.fixture_elapsed > 0 && liveEvData.fixture_status_short !== 'HT' && liveEvData.fixture_status_short !== 'BT' && liveEvData.fixture_status_short !== 'P' && (
                                         <span className="text-green-500/70 font-bold text-[11px]">{liveEvData.fixture_elapsed}'</span>
                                       )}
+                                      {displayPicks[ev.id] && (() => {
+                                        const PICK_STATUS_LABEL = { live_winning: 'Favorable', live_neutral: 'Neutral', unlikely: 'At Risk', likely: 'Very likely' }
+                                        const PICK_STATUS_COLOR = { live_winning: 'text-blue-400', live_neutral: 'text-blue-300/60', unlikely: 'text-orange-400', likely: 'text-purple-400' }
+                                        const label = PICK_STATUS_LABEL[liveStatus]
+                                        if (!label) return null
+                                        return (
+                                          <>
+                                            <span className="text-green-800 text-[11px] font-bold">·</span>
+                                            <span className={`text-[10px] font-semibold ${PICK_STATUS_COLOR[liveStatus]}`}>{label}</span>
+                                          </>
+                                        )
+                                      })()}
                                     </div>
                                   )}
                                   {/* Non-live header (badge only — score is now inside the card) */}
                                   {!isFixtureLive && (
                                     <div className="flex items-center px-1 pb-1">
-                                      <LivePickBadge status={liveStatus} elapsed={liveEvData?.fixture_elapsed} />
+                                      <LivePickBadge status={liveStatus} elapsed={liveEvData?.fixture_elapsed} matchTime={ev.match_time} />
                                     </div>
                                   )}
                                   <EventCard event={ev} selectedOptionId={displayPicks[ev.id]}

@@ -150,6 +150,31 @@ const BADGE_ACCENTS = {
   DIV_CHAMP_CHAMPIONS: { glow: '#fde047', border: 'rgba(253,224,71,0.55)',  text: 'text-yellow-200'  },
 }
 
+const COMP_ACCENTS = {
+  2:   { glow: '#fbbf24', border: 'rgba(251,191,36,0.4)',   text: 'text-yellow-400'  }, // Champions League
+  3:   { glow: '#f97316', border: 'rgba(249,115,22,0.4)',   text: 'text-orange-400'  }, // Europa League
+  848: { glow: '#fb923c', border: 'rgba(251,146,60,0.4)',   text: 'text-orange-300'  }, // Conference League
+  1:   { glow: '#34d399', border: 'rgba(52,211,153,0.4)',   text: 'text-emerald-400' }, // World Cup
+  5:   { glow: '#38bdf8', border: 'rgba(56,189,248,0.4)',   text: 'text-sky-400'     }, // UEFA Nations
+  15:  { glow: '#38bdf8', border: 'rgba(56,189,248,0.4)',   text: 'text-sky-400'     }, // FIFA Club World Cup
+  39:  { glow: '#a78bfa', border: 'rgba(167,139,250,0.4)',  text: 'text-violet-400'  }, // Premier League
+  45:  { glow: '#a78bfa', border: 'rgba(167,139,250,0.4)',  text: 'text-violet-400'  }, // FA Cup
+  140: { glow: '#ef4444', border: 'rgba(239,68,68,0.4)',    text: 'text-red-400'     }, // La Liga
+  143: { glow: '#ef4444', border: 'rgba(239,68,68,0.4)',    text: 'text-red-400'     }, // Copa del Rey
+  78:  { glow: '#f97316', border: 'rgba(249,115,22,0.4)',   text: 'text-orange-400'  }, // Bundesliga
+  135: { glow: '#3b82f6', border: 'rgba(59,130,246,0.4)',   text: 'text-blue-400'    }, // Serie A
+  137: { glow: '#3b82f6', border: 'rgba(59,130,246,0.4)',   text: 'text-blue-400'    }, // Coppa Italia
+  61:  { glow: '#818cf8', border: 'rgba(129,140,248,0.4)',  text: 'text-indigo-400'  }, // Ligue 1
+  88:  { glow: '#f97316', border: 'rgba(249,115,22,0.4)',   text: 'text-orange-400'  }, // Eredivisie
+  94:  { glow: '#34d399', border: 'rgba(52,211,153,0.4)',   text: 'text-emerald-400' }, // Primeira Liga
+  144: { glow: '#ef4444', border: 'rgba(239,68,68,0.4)',    text: 'text-red-400'     }, // Belgian Pro League
+  179: { glow: '#38bdf8', border: 'rgba(56,189,248,0.4)',   text: 'text-sky-400'     }, // Scottish Premiership
+  253: { glow: '#e11d48', border: 'rgba(225,29,72,0.4)',    text: 'text-rose-400'    }, // MLS
+}
+const COMP_ACCENT_DEFAULT = { glow: '#34d399', border: 'rgba(52,211,153,0.35)', text: 'text-emerald-400' }
+
+const LEAGUE_FLAGS = { 1:'🌍', 2:'⭐', 3:'🏅', 848:'🥉', 5:'🌐', 39:'🏴󠁧󠁢󠁥󠁮󠁧󠁿', 140:'🇪🇸', 78:'🇩🇪', 135:'🇮🇹', 61:'🇫🇷', 88:'🇳🇱', 94:'🇵🇹', 144:'🇧🇪', 179:'🏴󠁧󠁢󠁳󠁣󠁴󠁿', 45:'🏴󠁧󠁢󠁥󠁮󠁧󠁿', 143:'🇪🇸', 137:'🇮🇹', 15:'🌐', 253:'🇺🇸' }
+
 function AwardBadge({ cfg, count }) {
   return (
     <div className="relative flex-shrink-0 flex flex-col items-center justify-center gap-1 rounded-2xl overflow-hidden"
@@ -329,16 +354,6 @@ function WalletTab({ walletBalance, transactions, loadingWallet, onGoToStore }) 
               <p className={`text-[11px] mt-2 ${hasPurchased ? 'text-purple-400/70' : 'text-gray-500'}`}>
                 Safer outcomes cost more energy. Run out and the best picks get locked.
               </p>
-            </div>
-
-            <div className={`flex items-center gap-2.5 rounded-xl px-3 py-2.5 border ${
-              hasPurchased ? 'bg-violet-500/10 border-violet-500/20' : 'bg-white/4 border-white/6'
-            }`}>
-              <span className="text-lg flex-shrink-0">🎯</span>
-              <div>
-                <p className={`text-xs font-semibold ${hasPurchased ? 'text-violet-200' : 'text-white'}`}>Back all 6 events every week</p>
-                <p className={`text-[11px] ${hasPurchased ? 'text-violet-400/70' : 'text-gray-500'}`}>25 base energy fills fast. Bonus energy keeps you in the game for every pick.</p>
-              </div>
             </div>
 
             <div className="flex items-center gap-2.5 rounded-xl px-3 py-2.5 border border-yellow-400/25 bg-yellow-400/8">
@@ -651,10 +666,82 @@ export default function ProfilePage() {
         </div>
 
         {/* Stats tab */}
-        {activeTab === 'stats' && (
+        {activeTab === 'stats' && (() => {
+          // ── Build unified achievement list ───────────────────────────────
+          const streak      = glory?.longest_correct_streak ?? 0
+          const sprintWins  = glory?.sprint_championships_overall ?? []
+          const divChamps   = glory?.division_championships ?? []
+
+          const DIV_ORDER_TO_CODE = { 1:'DIV_CHAMP_ACADEMY',2:'DIV_CHAMP_SUNDAY',3:'DIV_CHAMP_DIV3',4:'DIV_CHAMP_DIV2',5:'DIV_CHAMP_DIV1',6:'DIV_CHAMP_CHAMPIONS' }
+
+          // Sprint winner items
+          const sprintWinItems = sprintWins.map((sw, i) => ({
+            _key: `sprint_win_${sw.sprint_id ?? i}`,
+            icon: '🏆',
+            name: 'Sprint Winner',
+            description: `#1 globally in ${sw.sprint_name}`,
+            earned: true,
+            count: 1,
+            date: sw.end_date,
+            ac: { glow: '#fde047', border: 'rgba(253,224,71,0.55)', text: 'text-yellow-300' },
+            extraLabel: `${sw.total_league_points} LP · ${sw.sprint_name}`,
+            isSprintWin: true,
+          }))
+
+          // Division champion items (one row per division)
+          const divChampItems = divChamps.map((dc, i) => {
+            const code = DIV_ORDER_TO_CODE[dc.display_order]
+            return {
+              _key: `div_champ_${dc.division_id ?? i}`,
+              icon: '👑',
+              name: `${dc.division_icon} ${dc.division_name} Champion`,
+              description: `Ranked #1 in ${dc.division_name} at sprint end`,
+              earned: true,
+              count: dc.championships,
+              date: null,
+              ac: BADGE_ACCENTS[code] ?? { glow: '#fbbf24', border: 'rgba(251,191,36,0.45)', text: 'text-yellow-400' },
+              extraLabel: `${dc.championships} title${dc.championships > 1 ? 's' : ''}`,
+            }
+          })
+
+          // Streak item
+          const streakItem = {
+            _key: 'streak',
+            icon: '🔥',
+            name: 'Best Streak',
+            description: 'Longest run of consecutive correct picks',
+            earned: streak > 0,
+            count: streak,
+            date: null,
+            ac: { glow: '#f97316', border: 'rgba(249,115,22,0.4)', text: 'text-orange-400' },
+            extraLabel: streak > 0 ? `${streak} in a row` : null,
+            isStreak: true,
+          }
+
+          // Regular badge items from DB
+          const regularItems = badgeList.map(b => {
+            const live  = badgeEarnedMap[b.code] ?? b
+            const count = live.earned_count ?? 0
+            return {
+              _key: b.code,
+              icon: b.icon,
+              name: b.name,
+              description: b.description,
+              earned: count > 0,
+              count,
+              date: live.last_earned_at,
+              ac: BADGE_ACCENTS[b.code] ?? { glow: '#6366f1', border: 'rgba(99,102,241,0.35)', text: 'text-indigo-400' },
+            }
+          })
+
+          const allItems   = [...sprintWinItems, ...divChampItems, streakItem, ...regularItems]
+          const earnedList = allItems.filter(i => i.earned)
+          const lockedList = allItems.filter(i => !i.earned)
+
+          return (
           <div className="space-y-3">
 
-            {/* ── Hero: Accuracy (most important) ── */}
+            {/* ── Hero: Accuracy ── */}
             <div
               className="relative rounded-2xl overflow-hidden"
               style={{
@@ -683,7 +770,6 @@ export default function ProfilePage() {
                 <p className="text-white/35 text-[11px] font-medium mb-3">
                   {stats?.lifetime_correct ?? 0} correct out of {stats?.total_picks ?? 0} picks
                 </p>
-                {/* Tier progress bar */}
                 <div className="h-2 rounded-full bg-white/8 overflow-hidden mb-1.5">
                   <div className="h-full rounded-full transition-all duration-700"
                     style={{
@@ -693,14 +779,13 @@ export default function ProfilePage() {
                         : 'linear-gradient(to right, #f59e0b, #fbbf24)',
                     }} />
                 </div>
-                {/* Tier milestones */}
                 <div className="flex justify-between text-[9px] text-white/20 font-semibold">
                   <span>0%</span><span>🥉 70%</span><span>🥈 80%</span><span>🥇 90%</span>
                 </div>
               </div>
             </div>
 
-            {/* ── Current division ── */}
+            {/* ── Current division + sprint ── */}
             {div && (
               <div className="relative rounded-2xl overflow-hidden bg-gradient-to-br from-indigo-950 via-violet-900/50 to-indigo-950 border border-indigo-500/25 shadow-[0_0_18px_-6px_rgba(99,102,241,0.3)]">
                 <div className="relative flex items-center justify-between p-4 pb-3">
@@ -739,12 +824,8 @@ export default function ProfilePage() {
                         <p className="text-white/25 text-[10px] uppercase tracking-wider mt-1">Perfect</p>
                       </div>
                       <div className="bg-indigo-500/8 rounded-xl py-2.5">
-                        <p className="text-white font-black text-xl leading-none">
-                          {divRank != null ? `#${divRank}` : '—'}
-                        </p>
-                        <p className="text-white/25 text-[10px] uppercase tracking-wider mt-1">
-                          {divTotal != null ? `of ${divTotal}` : 'Rank'}
-                        </p>
+                        <p className="text-white font-black text-xl leading-none">{divRank != null ? `#${divRank}` : '—'}</p>
+                        <p className="text-white/25 text-[10px] uppercase tracking-wider mt-1">{divTotal != null ? `of ${divTotal}` : 'Rank'}</p>
                       </div>
                     </div>
                   </div>
@@ -752,52 +833,38 @@ export default function ProfilePage() {
               </div>
             )}
 
-            {/* ── Row: LP + Total picks ── */}
-            <div className="grid grid-cols-2 gap-3">
-              <StatCard
-                label="League Points" value={stats?.lifetime_lp ?? 0} icon="⚡" sub="lifetime"
-                gradient="bg-gradient-to-br from-violet-950 via-purple-900/60 to-violet-950"
-                glow="shadow-[0_0_16px_-4px_rgba(139,92,246,0.28)]"
-                border="border-violet-500/25" textColor="text-violet-300"
-              />
-              <StatCard
-                label="Picks made" value={stats?.total_picks ?? 0} icon="🎮" sub="total"
-                gradient="bg-gradient-to-br from-cyan-950 via-teal-900/50 to-cyan-950"
-                glow="shadow-[0_0_16px_-4px_rgba(6,182,212,0.22)]"
-                border="border-cyan-500/25" textColor="text-cyan-300"
-              />
-            </div>
-
-            {/* ── Row: Correct + Incorrect ── */}
-            <div className="grid grid-cols-2 gap-3">
-              <StatCard
-                label="Correct picks" value={stats?.lifetime_correct ?? 0} icon="✅"
-                gradient="bg-gradient-to-br from-emerald-950 via-green-900/60 to-emerald-950"
-                glow="shadow-[0_0_16px_-4px_rgba(52,211,153,0.28)]"
-                border="border-emerald-500/25" textColor="text-emerald-300"
-              />
-              <StatCard
-                label="Incorrect picks" value={stats?.lifetime_incorrect ?? 0} icon="❌"
-                gradient="bg-gradient-to-br from-rose-950 via-red-900/40 to-rose-950"
-                glow="shadow-[0_0_16px_-4px_rgba(244,63,94,0.18)]"
-                border="border-rose-500/20" textColor="text-rose-400"
-              />
-            </div>
-
-            {/* ── Row: Perfect weeks + Sprints ── */}
-            <div className="grid grid-cols-2 gap-3">
-              <StatCard
-                label="Perfect weeks" value={stats?.total_perfect_weeks ?? 0} icon="⭐"
-                gradient="bg-gradient-to-br from-yellow-950 via-amber-900/60 to-yellow-950"
-                glow="shadow-[0_0_16px_-4px_rgba(250,204,21,0.22)]"
-                border="border-yellow-500/25" textColor="text-yellow-300"
-              />
-              <StatCard
-                label="Sprints played" value={stats?.sprints_played ?? 0} icon="🏁"
-                gradient="bg-gradient-to-br from-sky-950 via-blue-900/60 to-sky-950"
-                glow="shadow-[0_0_16px_-4px_rgba(56,189,248,0.2)]"
-                border="border-sky-500/25" textColor="text-sky-300"
-              />
+            {/* ── LIFETIME STATS ── */}
+            <div className="bg-[#0d1117] border border-white/8 rounded-2xl overflow-hidden">
+              <div className="px-4 py-3 border-b border-white/5 flex items-center justify-between">
+                <p className="text-gray-500 text-[11px] font-semibold tracking-widest uppercase">Lifetime Stats</p>
+                <span className="text-[9px] text-white/15 font-semibold uppercase tracking-widest">all time</span>
+              </div>
+              <div className="p-3 grid grid-cols-3 gap-2">
+                <div className="rounded-xl bg-violet-500/8 border border-violet-500/15 py-3 text-center">
+                  <p className="text-violet-300 font-black text-2xl leading-none">{stats?.lifetime_lp ?? 0}</p>
+                  <p className="text-white/25 text-[9px] uppercase tracking-wider mt-1">LP</p>
+                </div>
+                <div className="rounded-xl bg-emerald-500/8 border border-emerald-500/15 py-3 text-center">
+                  <p className="text-emerald-300 font-black text-2xl leading-none">{stats?.lifetime_correct ?? 0}</p>
+                  <p className="text-white/25 text-[9px] uppercase tracking-wider mt-1">Correct</p>
+                </div>
+                <div className="rounded-xl bg-rose-500/6 border border-rose-500/12 py-3 text-center">
+                  <p className="text-rose-400 font-black text-2xl leading-none">{stats?.lifetime_incorrect ?? 0}</p>
+                  <p className="text-white/25 text-[9px] uppercase tracking-wider mt-1">Wrong</p>
+                </div>
+                <div className="rounded-xl bg-yellow-500/8 border border-yellow-500/15 py-3 text-center">
+                  <p className="text-yellow-300 font-black text-2xl leading-none">{stats?.total_perfect_weeks ?? 0}</p>
+                  <p className="text-white/25 text-[9px] uppercase tracking-wider mt-1">⭐ Perfect</p>
+                </div>
+                <div className="rounded-xl bg-sky-500/8 border border-sky-500/15 py-3 text-center">
+                  <p className="text-sky-300 font-black text-2xl leading-none">{stats?.sprints_played ?? 0}</p>
+                  <p className="text-white/25 text-[9px] uppercase tracking-wider mt-1">Sprints</p>
+                </div>
+                <div className="rounded-xl bg-cyan-500/8 border border-cyan-500/15 py-3 text-center">
+                  <p className="text-cyan-300 font-black text-2xl leading-none">{stats?.total_picks ?? 0}</p>
+                  <p className="text-white/25 text-[9px] uppercase tracking-wider mt-1">Picks</p>
+                </div>
+              </div>
             </div>
 
             {/* ── Best division reached ── */}
@@ -817,141 +884,122 @@ export default function ProfilePage() {
               </div>
             )}
 
-            {/* Achievement badges — always shown, earned colorful / unearned dim */}
-            <Section title={`Achievements (${badgeEarnedCount}/${badgeList.length})`}>
-              <div className="space-y-2">
-                {badgeList.map((b, i) => {
-                  const live   = badgeEarnedMap[b.code] ?? b
-                  const count  = live.earned_count ?? 0
-                  const earned = count > 0
-                  const ac     = BADGE_ACCENTS[b.code] ?? { glow: '#6366f1', border: 'rgba(99,102,241,0.35)', text: 'text-indigo-400' }
-                  return (
-                    <div key={i} className="relative rounded-2xl overflow-hidden"
-                      style={{
-                        background: earned ? 'rgba(255,255,255,0.055)' : 'rgba(255,255,255,0.02)',
-                        border: `1px solid ${earned ? ac.border : 'rgba(255,255,255,0.06)'}`,
-                        boxShadow: earned ? `0 0 26px -4px ${ac.glow}55` : 'none',
-                        opacity: earned ? 1 : 0.45,
-                      }}>
-                      {earned && <div className="absolute -top-6 -right-6 w-32 h-32 rounded-full blur-3xl pointer-events-none" style={{ background: ac.glow, opacity: 0.2 }} />}
-                      <div className="relative flex items-center gap-4 p-4">
-                        <span className="text-5xl flex-shrink-0 leading-none">{b.icon}</span>
-                        <div className="min-w-0 flex-1">
-                          <p className={`font-black text-lg leading-tight ${earned ? 'text-white' : 'text-white/25'}`}>{b.name}</p>
-                          <p className="text-white/50 text-xs mt-0.5">{b.description}</p>
-                          {earned && live.last_earned_at && (
-                            <p className={`text-[10px] mt-1 ${ac.text} opacity-70`}>{new Date(live.last_earned_at).toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' })}</p>
-                          )}
-                        </div>
-                        <div className="flex-shrink-0 flex flex-col items-end gap-1">
-                          <span className="text-[10px] font-semibold uppercase tracking-widest" style={{ color: earned ? 'rgba(255,255,255,0.2)' : 'rgba(255,255,255,0.12)' }}>
-                            {earned ? 'earned' : 'locked'}
-                          </span>
-                          {count > 1 && <span className={`text-xs font-black ${ac.text}`}>×{count}</span>}
+            {/* ── ACHIEVEMENTS (unified) ── */}
+            <div className="bg-[#0d1117] border border-white/8 rounded-2xl overflow-hidden">
+              <div className="px-4 py-3 border-b border-white/5 flex items-center justify-between">
+                <p className="text-gray-500 text-[11px] font-semibold tracking-widest uppercase">Achievements</p>
+                <span className="text-[9px] text-white/20 font-semibold">{earnedList.length} earned · {lockedList.length} locked</span>
+              </div>
+              <div className="p-3 space-y-2">
+
+                {/* Earned */}
+                {earnedList.length > 0 && (
+                  <>
+                    <p className="text-[9px] uppercase tracking-widest text-green-500/50 font-black px-1 mb-1">Granted</p>
+                    {earnedList.map(item => (
+                      <div key={item._key} className="relative rounded-2xl overflow-hidden"
+                        style={{
+                          background: item.isSprintWin
+                            ? 'linear-gradient(135deg, #1a1200, #2d1f00)'
+                            : 'rgba(255,255,255,0.055)',
+                          border: `1px solid ${item.ac.border}`,
+                          boxShadow: `0 0 24px -6px ${item.ac.glow}55`,
+                        }}>
+                        <div className="absolute -top-6 -right-6 w-28 h-28 rounded-full blur-3xl pointer-events-none"
+                          style={{ background: item.ac.glow, opacity: item.isSprintWin ? 0.3 : 0.18 }} />
+                        <div className="relative flex items-center gap-3 px-4 py-3">
+                          <span className="text-3xl flex-shrink-0 leading-none">{item.icon}</span>
+                          <div className="min-w-0 flex-1">
+                            <p className="font-black text-sm leading-tight text-white">{item.name}</p>
+                            <p className="text-white/45 text-[11px] mt-0.5">{item.description}</p>
+                            {item.extraLabel && (
+                              <p className={`text-[10px] mt-1 font-semibold ${item.ac.text} opacity-75`}>{item.extraLabel}</p>
+                            )}
+                            {!item.extraLabel && item.date && (
+                              <p className={`text-[10px] mt-1 ${item.ac.text} opacity-60`}>
+                                {new Date(item.date).toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' })}
+                              </p>
+                            )}
+                          </div>
+                          <div className="flex-shrink-0 flex flex-col items-end gap-1">
+                            {item.isStreak ? (
+                              <span className={`font-black text-xl tabular-nums ${item.ac.text}`}>{item.count}</span>
+                            ) : item.count > 1 ? (
+                              <span className={`font-black text-sm ${item.ac.text}`}>×{item.count}</span>
+                            ) : null}
+                            <span className="text-[9px] font-black uppercase tracking-widest text-green-400/40">earned</span>
+                          </div>
                         </div>
                       </div>
-                    </div>
-                  )
-                })}
-              </div>
-            </Section>
-
-            {/* 4. Longest correct streak */}
-            <Section title="Best Streak">
-              <div className="relative rounded-2xl overflow-hidden p-4"
-                style={{
-                  background: (glory?.longest_correct_streak ?? 0) > 0
-                    ? 'rgba(249,115,22,0.08)'
-                    : 'rgba(255,255,255,0.02)',
-                  border: `1px solid ${(glory?.longest_correct_streak ?? 0) > 0 ? 'rgba(249,115,22,0.4)' : 'rgba(255,255,255,0.06)'}`,
-                  boxShadow: (glory?.longest_correct_streak ?? 0) > 0
-                    ? '0 0 30px -6px rgba(249,115,22,0.4)'
-                    : 'none',
-                  opacity: (glory?.longest_correct_streak ?? 0) > 0 ? 1 : 0.45,
-                }}>
-                {(glory?.longest_correct_streak ?? 0) > 0 && (
-                  <div className="absolute -top-6 -right-6 w-36 h-36 rounded-full blur-3xl pointer-events-none bg-orange-500/20" />
+                    ))}
+                  </>
                 )}
-                <div className="relative flex items-center gap-4">
-                  <span className="text-5xl leading-none flex-shrink-0">🔥</span>
-                  <div className="flex-1 min-w-0">
-                    <p className="text-white/40 text-[10px] font-black uppercase tracking-widest mb-1">Longest Correct Streak</p>
-                    <p className={`font-black text-4xl leading-none tabular-nums ${(glory?.longest_correct_streak ?? 0) > 0 ? 'text-orange-400' : 'text-white/20'}`}>
-                      {glory?.longest_correct_streak ?? 0}
-                    </p>
-                    <p className="text-white/35 text-xs mt-1">consecutive correct picks</p>
-                  </div>
-                  <div className="flex-shrink-0 text-right">
-                    <span className="text-[10px] font-semibold uppercase tracking-widest"
-                      style={{ color: (glory?.longest_correct_streak ?? 0) > 0 ? 'rgba(249,115,22,0.5)' : 'rgba(255,255,255,0.12)' }}>
-                      {(glory?.longest_correct_streak ?? 0) > 0 ? 'record' : 'locked'}
-                    </span>
-                  </div>
-                </div>
-              </div>
-            </Section>
 
-            {/* 6. Division champion badges */}
-            {!!glory?.division_championships?.length && (
-              <Section title={`Division Champion (${glory.division_championships.length})`}>
-                <div className="grid grid-cols-2 gap-2">
-                  {glory.division_championships.map((dc, i) => (
-                    <div key={i} className="relative rounded-2xl overflow-hidden p-3"
-                      style={{ background: 'rgba(255,255,255,0.05)', border: 'rgba(250,204,21,0.3) solid 1px', boxShadow: '0 0 18px -5px rgba(250,204,21,0.35)' }}>
-                      <div className="absolute -top-4 -right-4 w-20 h-20 rounded-full blur-2xl pointer-events-none bg-yellow-400/20" />
-                      <div className="relative">
-                        <div className="flex items-center gap-1.5 mb-2">
-                          <span className="text-xl leading-none">{dc.division_icon}</span>
-                          <p className="text-white text-[11px] font-bold leading-tight truncate">{dc.division_name}</p>
-                        </div>
-                        <div className="flex items-end justify-between">
-                          <div>
-                            <p className="text-yellow-400 font-black text-xl leading-none">👑 {dc.championships}</p>
-                            <p className="text-yellow-500/50 text-[10px]">{dc.championships === 1 ? 'title' : 'titles'}</p>
+                {/* Divider */}
+                {earnedList.length > 0 && lockedList.length > 0 && (
+                  <div className="border-t border-white/5 my-1" />
+                )}
+
+                {/* Locked */}
+                {lockedList.length > 0 && (
+                  <>
+                    <p className="text-[9px] uppercase tracking-widest text-white/15 font-black px-1 mb-1">Locked</p>
+                    {lockedList.map(item => (
+                      <div key={item._key} className="relative rounded-2xl overflow-hidden opacity-35"
+                        style={{
+                          background: 'rgba(255,255,255,0.02)',
+                          border: '1px solid rgba(255,255,255,0.06)',
+                        }}>
+                        <div className="flex items-center gap-3 px-4 py-3">
+                          <span className="text-3xl flex-shrink-0 leading-none grayscale">{item.icon}</span>
+                          <div className="min-w-0 flex-1">
+                            <p className="font-black text-sm leading-tight text-white/30">{item.name}</p>
+                            <p className="text-white/20 text-[11px] mt-0.5">{item.description}</p>
                           </div>
-                          <div className="text-right">
-                            <p className="text-white/40 font-semibold text-xs leading-none">{dc.sprints_in_division}</p>
-                            <p className="text-gray-700 text-[10px]">sprints</p>
-                          </div>
+                          <span className="text-[9px] font-black uppercase tracking-widest text-white/15 flex-shrink-0">locked</span>
                         </div>
                       </div>
-                    </div>
-                  ))}
-                </div>
-              </Section>
-            )}
+                    ))}
+                  </>
+                )}
+              </div>
+            </div>
 
-            {/* 7. Competition badges */}
+            {/* ── Competition Records ── */}
             {!!glory?.competition_stats?.length && (
-              <Section title={`Competition Badges (${glory.competition_stats.length})`}>
-                <div className="space-y-2">
+              <div className="bg-[#0d1117] border border-white/8 rounded-2xl overflow-hidden">
+                <div className="px-4 py-3 border-b border-white/5">
+                  <p className="text-gray-500 text-[11px] font-semibold tracking-widest uppercase">Competition Records</p>
+                </div>
+                <div className="p-3 space-y-2">
                   {glory.competition_stats.map((comp, i) => {
-                    const LEAGUE_FLAGS = { 1:'🌍', 2:'⭐', 3:'🏅', 848:'🥉', 5:'🌐', 39:'🏴󠁧󠁢󠁥󠁮󠁧󠁿', 140:'🇪🇸', 78:'🇩🇪', 135:'🇮🇹', 61:'🇫🇷', 88:'🇳🇱', 94:'🇵🇹', 144:'🇧🇪', 179:'🏴󠁧󠁢󠁳󠁣󠁴󠁿', 45:'🏴󠁧󠁢󠁥󠁮󠁧󠁿', 143:'🇪🇸', 137:'🇮🇹', 15:'🌐', 253:'🇺🇸' }
-                    const flag = LEAGUE_FLAGS[comp.api_league_id] ?? '🏆'
-                    const accuracy = comp.total > 0 ? Math.round((comp.correct / comp.total) * 100) : 0
+                    const flag     = LEAGUE_FLAGS[comp.api_league_id] ?? '🏆'
+                    const accuracy = comp.total > 0 ? Math.ceil((comp.correct / comp.total) * 100) : 0
+                    const ac       = COMP_ACCENTS[comp.api_league_id] ?? COMP_ACCENT_DEFAULT
                     return (
                       <div key={i} className="relative rounded-2xl overflow-hidden"
-                        style={{ background: 'rgba(255,255,255,0.055)', border: '1px solid rgba(52,211,153,0.25)', boxShadow: '0 0 26px -4px rgba(52,211,153,0.3)' }}>
-                        <div className="absolute -top-6 -right-6 w-32 h-32 rounded-full blur-3xl pointer-events-none bg-emerald-400/15" />
-                        <div className="relative flex items-center gap-4 p-4">
-                          <span className="text-5xl flex-shrink-0 leading-none">{flag}</span>
+                        style={{ background: 'rgba(255,255,255,0.04)', border: `1px solid ${ac.border}`, boxShadow: `0 0 20px -6px ${ac.glow}44` }}>
+                        <div className="absolute -top-4 -right-4 w-24 h-24 rounded-full blur-3xl pointer-events-none" style={{ background: ac.glow, opacity: 0.12 }} />
+                        <div className="relative flex items-center gap-3 px-4 py-3">
+                          <span className="text-3xl flex-shrink-0 leading-none">{flag}</span>
                           <div className="min-w-0 flex-1">
-                            <p className="font-black text-lg leading-tight text-white">{comp.competition_name}</p>
-                            <p className="text-white/50 text-xs mt-0.5">{comp.correct} correct picks · {comp.total} total</p>
+                            <p className="font-bold text-sm leading-tight text-white">{comp.competition_name}</p>
+                            <p className="text-white/35 text-[11px] mt-0.5">{comp.correct} correct · {comp.total} picks</p>
                           </div>
                           <div className="flex-shrink-0 text-right">
-                            <p className="text-emerald-400 font-black text-xl leading-none tabular-nums">{accuracy}%</p>
-                            <p className="text-[10px] font-semibold uppercase tracking-widest text-white/20 mt-0.5">accuracy</p>
+                            <p className={`font-black text-lg tabular-nums ${ac.text}`}>{accuracy}%</p>
+                            <span className="text-[9px] uppercase tracking-widest text-white/15">accuracy</span>
                           </div>
                         </div>
                       </div>
                     )
                   })}
                 </div>
-              </Section>
+              </div>
             )}
           </div>
-        )}
+          )
+        })()}
 
         {/* Wallet tab */}
         {activeTab === 'wallet' && (

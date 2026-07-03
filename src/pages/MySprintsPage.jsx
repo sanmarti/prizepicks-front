@@ -1,4 +1,5 @@
 import { useEffect, useState, useRef } from 'react'
+import { useNavigate } from 'react-router-dom'
 import { getMyRelevantSprints, getSprintDetail, getGloryGameweek } from '../api/glory'
 import BottomNav from '../components/layout/BottomNav'
 
@@ -82,7 +83,7 @@ const OUTCOME = {
   promoted:  { bg: 'from-green-950/60 to-green-900/20',   border: 'border-green-500/25',  badge: 'bg-green-900/50 text-green-300 border-green-500/40',   label: '⬆ Promoted',  color: '#22c55e' },
   retained:  { bg: 'from-white/4 to-white/0',             border: 'border-white/10',      badge: 'bg-white/10 text-gray-400 border-white/15',            label: '= Retained',   color: '#6b7280' },
   relegated: { bg: 'from-red-950/50 to-red-900/10',       border: 'border-red-500/20',    badge: 'bg-red-900/40 text-red-300 border-red-500/30',         label: '⬇ Relegated', color: '#ef4444' },
-  pending:   { bg: 'from-indigo-950/40 to-indigo-900/10', border: 'border-indigo-500/25', badge: 'bg-indigo-900/40 text-indigo-300 border-indigo-500/30', label: '🔴 Live',      color: '#6366f1' },
+  pending:   { bg: 'from-indigo-950/40 to-indigo-900/10', border: 'border-indigo-500/25', badge: 'bg-green-900/40 text-green-300 border-green-500/30',   label: '● Live',      color: '#6366f1' },
 }
 
 const TEAM_LOGOS = {
@@ -112,7 +113,7 @@ function getTeamLogoUrl(name) {
 }
 
 // ── Full-screen Division Rankings ──────────────────────────────────────────────
-function RankingsScreen({ sprint, division, rankings, myUserId, onClose }) {
+function RankingsScreen({ sprint, division, rankings, myUserId, onClose, onUserClick }) {
   const promLP = division?.promotion_min_points ?? null
   const relLP  = division?.relegation_max_points ?? null
 
@@ -172,62 +173,75 @@ function RankingsScreen({ sprint, division, rankings, myUserId, onClose }) {
                   </div>
                 )}
                 <div className={`relative flex items-center gap-3 border-b ${
-                  isMe ? 'px-4 py-4 border-indigo-500/25' : 'px-4 py-2.5 border-white/4'
+                  isMe ? 'px-4 py-4 border-purple-500/30' : 'px-4 py-2.5 border-white/4'
                 } ${
                   !isMe && isPromo ? 'bg-green-950/15' : !isMe && isRel ? 'bg-red-950/12' : ''
                 }`}
                   style={isMe ? {
-                    background: 'linear-gradient(90deg, rgba(49,46,129,0.7) 0%, rgba(55,48,163,0.4) 60%, rgba(49,46,129,0.15) 100%)',
-                    boxShadow: 'inset 0 0 40px -10px rgba(99,102,241,0.3)',
+                    background: 'linear-gradient(90deg, rgba(88,28,135,0.45) 0%, rgba(88,28,135,0.2) 60%, transparent 100%)',
+                    boxShadow: 'inset 0 0 40px -10px rgba(168,85,247,0.25)',
                   } : {}}>
 
-                  {/* Left accent bar */}
                   {isMe
-                    ? <span className="absolute left-0 top-0 bottom-0 w-1 rounded-r-full bg-gradient-to-b from-indigo-400 via-violet-400 to-indigo-400" />
+                    ? <span className="absolute left-0 top-0 bottom-0 w-1 rounded-r-full bg-purple-500" />
                     : (isPromo || isRel) && <span className={`absolute left-0 top-0 bottom-0 w-0.5 ${isPromo ? 'bg-green-500' : 'bg-red-500'}`} />
                   }
 
                   <span className={`text-center font-black flex-shrink-0 ${
-                    isMe ? 'w-8 text-base text-indigo-300' :
+                    isMe ? 'w-8 text-base text-purple-300' :
                     `w-7 text-sm ${rank === 1 ? 'text-yellow-400' : rank === 2 ? 'text-gray-300' : rank === 3 ? 'text-amber-600' : 'text-gray-600'}`
                   }`}>{rank}</span>
 
-                  <div className="relative flex-shrink-0">
+                  <button onClick={() => onUserClick?.(row.user_id)} className="relative flex-shrink-0">
                     {row.avatar_url
                       ? <img src={row.avatar_url} alt="" className={`rounded-full object-cover ${isMe ? 'w-11 h-11' : 'w-8 h-8'}`}
-                          style={isMe ? { boxShadow: '0 0 0 2px rgba(99,102,241,0.7), 0 0 16px rgba(99,102,241,0.4)' } : {}} />
+                          style={isMe ? { boxShadow: '0 0 0 2px rgba(168,85,247,0.8), 0 0 16px rgba(168,85,247,0.4)' } : {}} />
                       : <div className={`rounded-full flex items-center justify-center font-bold ${
-                          isMe ? 'w-11 h-11 text-base bg-indigo-700 text-white' : 'w-8 h-8 text-xs bg-indigo-900/50 text-indigo-300'
-                        }`} style={isMe ? { boxShadow: '0 0 0 2px rgba(99,102,241,0.6), 0 0 16px rgba(99,102,241,0.35)' } : {}}>
+                          isMe ? 'w-11 h-11 text-base' : 'w-8 h-8 text-xs bg-white/8 text-gray-400'
+                        }`} style={isMe ? { background: 'rgba(88,28,135,0.6)', color: '#d8b4fe', boxShadow: '0 0 0 2px rgba(168,85,247,0.7), 0 0 16px rgba(168,85,247,0.35)' } : {}}>
                           {(row.display_name || '?')[0].toUpperCase()}
                         </div>
                     }
                     <TierBadgeSm correct={row.total_correct_picks} incorrect={row.total_incorrect_picks} />
-                  </div>
+                  </button>
 
                   <div className="flex-1 min-w-0">
                     <div className="flex items-center gap-1.5">
-                      <p className={`font-semibold truncate ${isMe ? 'text-white text-base' : 'text-gray-400 text-sm'}`}>
+                      <p className={`font-semibold truncate ${isMe ? 'text-white text-base' : 'text-gray-300 text-sm'}`}>
                         {row.display_name || 'Player'}
                       </p>
                       {isMe && (
-                        <span className="text-[10px] font-black px-1.5 py-0.5 rounded-full border border-indigo-500/40 bg-indigo-500/20 text-indigo-300 flex-shrink-0">YOU</span>
+                        <span className="text-[10px] font-black px-1.5 py-0.5 rounded-full border border-purple-500/50 bg-purple-900/40 text-purple-300 flex-shrink-0">YOU</span>
                       )}
                     </div>
-                    <p className={`text-[10px] mt-0.5 ${isMe ? 'text-gray-400' : 'text-gray-700'}`}>
-                      <span className={isMe ? 'text-green-400 font-semibold' : ''}>{row.total_correct_picks ?? 0}✓</span>
-                      {' correct · '}
-                      {row.perfect_weeks ?? 0}⭐
-                    </p>
+                    <div className="flex items-center gap-1.5 mt-0.5 flex-wrap">
+                      <span className={`text-[10px] font-semibold text-green-400`}>{row.total_correct_picks ?? 0}✓</span>
+                      <span className="text-[10px] text-gray-600">·</span>
+                      <span className="text-[10px] text-red-400">{row.total_incorrect_picks ?? 0}✗</span>
+                      {(row.pending_picks ?? 0) > 0 && (
+                        <>
+                          <span className="text-[10px] text-gray-600">·</span>
+                          <span className="text-[10px] text-gray-400">{row.pending_picks}⏳</span>
+                        </>
+                      )}
+                      {(row.perfect_weeks ?? 0) > 0 && (
+                        <>
+                          <span className="text-[10px] text-gray-600">·</span>
+                          <span className="text-[10px] text-yellow-500">{row.perfect_weeks}⭐</span>
+                        </>
+                      )}
+                      <span className="text-[10px] text-gray-600">·</span>
+                      <span className="text-[10px] text-orange-400">{row.energy_used ?? 0}⚡</span>
+                    </div>
                   </div>
 
                   <div className="text-right flex-shrink-0">
                     <p className={`font-black tabular-nums ${
-                      isMe ? 'text-2xl text-white' : isPromo ? 'text-base text-green-400' : isRel ? 'text-base text-red-400' : 'text-base text-indigo-400'
-                    }`} style={isMe ? { textShadow: '0 0 16px rgba(99,102,241,0.7)' } : {}}>
+                      isMe ? 'text-2xl text-white' : isPromo ? 'text-base text-green-400' : isRel ? 'text-base text-red-400' : 'text-base text-indigo-300'
+                    }`} style={isMe ? { textShadow: '0 0 16px rgba(168,85,247,0.6)' } : {}}>
                       {row.total_league_points}
                     </p>
-                    <p className={`text-[10px] -mt-0.5 ${isMe ? 'text-indigo-400/70' : 'text-gray-700'}`}>LP</p>
+                    <p className={`text-[10px] -mt-0.5 ${isMe ? 'text-purple-400/70' : 'text-gray-600'}`}>LP</p>
                   </div>
                 </div>
               </div>
@@ -344,10 +358,31 @@ function EventCard({ event, myOptionId }) {
   )
 }
 
+// ── Slot status helper ─────────────────────────────────────────────────────────
+// slotStatus: 'live' | 'played' | 'missed' | 'not-available' | 'coming-soon' | 'upcoming'
+function computeSlotStatus(gw, weekNum, liveWeekNum, isSprintCompleted) {
+  if (!gw) {
+    if (isSprintCompleted) return 'not-available'
+    if (liveWeekNum == null) return 'upcoming'
+    // Sprint is running — any empty future slot hasn't been created yet, mark unavailable
+    return 'not-available'
+  }
+  const st = getWeekStatus(gw.lock_time, gw.status)
+  if (st === 'PUBLISHED') {
+    // Only the current (live) week is marked live; future weeks with early picks open are upcoming
+    return weekNum === liveWeekNum ? 'live' : 'upcoming'
+  }
+  if (st === 'LOCKED' && weekNum === liveWeekNum) return 'live'
+  if (st === 'FINISHED' || st === 'LOCKED') return gw.entry ? 'played' : 'missed'
+  // DRAFT with gw data — always upcoming (picks exist but week not open yet)
+  if (isSprintCompleted) return 'not-available'
+  return 'upcoming'
+}
+
 // ── Gameweek section (expandable, fetches all events) ──────────────────────────
-function GameweekSection({ gw, lpBefore, lpAfter, isOpen: defaultOpen }) {
-  const computedStatus = getWeekStatus(gw.lock_time, gw.status)
-  const isLiveWeek     = computedStatus === 'PUBLISHED' || computedStatus === 'LOCKED'
+function GameweekSection({ gw, weekNum, slotStatus, lpBefore, lpAfter, isOpen: defaultOpen }) {
+  const isLiveWeek   = slotStatus === 'live'
+  const isExpandable = slotStatus === 'live' || slotStatus === 'played' || slotStatus === 'missed'
 
   const [expanded, setExpanded]   = useState(defaultOpen ?? isLiveWeek)
   const [gwData,   setGwData]     = useState(null)
@@ -355,8 +390,9 @@ function GameweekSection({ gw, lpBefore, lpAfter, isOpen: defaultOpen }) {
   const fetched = useRef(false)
 
   const toggle = () => {
+    if (!isExpandable) return
     setExpanded(e => !e)
-    if (!fetched.current && gw.id) {
+    if (!fetched.current && gw?.id) {
       fetched.current = true
       setLoading(true)
       getGloryGameweek(gw.id)
@@ -366,9 +402,8 @@ function GameweekSection({ gw, lpBefore, lpAfter, isOpen: defaultOpen }) {
     }
   }
 
-  // Fetch immediately if defaultOpen
   useEffect(() => {
-    if (defaultOpen && gw.id && !fetched.current) {
+    if (defaultOpen && gw?.id && !fetched.current) {
       fetched.current = true
       setLoading(true)
       getGloryGameweek(gw.id)
@@ -378,44 +413,66 @@ function GameweekSection({ gw, lpBefore, lpAfter, isOpen: defaultOpen }) {
     }
   }, []) // eslint-disable-line react-hooks/exhaustive-deps
 
-  const hasEntry     = !!gw.entry
-  const entry        = gw.entry
+  const hasEntry     = !!gw?.entry
+  const entry        = gw?.entry
   const participated = hasEntry
-  const isFinished   = gw.status === 'FINISHED' || gw.status === 'LOCKED'
+  const isFinished   = gw?.status === 'FINISHED' || gw?.status === 'LOCKED'
 
-  // Build pick map from sprint detail data (event_id → option_id)
   const pickMap = {}
-  for (const p of gw.picks || []) {
+  for (const p of gw?.picks || []) {
     if (p.event_id) pickMap[p.event_id] = p.event_option_id
   }
-  // Also try from fetched gwData my_picks
   for (const p of gwData?.my_picks || []) {
     if (p.event_id) pickMap[p.event_id] = p.event_option_id
   }
 
-  const allEvents  = gwData?.gameweek?.events || gw._events || []
-  const lpEarned   = entry?.league_points ?? 0
-  const correct    = entry?.correct_picks ?? 0
-  const incorrect  = entry?.incorrect_picks ?? 0
-  const isPerfect  = entry?.is_perfect_week
+  const allEvents = gwData?.gameweek?.events || gw?._events || []
+  const lpEarned  = entry?.league_points ?? 0
+  const correct   = entry?.correct_picks ?? 0
+  const incorrect = entry?.incorrect_picks ?? 0
+  const isPerfect = entry?.is_perfect_week
+
+  const outerClass = {
+    live:            'border-green-500/40 shadow-[0_0_20px_-4px_rgba(34,197,94,0.25)]',
+    played:          isPerfect ? 'border-yellow-500/30' : 'border-white/10',
+    missed:          'border-red-500/15',
+    'not-available': 'border-white/5 opacity-50',
+    'coming-soon':   'border-amber-500/20',
+    upcoming:        'border-white/5',
+  }[slotStatus] ?? 'border-white/6'
+
+  const outerStyle = {
+    live:   { background: 'linear-gradient(160deg, rgba(34,197,94,0.05) 0%, rgba(10,13,18,1) 50%)' },
+    played: isPerfect ? { background: 'rgba(234,179,8,0.04)' } : {},
+  }[slotStatus] ?? {}
+
+  const badgeClass = {
+    live:            'bg-green-900/40 border-green-500/50 text-green-300',
+    played:          isPerfect ? 'bg-yellow-900/30 border-yellow-500/30 text-yellow-400' : 'bg-indigo-900/30 border-indigo-500/30 text-indigo-300',
+    missed:          'bg-red-900/20 border-red-500/20 text-red-400/70',
+    'not-available': 'bg-white/3 border-white/5 text-gray-700',
+    'coming-soon':   'bg-amber-900/20 border-amber-500/20 text-amber-400/60',
+    upcoming:        'bg-white/3 border-white/6 text-gray-700',
+  }[slotStatus] ?? 'bg-white/3 border-white/8 text-gray-700'
+
+  const titleClass = {
+    live:            'text-green-300',
+    played:          'text-white',
+    missed:          'text-gray-500',
+    'not-available': 'text-gray-700',
+    'coming-soon':   'text-amber-400/70',
+    upcoming:        'text-gray-600',
+  }[slotStatus] ?? 'text-gray-500'
 
   return (
-    <div className={`rounded-2xl border overflow-hidden transition-all ${
-      isLiveWeek ? 'border-green-500/40 shadow-[0_0_20px_-4px_rgba(34,197,94,0.25)]' :
-      isPerfect  ? 'border-yellow-500/30' :
-      hasEntry   ? 'border-white/10' :
-                   'border-white/6'
-    }`} style={
-      isLiveWeek ? { background: 'linear-gradient(160deg, rgba(34,197,94,0.05) 0%, rgba(10,13,18,1) 50%)' } :
-      isPerfect  ? { background: 'rgba(234,179,8,0.04)' } : {}
-    }>
+    <div className={`rounded-2xl border overflow-hidden transition-all ${outerClass}`} style={outerStyle}>
 
-      {/* ── Live week top strip ── */}
+      {/* ── Live top strip ── */}
       {isLiveWeek && (
         <div className="flex items-center gap-2 px-4 py-2 bg-green-900/20 border-b border-green-500/20">
           <span className="w-2 h-2 rounded-full bg-green-400 animate-pulse flex-shrink-0" />
           <span className="text-green-400 text-[10px] font-black tracking-widest uppercase">Live — Make your picks now</span>
-          {gw.lock_time && (() => {
+          {gw?.lock_time && (() => {
             const cd = fmtCountdown(gw.lock_time)
             return cd ? <span className="ml-auto text-yellow-400 text-[10px] font-semibold">Locks in {cd}</span> : null
           })()}
@@ -425,32 +482,26 @@ function GameweekSection({ gw, lpBefore, lpAfter, isOpen: defaultOpen }) {
       {/* ── Week header ── */}
       <button
         onClick={toggle}
-        className={`w-full px-4 py-4 flex items-center gap-3 text-left ${isLiveWeek ? 'hover:bg-green-900/10' : 'hover:bg-white/2'} transition-colors`}
+        className={`w-full px-4 py-4 flex items-center gap-3 text-left ${
+          isLiveWeek ? 'hover:bg-green-900/10' : isExpandable ? 'hover:bg-white/2' : 'cursor-default'
+        } transition-colors`}
       >
-        {/* Week number badge */}
-        <div className={`w-10 h-10 rounded-xl flex items-center justify-center font-black text-sm flex-shrink-0 border ${
-          isLiveWeek  ? 'bg-green-900/40 border-green-500/50 text-green-300' :
-          isPerfect   ? 'bg-yellow-900/30 border-yellow-500/30 text-yellow-400' :
-          participated? 'bg-indigo-900/30 border-indigo-500/30 text-indigo-300' :
-          isFinished  ? 'bg-white/5 border-white/10 text-gray-600' :
-                        'bg-white/3 border-white/8 text-gray-700'
-        }`}>
-          W{gw.sprint_week}
+        <div className={`w-10 h-10 rounded-xl flex items-center justify-center font-black text-sm flex-shrink-0 border ${badgeClass}`}>
+          W{weekNum}
         </div>
 
         <div className="flex-1 min-w-0">
           <div className="flex items-center gap-1.5 flex-wrap">
-            <p className={`text-sm font-bold ${isLiveWeek ? 'text-green-300' : participated ? 'text-white' : 'text-gray-500'}`}>
-              Week {gw.sprint_week}
-            </p>
-            {isLiveWeek  && <span className="text-[9px] bg-green-900/50 text-green-300 border border-green-500/40 px-1.5 py-0.5 rounded-full font-bold">● LIVE</span>}
-            {isPerfect   && <span className="text-[9px] bg-yellow-900/40 text-yellow-400 border border-yellow-500/30 px-1.5 py-0.5 rounded-full font-bold">⭐ PERFECT</span>}
-            {!participated && isFinished && !isLiveWeek && <span className="text-[9px] bg-white/5 text-gray-600 px-1.5 py-0.5 rounded-full">Missed</span>}
-            {computedStatus === 'DRAFT' && <span className="text-[9px] bg-white/4 text-gray-600 px-1.5 py-0.5 rounded-full">Upcoming</span>}
+            <p className={`text-sm font-bold ${titleClass}`}>Week {weekNum}</p>
+            {slotStatus === 'live'          && <span className="text-[9px] bg-green-900/50 text-green-300 border border-green-500/40 px-1.5 py-0.5 rounded-full font-bold">● LIVE</span>}
+            {slotStatus === 'played' && isPerfect && <span className="text-[9px] bg-yellow-900/40 text-yellow-400 border border-yellow-500/30 px-1.5 py-0.5 rounded-full font-bold">⭐ PERFECT</span>}
+            {slotStatus === 'missed'        && <span className="text-[9px] bg-red-900/30 text-red-400/80 border border-red-500/20 px-1.5 py-0.5 rounded-full">Missed</span>}
+            {slotStatus === 'not-available' && <span className="text-[9px] bg-white/4 text-gray-700 px-1.5 py-0.5 rounded-full">Not available</span>}
+            {slotStatus === 'coming-soon'   && <span className="text-[9px] bg-amber-900/30 text-amber-400/70 border border-amber-500/20 px-1.5 py-0.5 rounded-full">Coming soon</span>}
+            {slotStatus === 'upcoming'      && <span className="text-[9px] bg-white/4 text-gray-600 px-1.5 py-0.5 rounded-full">Upcoming</span>}
           </div>
 
-          {/* Mon → Sun date range */}
-          {gw.lock_time && (() => {
+          {gw?.lock_time && (() => {
             const { mon, sun } = getWeekRange(gw.lock_time)
             return mon ? (
               <p className="text-gray-600 text-[10px] mt-0.5 font-mono">
@@ -459,28 +510,30 @@ function GameweekSection({ gw, lpBefore, lpAfter, isOpen: defaultOpen }) {
             ) : null
           })()}
 
-          {/* LP row */}
-          <div className="flex items-center gap-1.5 mt-0.5">
-            <span className="text-gray-600 text-[11px]">{lpBefore} LP</span>
-            <span className="text-gray-700 text-[10px]">→</span>
-            <span className={`text-[11px] font-semibold ${lpEarned > 0 ? 'text-indigo-300' : 'text-gray-600'}`}>
-              {lpAfter} LP
-              {lpEarned > 0 && <span className="text-green-400 ml-1">+{lpEarned}</span>}
-            </span>
-            {participated && (
-              <span className="text-gray-700 text-[10px]">· {correct}✓ {incorrect > 0 ? `${incorrect}✗` : ''}</span>
-            )}
-          </div>
+          {(slotStatus === 'live' || slotStatus === 'played' || slotStatus === 'missed') && (
+            <div className="flex items-center gap-1.5 mt-0.5">
+              <span className="text-gray-600 text-[11px]">{lpBefore} LP</span>
+              <span className="text-gray-700 text-[10px]">→</span>
+              <span className={`text-[11px] font-semibold ${lpEarned > 0 ? 'text-indigo-300' : 'text-gray-600'}`}>
+                {lpAfter} LP
+                {lpEarned > 0 && <span className="text-green-400 ml-1">+{lpEarned}</span>}
+              </span>
+              {participated && (
+                <span className="text-gray-700 text-[10px]">· {correct}✓ {incorrect > 0 ? `${incorrect}✗` : ''}</span>
+              )}
+            </div>
+          )}
         </div>
 
-        <span className={`text-gray-600 text-xs transition-transform duration-200 ${expanded ? 'rotate-180' : ''}`}>▼</span>
+        {isExpandable && (
+          <span className={`text-gray-600 text-xs transition-transform duration-200 ${expanded ? 'rotate-180' : ''}`}>▼</span>
+        )}
       </button>
 
       {/* ── Expanded content ── */}
-      {expanded && (
+      {expanded && isExpandable && (
         <div className="border-t border-white/6 px-4 pt-4 pb-4 space-y-3">
 
-          {/* Stats row (if participated) */}
           {participated && (
             <div className="flex gap-2">
               <div className="flex-1 bg-green-950/25 border border-green-500/15 rounded-xl py-2.5 text-center">
@@ -504,7 +557,6 @@ function GameweekSection({ gw, lpBefore, lpAfter, isOpen: defaultOpen }) {
             </div>
           )}
 
-          {/* Did not participate notice */}
           {!participated && isFinished && (
             <div className="bg-white/3 border border-white/8 rounded-xl px-4 py-3 flex items-center gap-3">
               <span className="text-2xl flex-shrink-0">⏭</span>
@@ -515,7 +567,6 @@ function GameweekSection({ gw, lpBefore, lpAfter, isOpen: defaultOpen }) {
             </div>
           )}
 
-          {/* Loading events */}
           {loading && (
             <div className="flex items-center justify-center py-8 gap-2 text-gray-600 text-sm">
               <div className="w-4 h-4 border border-gray-700 border-t-indigo-400 rounded-full animate-spin" />
@@ -523,7 +574,6 @@ function GameweekSection({ gw, lpBefore, lpAfter, isOpen: defaultOpen }) {
             </div>
           )}
 
-          {/* All events */}
           {!loading && allEvents.length > 0 && (
             <div className="space-y-2">
               <p className="text-gray-600 text-[10px] font-bold tracking-widest uppercase">
@@ -535,7 +585,7 @@ function GameweekSection({ gw, lpBefore, lpAfter, isOpen: defaultOpen }) {
             </div>
           )}
 
-          {!loading && !gwData && gw.status === 'DRAFT' && (
+          {!loading && !gwData && gw?.status === 'DRAFT' && (
             <p className="text-center text-gray-700 text-xs py-4">Events not published yet</p>
           )}
         </div>
@@ -545,18 +595,33 @@ function GameweekSection({ gw, lpBefore, lpAfter, isOpen: defaultOpen }) {
 }
 
 // ── Compact inline rankings strip ──────────────────────────────────────────────
-function InlineRankings({ rankings, myUserId, promLP, relLP, onViewFull }) {
+function InlineRankings({ rankings, myUserId, promLP, relLP, onViewFull, division, myDivRank, onUserClick }) {
   if (!rankings?.length) return null
   const myIdx = rankings.findIndex(r => r.user_id === myUserId)
   const top3  = rankings.slice(0, 3)
   const myRow = myIdx >= 0 ? rankings[myIdx] : null
   const showMyRow = myIdx > 2
+  const displayRank = myRow ? (myRow.rank ?? myIdx + 1) : myDivRank
+  const divLabel = division
+    ? `${division.icon ? division.icon + ' ' : ''}${division.name}`
+    : null
 
   return (
     <div className="bg-[#0d1117] border border-white/8 rounded-2xl overflow-hidden">
-      <div className="px-4 py-3 border-b border-white/5 flex items-center justify-between">
-        <p className="text-white text-sm font-bold">Final Sprint Ranking</p>
-        <button onClick={onViewFull} className="text-indigo-400 text-xs font-semibold hover:text-indigo-300">
+      <div className="px-4 py-3 border-b border-white/5 flex items-center gap-3">
+        <div className="flex-1 min-w-0">
+          <p className="text-white text-sm font-bold">Division Ranking</p>
+          {divLabel && (
+            <p className="text-gray-500 text-[10px] mt-0.5">{divLabel}</p>
+          )}
+        </div>
+        {displayRank != null && (
+          <div className="text-center flex-shrink-0">
+            <p className="text-indigo-300 font-black text-xl leading-none">#{displayRank}</p>
+            <p className="text-gray-600 text-[10px] mt-0.5">your rank</p>
+          </div>
+        )}
+        <button onClick={onViewFull} className="text-indigo-400 text-xs font-semibold hover:text-indigo-300 flex-shrink-0">
           See all {rankings.length} →
         </button>
       </div>
@@ -576,12 +641,12 @@ function InlineRankings({ rankings, myUserId, promLP, relLP, onViewFull }) {
         return (
           <div key={row.user_id} className={`flex items-start gap-3 px-4 py-3 border-b border-white/4 ${isMe ? 'bg-indigo-900/20' : ''}`}>
             <span className={`w-6 text-center text-xs font-black flex-shrink-0 mt-0.5 ${rank === 1 ? 'text-yellow-400' : rank === 2 ? 'text-gray-300' : 'text-amber-600'}`}>{rank}</span>
-            <div className="relative flex-shrink-0 mt-0.5">
+            <button onClick={() => onUserClick?.(row.user_id)} className="relative flex-shrink-0 mt-0.5">
               <div className="w-7 h-7 rounded-full bg-indigo-900/40 flex items-center justify-center text-xs text-indigo-300 font-bold">
                 {(row.display_name || '?')[0].toUpperCase()}
               </div>
               <TierBadgeSm correct={row.total_correct_picks} incorrect={row.total_incorrect_picks} />
-            </div>
+            </button>
             <div className="flex-1 min-w-0">
               <p className={`text-sm truncate ${isMe ? 'text-white font-semibold' : 'text-gray-300'}`}>
                 {row.display_name || 'Player'}{isMe && <span className="text-indigo-400 text-xs ml-1">you</span>}
@@ -597,6 +662,7 @@ function InlineRankings({ rankings, myUserId, promLP, relLP, onViewFull }) {
                     <span className="text-[10px] text-red-400/70">{wrong}✗</span>
                     {acc !== null && <span className="text-[10px] text-gray-500">{acc}%</span>}
                     {gw > 0 && <span className="text-[10px] text-gray-600">{gw} GW</span>}
+                    <span className="text-[10px] text-yellow-500/60">{row.energy_used ?? 0}⚡</span>
                   </>)
                 })()}
               </div>
@@ -616,12 +682,12 @@ function InlineRankings({ rankings, myUserId, promLP, relLP, onViewFull }) {
         return (
           <div className="flex items-start gap-3 px-4 py-3 bg-indigo-900/20 border-t border-indigo-500/15">
             <span className="w-6 text-center text-xs font-black text-indigo-400 flex-shrink-0 mt-0.5">{myIdx + 1}</span>
-            <div className="relative flex-shrink-0 mt-0.5">
+            <button onClick={() => onUserClick?.(myRow.user_id)} className="relative flex-shrink-0 mt-0.5">
               <div className="w-7 h-7 rounded-full bg-indigo-700/50 flex items-center justify-center text-xs text-indigo-200 font-bold">
                 {(myRow.display_name || '?')[0].toUpperCase()}
               </div>
               <TierBadgeSm correct={myRow.total_correct_picks} incorrect={myRow.total_incorrect_picks} />
-            </div>
+            </button>
             <div className="flex-1 min-w-0">
               <p className="text-sm text-white font-semibold truncate">{myRow.display_name || 'You'} <span className="text-indigo-400 text-xs">you</span></p>
               <div className="flex items-center gap-2 mt-0.5 flex-wrap">
@@ -635,6 +701,7 @@ function InlineRankings({ rankings, myUserId, promLP, relLP, onViewFull }) {
                     <span className="text-[10px] text-red-400/70">{wrong}✗</span>
                     {acc !== null && <span className="text-[10px] text-gray-500">{acc}%</span>}
                     {gw > 0 && <span className="text-[10px] text-gray-600">{gw} GW</span>}
+                    <span className="text-[10px] text-yellow-500/60">{myRow.energy_used ?? 0}⚡</span>
                   </>)
                 })()}
               </div>
@@ -648,10 +715,17 @@ function InlineRankings({ rankings, myUserId, promLP, relLP, onViewFull }) {
 }
 
 // ── Overall sprint rankings across all divisions ──────────────────────────────
-function OverallRankingsScreen({ sprint, overallRanking, myUserId, onClose }) {
-  const myRow = overallRanking.find(r => r.user_id === myUserId)
+function OverallRankingsScreen({ sprint, overallRanking, myUserId, onClose, onUserClick }) {
+  const myRow  = overallRanking.find(r => r.user_id === myUserId)
+  const myRef  = useRef(null)
   const OUTCOME_ICON = { promoted:'⬆', retained:'=', relegated:'⬇' }
   const OUTCOME_CLS  = { promoted:'text-green-400', retained:'text-gray-400', relegated:'text-red-400' }
+
+  useEffect(() => {
+    if (myRef.current) {
+      myRef.current.scrollIntoView({ block: 'center' })
+    }
+  }, [])
 
   return (
     <div className="fixed inset-0 z-50 bg-[#0a0d12] flex flex-col">
@@ -663,15 +737,12 @@ function OverallRankingsScreen({ sprint, overallRanking, myUserId, onClose }) {
             <p className="text-white font-bold text-base">Overall Rankings</p>
             <p className="text-gray-500 text-xs">{sprint?.name} · {overallRanking.length} players</p>
           </div>
-        </div>
-      </div>
-
-      {/* Legend */}
-      <div className="border-b border-white/5">
-        <div className="max-w-md mx-auto flex gap-3 px-4 py-2">
-          <span className="flex items-center gap-1 text-[10px] text-green-400">⬆ Promoted</span>
-          <span className="flex items-center gap-1 text-[10px] text-gray-500">= Retained</span>
-          <span className="flex items-center gap-1 text-[10px] text-red-400 ml-auto">⬇ Relegated</span>
+          {myRow && (
+            <div className="text-right flex-shrink-0">
+              <p className="text-indigo-300 font-black text-xl leading-none">#{myRow.overall_rank}</p>
+              <p className="text-gray-600 text-[10px]">your position</p>
+            </div>
+          )}
         </div>
       </div>
 
@@ -683,55 +754,58 @@ function OverallRankingsScreen({ sprint, overallRanking, myUserId, onClose }) {
             const oi = OUTCOME_ICON[row.sprint_outcome] || '='
             return (
               <div key={`${row.user_id}_${row.overall_rank}`}
-                className={`flex items-start gap-3 px-4 py-3 ${isMe ? 'bg-indigo-900/20' : ''}`}>
-                {/* Rank */}
+                ref={isMe ? myRef : null}
+                className="relative flex items-start gap-3 px-4 py-3 border-b border-white/4"
+                style={isMe ? {
+                  background: 'linear-gradient(90deg, rgba(88,28,135,0.4) 0%, rgba(88,28,135,0.15) 60%, transparent 100%)',
+                  borderColor: 'rgba(168,85,247,0.25)',
+                } : {}}>
+                {isMe && <span className="absolute left-0 top-0 bottom-0 w-1 rounded-r-full bg-purple-500" />}
                 <span className={`w-7 text-center text-sm font-black flex-shrink-0 mt-0.5 ${
+                  isMe ? 'text-purple-300' :
                   row.overall_rank === 1 ? 'text-yellow-400' :
                   row.overall_rank === 2 ? 'text-gray-300' :
                   row.overall_rank === 3 ? 'text-amber-600' : 'text-gray-600'
                 }`}>{row.overall_rank}</span>
 
-                {/* Avatar */}
-                <div className="relative flex-shrink-0">
-                  <div className={`w-8 h-8 rounded-full flex items-center justify-center text-xs font-bold ${
-                    isMe ? 'bg-indigo-700/60 text-indigo-200' : 'bg-white/8 text-gray-400'
-                  }`}>
+                <button onClick={() => onUserClick?.(row.user_id)} className="relative flex-shrink-0">
+                  <div className={`rounded-full flex items-center justify-center font-bold ${isMe ? 'w-9 h-9 text-sm' : 'w-8 h-8 text-xs bg-white/8 text-gray-400'}`}
+                    style={isMe ? { background: 'rgba(88,28,135,0.6)', color: '#d8b4fe', boxShadow: '0 0 0 2px rgba(168,85,247,0.7), 0 0 12px rgba(168,85,247,0.3)' } : {}}>
                     {(row.display_name || '?')[0].toUpperCase()}
                   </div>
                   <TierBadgeSm correct={row.total_correct_picks} incorrect={row.total_incorrect_picks} />
-                </div>
+                </button>
 
-                {/* Info */}
                 <div className="flex-1 min-w-0">
                   <div className="flex items-center gap-1.5 flex-wrap">
-                    <p className={`text-sm font-semibold truncate ${isMe ? 'text-white' : 'text-gray-200'}`}>
-                      {row.display_name}{isMe && <span className="text-indigo-400 text-xs ml-1">← you</span>}
+                    <p className={`text-sm font-semibold truncate ${isMe ? 'text-white' : 'text-gray-300'}`}>
+                      {row.display_name}
                     </p>
+                    {isMe && <span className="text-[10px] font-black px-1.5 py-0.5 rounded-full border border-purple-500/50 bg-purple-900/40 text-purple-300 flex-shrink-0">YOU</span>}
                     <span className={`text-[10px] font-bold flex-shrink-0 ${oc}`}>{oi}</span>
                   </div>
-                  {/* Division badge */}
                   <p className="text-gray-500 text-[10px] mt-0.5">
-                    {row.division_icon} {row.division_name} · Div #{row.division_rank}
+                    {row.division_icon} {row.division_name} · #{row.division_rank}
                   </p>
-                  {/* Stats row */}
-                  {(() => {
-                    const wrong = row.total_incorrect_picks ?? 0
-                    const total = (row.total_correct_picks || 0) + wrong
-                    const acc = total > 0 ? Math.round((row.total_correct_picks || 0) / total * 100) : null
-                    return (
-                      <div className="flex items-center gap-2 mt-0.5 flex-wrap">
-                        <span className="text-green-400 text-[10px] font-semibold">{row.total_correct_picks ?? 0}✓</span>
-                        <span className="text-red-400/80 text-[10px]">{wrong}✗</span>
-                        {acc !== null && <span className="text-gray-500 text-[10px]">{acc}%</span>}
-                      </div>
-                    )
-                  })()}
+                  <div className="flex items-center gap-1.5 mt-0.5 flex-wrap">
+                    <span className="text-green-400 text-[10px] font-semibold">{row.total_correct_picks ?? 0}✓</span>
+                    <span className="text-[10px] text-gray-600">·</span>
+                    <span className="text-red-400 text-[10px]">{row.total_incorrect_picks ?? 0}✗</span>
+                    {(row.pending_picks ?? 0) > 0 && (
+                      <>
+                        <span className="text-[10px] text-gray-600">·</span>
+                        <span className="text-gray-400 text-[10px]">{row.pending_picks}⏳</span>
+                      </>
+                    )}
+                    <span className="text-[10px] text-gray-600">·</span>
+                    <span className="text-orange-400 text-[10px]">{row.energy_used ?? 0}⚡</span>
+                  </div>
                 </div>
 
-                {/* LP */}
                 <div className="text-right flex-shrink-0">
-                  <p className={`font-black text-base ${oc}`}>{row.total_league_points}</p>
-                  <p className="text-gray-700 text-[10px]">LP</p>
+                  <p className={`font-black text-base ${isMe ? 'text-white' : oc}`}
+                    style={isMe ? { textShadow: '0 0 12px rgba(168,85,247,0.5)' } : {}}>{row.total_league_points}</p>
+                  <p className={`text-[10px] ${isMe ? 'text-purple-400/70' : 'text-gray-600'}`}>LP</p>
                 </div>
               </div>
             )
@@ -755,6 +829,7 @@ function OverallRankingsScreen({ sprint, overallRanking, myUserId, onClose }) {
 
 // ── Sprint detail full-screen ──────────────────────────────────────────────────
 function SprintDetailScreen({ sprintSummary, myUserId, onClose }) {
+  const navigate = useNavigate()
   const [detail,       setDetail]       = useState(null)
   const [loading,      setLoading]      = useState(true)
   const [showRankings, setShowRankings] = useState(false)
@@ -774,24 +849,46 @@ function SprintDetailScreen({ sprintSummary, myUserId, onClose }) {
   const rankings       = detail?.rankings || []
   const overallRanking = detail?.overall_ranking || []
   const gameweeks      = detail?.gameweeks || []
-  const effectiveUserId = myUserId
+  const effectiveUserId = detail?.progress?.user_id ?? myUserId
   const outcome   = progress?.sprint_outcome ?? (sprintSummary.status === 'live' ? 'pending' : null)
   const oc        = outcome ? (OUTCOME[outcome] || OUTCOME.pending) : null
   const gwCount   = sprint.gameweek_count || 4
   const isLive    = sprint.status === 'live'
   const promLP    = division?.promotion_min_points ?? null
   const relLP     = division?.relegation_max_points ?? null
+  const isSprintCompleted = sprint.status === 'completed' || sprint.status === 'archived'
 
-  // Compute cumulative LP after each week
+  // Build week lookup and find live week number
+  const gwByWeek = {}
+  for (const gw of gameweeks) {
+    if (gw.sprint_week) gwByWeek[gw.sprint_week] = gw
+  }
+  // Prefer PUBLISHED (picks open) over LOCKED (deadline passed awaiting results)
+  const liveWeekNum = (
+    gameweeks.filter(g => getWeekStatus(g?.lock_time, g?.status) === 'PUBLISHED')
+      .sort((a, b) => (a.sprint_week ?? 99) - (b.sprint_week ?? 99))[0]
+    ?? gameweeks.filter(g => getWeekStatus(g?.lock_time, g?.status) === 'LOCKED')
+      .sort((a, b) => (a.sprint_week ?? 99) - (b.sprint_week ?? 99))[0]
+  )?.sprint_week ?? null
+
+  // LP/correct counts from FINISHED weeks only (settled, not partial)
+  const settledLP      = gameweeks.filter(g => g.status === 'FINISHED' && g.entry).reduce((s, g) => s + (g.entry.league_points ?? 0), 0)
+  const settledCorrect = gameweeks.filter(g => g.status === 'FINISHED' && g.entry).reduce((s, g) => s + (g.entry.correct_picks ?? 0), 0)
+  const settledPerfect = gameweeks.filter(g => g.status === 'FINISHED' && g.entry?.is_perfect_week).length
+  const hasSettled     = gameweeks.some(g => g.status === 'FINISHED' && g.entry)
+
+  // Compute cumulative LP by week slot 1..gwCount
   const cumLP = []
   let running = 0
-  for (let i = 0; i < gwCount; i++) {
-    const gw = gameweeks[i]
+  for (let i = 1; i <= gwCount; i++) {
+    const gw = gwByWeek[i]
     const earned = gw?.entry?.league_points ?? 0
     const before = running
     running += earned
     cumLP.push({ before, after: running })
   }
+
+  const goToUser = (userId) => navigate(`/users/${userId}`)
 
   if (showOverall && detail) {
     return (
@@ -800,6 +897,7 @@ function SprintDetailScreen({ sprintSummary, myUserId, onClose }) {
         overallRanking={overallRanking}
         myUserId={effectiveUserId}
         onClose={() => setShowOverall(false)}
+        onUserClick={goToUser}
       />
     )
   }
@@ -811,6 +909,7 @@ function SprintDetailScreen({ sprintSummary, myUserId, onClose }) {
         rankings={rankings}
         myUserId={effectiveUserId}
         onClose={() => setShowRankings(false)}
+        onUserClick={goToUser}
       />
     )
   }
@@ -842,35 +941,45 @@ function SprintDetailScreen({ sprintSummary, myUserId, onClose }) {
             {/* Gameweek progress — cards per week */}
             <div className="mt-5 flex gap-2">
               {Array.from({ length: gwCount }, (_, i) => {
-                const gw   = gameweeks[i]
-                const st   = getWeekStatus(gw?.lock_time, gw?.status)
-                const done = st === 'FINISHED'
-                const open = st === 'PUBLISHED' || st === 'LOCKED'
-                const has  = !!gw?.entry
+                const gw      = gwByWeek[i + 1] ?? gameweeks[i]
+                const st      = getWeekStatus(gw?.lock_time, gw?.status)
+                const isLive  = st === 'PUBLISHED' || st === 'LOCKED'
+                const isDone  = st === 'FINISHED'
+                const isFuture = !isLive && !isDone
+                const has     = !!gw?.entry
+                const missed  = isDone && !has
                 const { mon } = gw?.lock_time ? getWeekRange(gw.lock_time) : {}
                 return (
                   <div key={i} className={`flex-1 rounded-xl px-2 py-2 border text-center transition-all ${
-                    open ? 'border-green-500/50 bg-green-900/20 shadow-[0_0_12px_-3px_rgba(34,197,94,0.3)]' :
-                    done && has ? 'border-indigo-500/25 bg-indigo-900/15' :
-                    done ? 'border-white/8 bg-white/3' :
-                    'border-white/5 bg-white/2'
+                    isLive         ? 'border-green-500/50 bg-green-900/20 shadow-[0_0_12px_-3px_rgba(34,197,94,0.3)]' :
+                    isDone && has  ? 'border-indigo-500/25 bg-indigo-900/15' :
+                    missed         ? 'border-red-500/15 bg-red-950/10' :
+                    isFuture       ? 'border-dashed border-white/10 bg-white/2' :
+                                     'border-white/5 bg-white/2'
                   }`}>
-                    {/* Bar */}
+                    {/* Status bar */}
                     <div className={`h-1 w-full rounded-full mb-1.5 ${
-                      open ? 'bg-green-400 animate-pulse' :
-                      done && has ? 'bg-indigo-500' :
-                      done ? 'bg-white/20' : 'bg-white/8'
+                      isLive        ? 'bg-green-400 animate-pulse' :
+                      isDone && has ? 'bg-indigo-500' :
+                      missed        ? 'bg-red-800/50' :
+                                      'bg-white/6'
                     }`} />
                     <p className={`text-[10px] font-black ${
-                      open ? 'text-green-300' : done && has ? 'text-indigo-300' : done ? 'text-gray-600' : 'text-gray-700'
+                      isLive        ? 'text-green-300' :
+                      isDone && has ? 'text-indigo-300' :
+                      missed        ? 'text-red-400/70' :
+                                      'text-gray-700'
                     }`}>W{i + 1}</p>
-                    {open && <p className="text-[8px] text-green-400 font-bold mt-0.5">LIVE</p>}
-                    {done && has && gw?.entry?.league_points != null && (
+                    {isLive && <p className="text-[8px] text-green-400 font-bold mt-0.5">LIVE</p>}
+                    {isDone && has && gw?.entry?.league_points != null && (
                       <p className="text-[8px] text-indigo-400 mt-0.5">+{gw.entry.league_points} LP</p>
                     )}
-                    {done && !has && <p className="text-[8px] text-gray-700 mt-0.5">missed</p>}
-                    {!open && !done && mon && (
+                    {missed && <p className="text-[8px] text-red-500/60 mt-0.5">missed</p>}
+                    {isFuture && mon && (
                       <p className="text-[8px] text-gray-700 mt-0.5">{fmtShort(mon)}</p>
+                    )}
+                    {isFuture && !mon && (
+                      <p className="text-[8px] text-gray-700 mt-0.5">soon</p>
                     )}
                   </div>
                 )
@@ -960,20 +1069,20 @@ function SprintDetailScreen({ sprintSummary, myUserId, onClose }) {
             })()}
 
             {/* Sprint summary stats */}
-            {progress ? (
+            {(progress || hasSettled) ? (
               <div className="grid grid-cols-3 gap-2">
                 <div className="bg-[#0d1117] border border-white/8 rounded-2xl py-3 text-center">
                   <p className={`font-black text-2xl ${outcome === 'promoted' ? 'text-green-400' : outcome === 'relegated' ? 'text-red-400' : 'text-indigo-400'}`}>
-                    {progress.total_league_points ?? 0}
+                    {isLive ? settledLP : (progress?.total_league_points ?? 0)}
                   </p>
-                  <p className="text-gray-600 text-[10px] mt-0.5">Final LP</p>
+                  <p className="text-gray-600 text-[10px] mt-0.5">{isLive ? 'LP earned' : 'Final LP'}</p>
                 </div>
                 <div className="bg-[#0d1117] border border-white/8 rounded-2xl py-3 text-center">
-                  <p className="text-white font-black text-2xl">{progress.total_correct_picks ?? 0}</p>
+                  <p className="text-white font-black text-2xl">{isLive ? settledCorrect : (progress?.total_correct_picks ?? 0)}</p>
                   <p className="text-gray-600 text-[10px] mt-0.5">Correct picks</p>
                 </div>
                 <div className="bg-[#0d1117] border border-white/8 rounded-2xl py-3 text-center">
-                  <p className="text-yellow-400 font-black text-2xl">{progress.perfect_weeks ?? 0}</p>
+                  <p className="text-yellow-400 font-black text-2xl">{isLive ? settledPerfect : (progress?.perfect_weeks ?? 0)}</p>
                   <p className="text-gray-600 text-[10px] mt-0.5">Perfect weeks</p>
                 </div>
               </div>
@@ -985,50 +1094,61 @@ function SprintDetailScreen({ sprintSummary, myUserId, onClose }) {
             ) : null}
 
             {/* Rankings section */}
-            {(rankings.length > 0 || overallRanking.length > 0) && (
+            {(rankings.length > 0 || overallRanking.length > 0 || sprint.my_rank) && (() => {
+              const myOverallRow = overallRanking.find(r => r.user_id === effectiveUserId)
+              return (
               <div className="space-y-2">
                 {overallRanking.length > 0 && (
                   <button
                     onClick={() => setShowOverall(true)}
-                    className="w-full flex items-center justify-between px-4 py-3.5 rounded-2xl border border-indigo-500/25 bg-indigo-950/30 hover:bg-indigo-950/50 transition-colors"
+                    className="w-full flex items-center gap-3 px-4 py-3.5 rounded-2xl border border-indigo-500/25 bg-indigo-950/30 hover:bg-indigo-950/50 transition-colors"
                   >
-                    <div className="text-left">
+                    <div className="text-left flex-1 min-w-0">
                       <p className="text-white font-bold text-sm">Overall Sprint Rankings</p>
                       <p className="text-gray-500 text-xs mt-0.5">{overallRanking.length} players across all divisions</p>
                     </div>
-                    <span className="text-indigo-400 font-semibold text-sm">→</span>
+                    {myOverallRow && (
+                      <div className="text-center flex-shrink-0">
+                        <p className="text-indigo-300 font-black text-xl leading-none">#{myOverallRow.overall_rank}</p>
+                        <p className="text-gray-600 text-[10px] mt-0.5">your rank</p>
+                      </div>
+                    )}
+                    <span className="text-indigo-400 font-semibold text-sm flex-shrink-0">→</span>
                   </button>
                 )}
-                {rankings.length > 0 && (
+                {rankings.length > 0 ? (
                   <InlineRankings
                     rankings={rankings}
                     myUserId={effectiveUserId}
                     promLP={promLP}
                     relLP={relLP}
                     onViewFull={() => setShowRankings(true)}
+                    division={division}
+                    myDivRank={myOverallRow?.division_rank}
+                    onUserClick={goToUser}
                   />
-                )}
+                ) : sprint.my_rank ? (
+                  <div className="bg-[#0d1117] border border-white/8 rounded-2xl px-4 py-3.5 flex items-center gap-3">
+                    <div className="flex-1 min-w-0">
+                      <p className="text-white text-sm font-bold">Division Ranking</p>
+                      {division && (
+                        <p className="text-gray-500 text-[10px] mt-0.5">
+                          {division.icon ? `${division.icon} ` : ''}{division.name}
+                        </p>
+                      )}
+                    </div>
+                    <div className="text-right flex-shrink-0">
+                      <p className="text-indigo-300 font-black text-xl leading-none">#{sprint.my_rank}</p>
+                      <p className="text-gray-600 text-[10px] mt-0.5">
+                        your rank{sprint.total_players ? ` / ${sprint.total_players}` : ''}
+                      </p>
+                    </div>
+                  </div>
+                ) : null}
               </div>
-            )}
+              )
+            })()}
 
-            {/* Gameweeks */}
-            {gameweeks.length > 0 && (
-              <div className="space-y-3">
-                <div className="flex items-center gap-2">
-                  <p className="text-gray-500 text-[11px] font-bold tracking-widest uppercase flex-shrink-0">Weekly breakdown</p>
-                  <div className="flex-1 h-px bg-white/5" />
-                </div>
-                {gameweeks.map((gw, i) => (
-                  <GameweekSection
-                    key={gw.id}
-                    gw={gw}
-                    lpBefore={cumLP[i]?.before ?? 0}
-                    lpAfter={cumLP[i]?.after ?? 0}
-                    isOpen={false}
-                  />
-                ))}
-              </div>
-            )}
 
             {/* CTA for live sprint */}
             {isLive && (
@@ -1045,100 +1165,191 @@ function SprintDetailScreen({ sprintSummary, myUserId, onClose }) {
 
 // ── Current sprint card (prominent hero style) ────────────────────────────────
 function CurrentSprintCard({ sprint, onEnter }) {
-  const lp      = sprint.total_league_points ?? null
-  const hasStats = lp !== null
-  const gws     = sprint.gameweeks || []
+  const gws = sprint.gameweeks || []
 
-  // Find the active (PUBLISHED/LOCKED) week
-  const activeGw = gws.find(g => {
-    const st = getWeekStatus(g.lock_time, g.status)
-    return st === 'PUBLISHED' || st === 'LOCKED'
+  // Totals from settled gameweek entries (more accurate than user_sprint_progress)
+  const settledGws = gws.filter(gw => {
+    const st = getWeekStatus(gw.lock_time, gw.status)
+    return (st === 'FINISHED' || st === 'LOCKED') && gw.entry
   })
+  const earnedLP        = settledGws.reduce((s, gw) => s + (gw.entry?.league_points ?? 0), 0)
+  const earnedCorrect   = settledGws.reduce((s, gw) => s + (gw.entry?.correct_picks ?? 0), 0)
+  const earnedIncorrect = settledGws.reduce((s, gw) => s + (gw.entry?.incorrect_picks ?? 0), 0)
+  const earnedPerfect   = settledGws.filter(gw => gw.entry?.is_perfect_week).length
+  const hasStats        = settledGws.length > 0
+
+  // Rankings
+  const divRank       = sprint.my_rank ?? null
+  const divTotal      = sprint.total_players ?? null
+  const globalRank    = sprint.my_global_rank ?? null
+  const globalTotal   = sprint.total_global_players ?? null
+
+  // Promotion / relegation status
+  const promLP   = sprint.promotion_min_points ?? null
+  const relLP    = sprint.relegation_max_points ?? null
+  const outcome  = sprint.sprint_outcome
+
+  let statusBanner = null
+  if (outcome && outcome !== 'pending') {
+    if (outcome === 'promoted')
+      statusBanner = { text: 'You got promoted! Moving up next sprint.', cls: 'bg-green-900/40 border-green-500/30 text-green-300', icon: '⬆' }
+    else if (outcome === 'relegated')
+      statusBanner = { text: 'You got relegated. Better luck next sprint!', cls: 'bg-red-900/30 border-red-500/25 text-red-300', icon: '⬇' }
+    else
+      statusBanner = { text: 'You stay in your division next sprint.', cls: 'bg-white/5 border-white/10 text-gray-400', icon: '=' }
+  } else if (sprint.status === 'live' && hasStats) {
+    if (promLP !== null && earnedLP >= promLP)
+      statusBanner = { text: `Promotion zone — keep it up! (${earnedLP} / ${promLP} LP needed)`, cls: 'bg-green-900/40 border-green-500/30 text-green-300', icon: '⬆' }
+    else if (relLP !== null && earnedLP <= relLP)
+      statusBanner = { text: `Relegation risk — earn more LP! (${earnedLP} / ${relLP + 1} LP needed)`, cls: 'bg-red-900/30 border-red-500/25 text-red-300', icon: '⬇' }
+    else if (promLP !== null)
+      statusBanner = { text: `${promLP - earnedLP} LP needed for promotion`, cls: 'bg-indigo-900/30 border-indigo-500/25 text-indigo-300', icon: '=' }
+  }
 
   return (
     <div className="rounded-2xl overflow-hidden border border-indigo-500/30"
-      style={{ background: 'linear-gradient(160deg, rgba(99,102,241,0.13) 0%, rgba(13,17,23,1) 65%)', boxShadow: '0 0 50px -12px rgba(99,102,241,0.28)' }}>
+      style={{ background: 'linear-gradient(160deg, rgba(99,102,241,0.13) 0%, rgba(13,17,23,1) 60%)', boxShadow: '0 0 50px -12px rgba(99,102,241,0.28)' }}>
 
-      {/* Top: badge + sprint name */}
+      {/* Header */}
       <div className="px-4 pt-4 pb-3">
-        <span className="inline-flex items-center gap-1.5 text-[10px] font-black tracking-wider text-green-400 bg-green-900/35 border border-green-500/30 px-2.5 py-1 rounded-full mb-3">
-          <span className="w-1.5 h-1.5 rounded-full bg-green-400 animate-pulse inline-block" />
-          LIVE SPRINT
-        </span>
-        <h2 className="text-white font-black text-2xl leading-tight">{sprint.name}</h2>
-        <p className="text-gray-500 text-xs mt-0.5">{fmtShort(sprint.start_date)} – {fmtShort(sprint.end_date)}</p>
-        {sprint.division_name && (
-          <p className="text-indigo-300 text-xs mt-1 font-semibold">{sprint.division_icon} {sprint.division_name}</p>
-        )}
+        <div className="flex items-start justify-between gap-2">
+          <div className="min-w-0 flex-1">
+            <span className="inline-flex items-center gap-1.5 text-[10px] font-black tracking-wider text-green-400 bg-green-900/35 border border-green-500/30 px-2.5 py-1 rounded-full mb-2.5">
+              <span className="w-1.5 h-1.5 rounded-full bg-green-400 animate-pulse inline-block" />
+              LIVE SPRINT
+            </span>
+            <h2 className="text-white font-black text-xl leading-tight">{sprint.name}</h2>
+            <p className="text-gray-600 text-[11px] mt-0.5">{fmtShort(sprint.start_date)} – {fmtShort(sprint.end_date)}</p>
+          </div>
+          {sprint.division_name && (
+            <div className="flex-shrink-0 text-right mt-1">
+              <p className="text-indigo-300 text-xs font-bold">{sprint.division_icon} {sprint.division_name}</p>
+            </div>
+          )}
+        </div>
       </div>
 
-      {/* Week schedule with dates */}
+      {/* Stats grid */}
+      <div className="grid grid-cols-4 divide-x divide-white/6 border-t border-white/6">
+        <div className="py-3 text-center">
+          <p className="text-indigo-400 font-black text-lg leading-none">{earnedLP}</p>
+          <p className="text-gray-600 text-[9px] mt-1 uppercase tracking-wide">LP</p>
+        </div>
+        <div className="py-3 text-center">
+          <p className="text-green-400 font-black text-lg leading-none">{earnedCorrect}</p>
+          <p className="text-gray-600 text-[9px] mt-1 uppercase tracking-wide">Correct</p>
+        </div>
+        <div className="py-3 text-center">
+          <p className="text-red-400 font-black text-lg leading-none">{earnedIncorrect}</p>
+          <p className="text-gray-600 text-[9px] mt-1 uppercase tracking-wide">Wrong</p>
+        </div>
+        <div className="py-3 text-center">
+          <p className="text-yellow-400 font-black text-lg leading-none">{earnedPerfect}</p>
+          <p className="text-gray-600 text-[9px] mt-1 uppercase tracking-wide">⭐ Perfect</p>
+        </div>
+      </div>
+
+      {/* Rankings */}
+      {(globalRank || divRank) && (
+        <div className="grid grid-cols-2 gap-2 px-4 pt-3 pb-2">
+          {/* Global */}
+          <div className="rounded-xl bg-white/4 border border-white/8 px-3 py-2.5">
+            <p className="text-gray-500 text-[9px] uppercase tracking-wider font-semibold mb-1">Global ranking</p>
+            {globalRank ? (
+              <div className="flex items-baseline gap-1">
+                <span className="text-white font-black text-xl leading-none">#{globalRank}</span>
+                {globalTotal && <span className="text-gray-600 text-[10px]">of {globalTotal}</span>}
+              </div>
+            ) : (
+              <span className="text-gray-600 text-xs">—</span>
+            )}
+          </div>
+          {/* Division */}
+          <div className={`rounded-xl border px-3 py-2.5 ${
+            statusBanner?.icon === '⬆' ? 'bg-green-900/20 border-green-500/25' :
+            statusBanner?.icon === '⬇' ? 'bg-red-900/15 border-red-500/20' :
+            'bg-white/4 border-white/8'
+          }`}>
+            <p className="text-gray-500 text-[9px] uppercase tracking-wider font-semibold mb-1">Division ranking</p>
+            {divRank ? (
+              <div className="flex items-baseline gap-1.5">
+                <span className={`font-black text-xl leading-none ${
+                  statusBanner?.icon === '⬆' ? 'text-green-400' :
+                  statusBanner?.icon === '⬇' ? 'text-red-400' :
+                  'text-white'
+                }`}>#{divRank}</span>
+                {divTotal && <span className="text-gray-600 text-[10px]">of {divTotal}</span>}
+                {statusBanner?.icon === '⬆' && <span className="text-green-400 text-[10px] font-black ml-auto">⬆ PROMO</span>}
+                {statusBanner?.icon === '⬇' && <span className="text-red-400 text-[10px] font-black ml-auto">⬇ REL</span>}
+              </div>
+            ) : (
+              <span className="text-gray-600 text-xs">—</span>
+            )}
+          </div>
+        </div>
+      )}
+
+      {/* Status banner */}
+      {statusBanner && (
+        <div className={`mx-4 mb-3 px-3 py-2 rounded-xl border text-xs font-semibold flex items-center gap-2 ${statusBanner.cls}`}>
+          <span className="text-sm">{statusBanner.icon}</span>
+          {statusBanner.text}
+        </div>
+      )}
+
+      {/* Matchweek rows */}
       {gws.length > 0 && (
         <div className="px-4 pb-3 space-y-1.5">
+          <p className="text-gray-600 text-[9px] uppercase tracking-wider font-semibold mb-2">Matchweeks</p>
           {gws.map(gw => {
             const { mon, sun } = getWeekRange(gw.lock_time)
-            const st = getWeekStatus(gw.lock_time, gw.status)
-            const isActive = st === 'PUBLISHED' || st === 'LOCKED'
-            const isDone   = st === 'FINISHED'
-            const countdown = isActive ? fmtCountdown(gw.lock_time) : st === 'DRAFT' && mon ? fmtCountdown(mon) : null
+            const st     = getWeekStatus(gw.lock_time, gw.status)
+            const isLive = st === 'LOCKED'
+            const isOpen = st === 'PUBLISHED'
+            const isDone = st === 'FINISHED'
+            const lp     = gw.entry?.league_points ?? null
             return (
               <div key={gw.id}
-                className={`flex items-center gap-3 px-3 py-2.5 rounded-xl border ${
-                  isActive ? 'bg-indigo-900/20 border-indigo-500/25' :
-                  isDone   ? 'bg-white/3 border-white/6' :
-                             'bg-white/2 border-white/5'
+                className={`flex items-center gap-3 px-3 py-2 rounded-xl border ${
+                  isLive ? 'bg-green-900/15 border-green-500/20' :
+                  isOpen ? 'bg-indigo-900/20 border-indigo-500/25' :
+                  isDone ? 'bg-white/3 border-white/6' :
+                           'bg-white/2 border-white/4'
                 }`}>
-                {/* Status dot */}
-                <div className={`w-2.5 h-2.5 rounded-full flex-shrink-0 ${
-                  isActive ? 'bg-green-400 animate-pulse' :
-                  isDone   ? 'bg-indigo-500/60' :
-                             'bg-gray-700'
+                {/* Dot */}
+                <div className={`w-2 h-2 rounded-full flex-shrink-0 ${
+                  isLive ? 'bg-green-400 animate-pulse' :
+                  isOpen ? 'bg-indigo-400 animate-pulse' :
+                  isDone ? 'bg-indigo-500/50' :
+                           'bg-gray-700'
                 }`} />
-                {/* Week label */}
-                <span className={`text-xs font-bold flex-shrink-0 w-6 ${
-                  isActive ? 'text-indigo-300' : isDone ? 'text-gray-500' : 'text-gray-700'
+                {/* Week number */}
+                <span className={`text-xs font-black flex-shrink-0 w-5 ${
+                  isLive ? 'text-green-300' : isOpen ? 'text-indigo-300' : isDone ? 'text-gray-500' : 'text-gray-700'
                 }`}>W{gw.sprint_week}</span>
                 {/* Date range */}
                 <span className={`text-xs flex-1 min-w-0 truncate ${
-                  isActive ? 'text-white' : isDone ? 'text-gray-500' : 'text-gray-600'
+                  isLive || isOpen ? 'text-white/80' : isDone ? 'text-gray-600' : 'text-gray-700'
                 }`}>
                   {mon ? `${fmtWeekday(mon)} → ${fmtWeekday(sun)}` : `Week ${gw.sprint_week}`}
                 </span>
-                {/* Status + countdown */}
-                <span className={`text-[10px] flex-shrink-0 font-semibold ${
-                  isActive ? 'text-yellow-300' : isDone ? 'text-indigo-400/60' : 'text-gray-700'
-                }`}>
-                  {isActive && countdown ? `Locks in ${countdown}` :
-                   isActive ? 'Open' :
-                   isDone   ? `+${gw.entry?.league_points ?? 0} LP` :
-                   countdown ? `Starts in ${countdown}` : 'Upcoming'}
-                </span>
+                {/* Right label */}
+                {isLive && <span className="text-[10px] flex-shrink-0 font-black text-green-400 tracking-wide">LIVE</span>}
+                {isOpen && <span className="text-[10px] flex-shrink-0 font-semibold text-yellow-300">{fmtCountdown(gw.lock_time) ? `Locks ${fmtCountdown(gw.lock_time)}` : 'Open'}</span>}
+                {isDone && (
+                  <span className={`text-[10px] flex-shrink-0 font-black ${lp != null && lp > 0 ? 'text-indigo-400' : 'text-gray-600'}`}>
+                    {lp != null ? `+${lp} LP` : '—'}
+                  </span>
+                )}
+                {!isLive && !isOpen && !isDone && <span className="text-[10px] flex-shrink-0 text-gray-700">Upcoming</span>}
               </div>
             )
           })}
         </div>
       )}
 
-      {/* Stats row (only if LP earned) */}
-      {hasStats && (
-        <div className="flex border-t border-white/6 divide-x divide-white/5">
-          <div className="flex-1 py-3 text-center">
-            <p className="text-indigo-400 font-black text-xl leading-none">{lp}</p>
-            <p className="text-gray-600 text-[10px] mt-1">LP earned</p>
-          </div>
-          <div className="flex-1 py-3 text-center">
-            <p className="text-white font-black text-xl leading-none">{sprint.total_correct_picks ?? 0}</p>
-            <p className="text-gray-600 text-[10px] mt-1">Correct</p>
-          </div>
-          <div className="flex-1 py-3 text-center">
-            <p className="text-yellow-400 font-black text-xl leading-none">{sprint.perfect_weeks ?? 0}</p>
-            <p className="text-gray-600 text-[10px] mt-1">⭐ Perfect</p>
-          </div>
-        </div>
-      )}
-
       {/* CTA */}
-      <div className="p-3 border-t border-white/5">
+      <div className="p-3 pt-0">
         <button
           onClick={() => onEnter(sprint)}
           className="w-full py-3.5 rounded-xl bg-indigo-600 hover:bg-indigo-500 active:scale-[0.98] text-white font-bold text-sm transition-all shadow-lg shadow-indigo-900/50"
@@ -1244,9 +1455,13 @@ export default function MySprintsPage() {
     allSprints.filter(s => s.status === 'scheduled').sort((a, b) => new Date(a.start_date) - new Date(b.start_date))[0] ||
     null
 
-  // History: completed/archived sprints from API, newest first
+  // History: only sprints the user participated in, newest first
+  // Guard: my_rank must be a positive integer (API may return 0 or null for non-participated)
   const historicSprints = allSprints
-    .filter(s => s.status === 'completed' || s.status === 'archived')
+    .filter(s =>
+      (s.status === 'completed' || s.status === 'archived') &&
+      s.my_rank != null && s.my_rank > 0
+    )
     .sort((a, b) => new Date(b.start_date) - new Date(a.start_date))
 
   if (loading) return (
