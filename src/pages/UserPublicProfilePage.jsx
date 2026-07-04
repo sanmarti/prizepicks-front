@@ -251,6 +251,8 @@ export default function UserPublicProfilePage() {
   const navigate  = useNavigate()
   const [data, setData]     = useState(null)
   const [loading, setLoading] = useState(true)
+  const [tab, setTab]         = useState(0)
+  const touchStartX           = useRef(null)
 
   useEffect(() => {
     setLoading(true)
@@ -286,8 +288,6 @@ export default function UserPublicProfilePage() {
   const openWeekSubmitted = current_sprint?.open_week_submitted ?? false
   const openWeekLockTime  = current_sprint?.open_week_lock_time ?? null
 
-  const [tab, setTab] = useState(0)
-  const touchStartX = useRef(null)
   const TABS = ['Picks', 'History', 'Stats']
 
   function handleTouchStart(e) { touchStartX.current = e.touches[0].clientX }
