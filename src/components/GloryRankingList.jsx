@@ -299,8 +299,8 @@ export default function GloryRankingList({
                     </span>
                   )}
                   {isLive && (
-                    <span className="flex items-center gap-1 text-[9px] font-black px-1.5 py-0.5 rounded-full border flex-shrink-0 bg-red-500/10 border-red-500/30 text-red-400">
-                      <span className="w-1.5 h-1.5 rounded-full bg-red-500 animate-pulse inline-block" />
+                    <span className="flex items-center gap-1 text-[9px] font-black px-1.5 py-0.5 rounded-full border flex-shrink-0 bg-green-500/10 border-green-500/30 text-green-400">
+                      <span className="w-1.5 h-1.5 rounded-full bg-green-500 animate-pulse inline-block" />
                       LIVE
                     </span>
                   )}
