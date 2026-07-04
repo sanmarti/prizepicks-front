@@ -3,6 +3,7 @@ import { useNavigate } from 'react-router-dom'
 import { getMyRelevantSprints, getSprintDetail, getGloryGameweek } from '../api/glory'
 import BottomNav from '../components/layout/BottomNav'
 import SprintClosingPopup from '../components/SprintClosingPopup'
+import GloryRankingList from '../components/GloryRankingList'
 
 function getPlayerTier(correct, incorrect) {
   const total = (correct || 0) + (incorrect || 0)
@@ -115,17 +116,17 @@ function getTeamLogoUrl(name) {
 
 // ── Full-screen Division Rankings ──────────────────────────────────────────────
 function RankingsScreen({ sprint, division, rankings, myUserId, onClose, onUserClick, isGwLocked }) {
+  const myRowRef = useRef(null)
   const promLP = division?.promotion_min_points ?? null
   const relLP  = division?.relegation_max_points ?? null
+  const myIdx  = rankings.findIndex(r => r.user_id === myUserId)
+  const myRow  = rankings[myIdx]
 
-  const lastPromoIdx = promLP !== null ? (() => {
-    let idx = -1
-    rankings.forEach((r, i) => { if (r.total_league_points >= promLP) idx = i })
-    return idx
-  })() : -1
-  const firstRelIdx = relLP !== null ? rankings.findIndex(r => r.total_league_points <= relLP) : -1
-  const myIdx = rankings.findIndex(r => r.user_id === myUserId)
-  const myRow = rankings[myIdx]
+  useEffect(() => {
+    if (myRowRef.current) {
+      setTimeout(() => myRowRef.current?.scrollIntoView({ block: 'center', behavior: 'smooth' }), 120)
+    }
+  }, [])
 
   return (
     <div className="fixed inset-0 z-50 bg-[#0a0d12] flex flex-col">
@@ -170,108 +171,18 @@ function RankingsScreen({ sprint, division, rankings, myUserId, onClose, onUserC
         </div>
       )}
 
-      <div className="flex-1 overflow-y-auto pb-6">
+      <div className="flex-1 overflow-y-auto">
         <div className="max-w-md mx-auto">
-          {rankings.map((row, i) => {
-            const isPromo = promLP !== null && row.total_league_points >= promLP
-            const isRel   = relLP  !== null && row.total_league_points <= relLP
-            const isMe    = row.user_id === myUserId
-            const rank    = Number(row.rank)
-            return (
-              <div key={row.user_id}>
-                {lastPromoIdx === i - 1 && i > 0 && (
-                  <div className="flex items-center gap-2 px-4 py-1">
-                    <div className="flex-1 h-px bg-green-500/20" />
-                    <span className="text-[9px] text-green-600 tracking-widest font-semibold">PROMOTION LINE</span>
-                    <div className="flex-1 h-px bg-green-500/20" />
-                  </div>
-                )}
-                {firstRelIdx === i && i > 0 && (
-                  <div className="flex items-center gap-2 px-4 py-1">
-                    <div className="flex-1 h-px bg-red-500/15" />
-                    <span className="text-[9px] text-red-600 tracking-widest font-semibold">RELEGATION LINE</span>
-                    <div className="flex-1 h-px bg-red-500/15" />
-                  </div>
-                )}
-                <div className={`relative flex items-center gap-3 border-b ${
-                  isMe ? 'px-4 py-4 border-purple-500/30' : 'px-4 py-2.5 border-white/4'
-                } ${
-                  !isMe && isPromo ? 'bg-green-950/15' : !isMe && isRel ? 'bg-red-950/12' : ''
-                }`}
-                  style={isMe ? {
-                    background: 'linear-gradient(90deg, rgba(88,28,135,0.45) 0%, rgba(88,28,135,0.2) 60%, transparent 100%)',
-                    boxShadow: 'inset 0 0 40px -10px rgba(168,85,247,0.25)',
-                  } : {}}>
-
-                  {isMe
-                    ? <span className="absolute left-0 top-0 bottom-0 w-1 rounded-r-full bg-purple-500" />
-                    : (isPromo || isRel) && <span className={`absolute left-0 top-0 bottom-0 w-0.5 ${isPromo ? 'bg-green-500' : 'bg-red-500'}`} />
-                  }
-
-                  <span className={`text-center font-black flex-shrink-0 ${
-                    isMe ? 'w-8 text-base text-purple-300' :
-                    `w-7 text-sm ${rank === 1 ? 'text-yellow-400' : rank === 2 ? 'text-gray-300' : rank === 3 ? 'text-amber-600' : 'text-gray-600'}`
-                  }`}>{rank}</span>
-
-                  <button onClick={() => onUserClick?.(row.user_id)} className="relative flex-shrink-0">
-                    {row.avatar_url
-                      ? <img src={row.avatar_url} alt="" className={`rounded-full object-cover ${isMe ? 'w-11 h-11' : 'w-8 h-8'}`}
-                          style={isMe ? { boxShadow: '0 0 0 2px rgba(168,85,247,0.8), 0 0 16px rgba(168,85,247,0.4)' } : {}} />
-                      : <div className={`rounded-full flex items-center justify-center font-bold ${
-                          isMe ? 'w-11 h-11 text-base' : 'w-8 h-8 text-xs bg-white/8 text-gray-400'
-                        }`} style={isMe ? { background: 'rgba(88,28,135,0.6)', color: '#d8b4fe', boxShadow: '0 0 0 2px rgba(168,85,247,0.7), 0 0 16px rgba(168,85,247,0.35)' } : {}}>
-                          {(row.display_name || '?')[0].toUpperCase()}
-                        </div>
-                    }
-                    <TierBadgeSm correct={row.total_correct_picks} incorrect={row.total_incorrect_picks} />
-                  </button>
-
-                  <div className="flex-1 min-w-0">
-                    <div className="flex items-center gap-1.5">
-                      <p className={`font-semibold truncate ${isMe ? 'text-white text-base' : 'text-gray-300 text-sm'}`}>
-                        {row.display_name || 'Player'}
-                      </p>
-                      {isMe && (
-                        <span className="text-[10px] font-black px-1.5 py-0.5 rounded-full border border-purple-500/50 bg-purple-900/40 text-purple-300 flex-shrink-0">YOU</span>
-                      )}
-                    </div>
-                    <div className="flex items-center gap-1.5 mt-0.5 flex-wrap">
-                      <span className={`text-[10px] font-semibold text-green-400`}>{row.total_correct_picks ?? 0}✓</span>
-                      <span className="text-[10px] text-gray-600">·</span>
-                      <span className="text-[10px] text-red-400">{row.total_incorrect_picks ?? 0}✗</span>
-                      {(row.pending_picks ?? 0) > 0 && (
-                        <>
-                          <span className="text-[10px] text-gray-600">·</span>
-                          <span className="text-[10px] text-gray-400">{row.pending_picks}{isGwLocked ? '🔒' : '⏳'}</span>
-                        </>
-                      )}
-                      {(row.perfect_weeks ?? 0) > 0 && (
-                        <>
-                          <span className="text-[10px] text-gray-600">·</span>
-                          <span className="text-[10px] text-yellow-500">{row.perfect_weeks}⭐</span>
-                        </>
-                      )}
-                      {(row.energy_used ?? 0) > 0 && (
-                        <>
-                          <span className="text-[10px] text-gray-600">·</span>
-                          <span className="text-[10px] text-orange-400">{row.energy_used}⚡</span>
-                        </>
-                      )}
-                    </div>
-                  </div>
-
-                  <div className="text-right flex-shrink-0">
-                    <p className={`font-black tabular-nums ${
-                      isMe ? 'text-2xl text-white' : isPromo ? 'text-base text-green-400' : isRel ? 'text-base text-red-400' : 'text-base text-indigo-300'
-                    }`} style={isMe ? { textShadow: '0 0 16px rgba(168,85,247,0.6)' } : {}}>
-                      {row.total_league_points}
-                    </p>
-                    <p className={`text-[10px] -mt-0.5 ${isMe ? 'text-purple-400/70' : 'text-gray-600'}`}>LP</p>
-                  </div>
-                </div>
-              </div>
-            )
-          })}
+          <GloryRankingList
+            rows={rankings}
+            myUserId={myUserId}
+            promLP={promLP}
+            relLP={relLP}
+            isHighestDiv={!division?.allows_promotion}
+            isGwLocked={isGwLocked}
+            myRowRef={myRowRef}
+            onUserClick={onUserClick}
+          />
         </div>
       </div>
 
