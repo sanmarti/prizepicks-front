@@ -237,8 +237,6 @@ function DivisionsListScreen({ divisions, divStats, myDivId, activeDiv, onSelect
 // ── Rankings screen ────────────────────────────────────────────────────────────
 function RankingsScreen({ div, sprintId, sprintName, myUserId, myDivId, onOpenPicker, onBack, totalPlayers, isGwLocked }) {
   const navigate = useNavigate()
-  const v        = getV(div)
-  const coverSrc = div.badge_url || v.image
 
   const promLP = div.promotion_min_points ?? null
   const relLP  = div.allows_relegation && div.relegation_max_points !== null ? div.relegation_max_points : null
@@ -269,60 +267,42 @@ function RankingsScreen({ div, sprintId, sprintName, myUserId, myDivId, onOpenPi
 
   return (
     <div className="fixed inset-0 z-40 flex flex-col bg-[#0a0d12]">
-      {/* Hero */}
-      <div className="flex-shrink-0 h-36 bg-[#0a0d12]">
-        <div className="relative h-36 max-w-md mx-auto overflow-hidden">
-        <img src={coverSrc} alt={div.name} className="w-full h-full object-cover object-center opacity-70"
-          onError={e => { e.target.style.display = 'none' }} />
-        <div className="absolute inset-0 bg-gradient-to-t from-[#0a0d12] via-[#0a0d12]/30 to-transparent" />
-
-        {div.id === myDivId ? (
-          <button onClick={onOpenPicker}
-            className="absolute top-12 right-4 flex items-center gap-1.5 backdrop-blur-sm border text-sm font-bold px-3 py-2 rounded-xl"
-            style={{ background: v.bg, borderColor: v.border, color: v.accent }}>
-            See all Divisions
-          </button>
-        ) : (
+      {/* Header */}
+      <div className="flex-shrink-0 border-b border-white/8">
+        <div className="max-w-md mx-auto flex items-center gap-3 px-4 pt-5 pb-3">
           <button onClick={onBack}
-            className="absolute top-12 left-4 w-9 h-9 flex items-center justify-center rounded-xl backdrop-blur-sm border border-white/10 text-white text-sm"
-            style={{ background: 'rgba(0,0,0,0.40)' }}>
+            className="w-9 h-9 rounded-xl bg-white/6 flex items-center justify-center text-gray-300 hover:bg-white/10 flex-shrink-0">
             ←
           </button>
-        )}
-
-        <div className="absolute bottom-3 left-4 flex items-end gap-3">
-          <div className="w-9 h-9 rounded-xl flex items-center justify-center text-lg border"
-            style={{ background: v.bg, borderColor: v.border }}>
-            {div.icon}
+          <div className="flex-1 min-w-0">
+            <p className="text-white font-bold text-base leading-tight">{div.name} — Rankings</p>
+            {sprintName && <p className="text-gray-500 text-xs mt-0.5">{sprintName}</p>}
           </div>
-          <div>
-            <p className="font-black text-lg leading-tight" style={{ color: v.accent }}>{div.name}</p>
-            <p className="text-white/40 text-[11px]">
-              {totalPlayers > 0 && rows.length > 0
-                ? `${Math.round((rows.length / totalPlayers) * 100)}% of players`
-                : rows.length > 0 ? `${rows.length} players` : ''}
-              {sprintName && <> · <span className="text-white/60">{sprintName}</span></>}
-            </p>
-          </div>
-        </div>
+          {rows.length > 0 && (
+            <p className="text-gray-500 text-xs flex-shrink-0">{rows.length} players</p>
+          )}
         </div>
       </div>
 
       {/* Zone legend */}
       {(promLP !== null || relLP !== null) && (
         <div className="flex-shrink-0 border-b border-white/5">
-          <div className="max-w-md mx-auto flex">
+          <div className="max-w-md mx-auto flex items-center gap-3 px-4 py-2">
             {promLP !== null && !div.is_highest && (
-              <div className="flex-1 flex items-center gap-2 px-4 py-2 bg-green-950/40 border-r border-white/5">
-                <span className="w-2 h-2 rounded-sm bg-green-500" />
-                <span className="text-[10px] text-green-300 font-bold">Promotion ≥{promLP} LP</span>
-              </div>
+              <span className="flex items-center gap-1 text-[10px] text-green-400">
+                <span className="w-2 h-2 rounded-full bg-green-500 inline-block flex-shrink-0" />
+                Promotion ≥{promLP} LP
+              </span>
             )}
+            <span className="flex items-center gap-1 text-[10px] text-gray-500">
+              <span className="w-2 h-2 rounded-full bg-gray-600 inline-block flex-shrink-0" />
+              Retained
+            </span>
             {relLP !== null && (
-              <div className="flex-1 flex items-center gap-2 px-4 py-2 bg-red-950/40 justify-end">
-                <span className="text-[10px] text-red-300 font-bold">Relegation ≤{relLP} LP</span>
-                <span className="w-2 h-2 rounded-sm bg-red-500" />
-              </div>
+              <span className="flex items-center gap-1 text-[10px] text-red-400">
+                <span className="w-2 h-2 rounded-full bg-red-500 inline-block flex-shrink-0" />
+                Relegation ≤{relLP} LP
+              </span>
             )}
           </div>
         </div>
@@ -334,7 +314,7 @@ function RankingsScreen({ div, sprintId, sprintName, myUserId, myDivId, onOpenPi
         {loading && (
           <div className="flex items-center justify-center py-24">
             <div className="w-5 h-5 border-2 border-t-transparent rounded-full animate-spin"
-              style={{ borderColor: v.accent, borderTopColor: 'transparent' }} />
+              style={{ borderColor: 'rgba(168,85,247,0.8)', borderTopColor: 'transparent' }} />
           </div>
         )}
         {!loading && rows.length === 0 && (
@@ -467,11 +447,11 @@ function RankingsScreen({ div, sprintId, sprintName, myUserId, myDivId, onOpenPi
 
       {/* Sticky footer */}
       {!loading && myIdx >= 0 && (
-        <div className="flex-shrink-0 border-t" style={{ borderColor: v.border, backdropFilter: 'blur(12px)', background: v.bg + 'ee' }}>
+        <div className="flex-shrink-0 border-t border-white/8" style={{ backdropFilter: 'blur(12px)', background: 'rgba(10,13,18,0.95)' }}>
           <div className="max-w-md mx-auto px-4 py-3 flex items-center justify-between">
             <div>
               <p className="text-white text-xs font-semibold">Your position</p>
-              <p className="text-[11px] mt-0.5" style={{ color: v.accent }}>#{myIdx + 1} of {rows.length}</p>
+              <p className="text-purple-400 text-[11px] mt-0.5">#{myIdx + 1} of {rows.length}</p>
             </div>
             <div className="flex items-center gap-3">
               {!div.is_highest && promLP !== null && (
@@ -483,7 +463,7 @@ function RankingsScreen({ div, sprintId, sprintName, myUserId, myDivId, onOpenPi
                 </div>
               )}
               <div className="text-right">
-                <p className="font-black text-2xl leading-none" style={{ color: v.accent }}>
+                <p className="font-black text-2xl leading-none text-white">
                   {rows[myIdx]?.total_league_points}
                 </p>
                 <p className="text-[10px] text-gray-500">LP</p>

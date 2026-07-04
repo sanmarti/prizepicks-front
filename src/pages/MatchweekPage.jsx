@@ -1097,13 +1097,22 @@ function SprintLeaderboard({ myUserId, data, isGwLocked }) {
                     )}
                     {r.is_rookie && <span className="text-[9px] bg-blue-900/40 text-blue-400 px-1.5 py-0.5 rounded-full flex-shrink-0">ROOKIE</span>}
                   </div>
-                  <div className="flex items-center gap-2 mt-0.5 flex-wrap">
+                  <div className="flex items-center gap-1.5 mt-0.5 flex-wrap">
                     <span className={`font-semibold ${isMe ? 'text-[11px] text-green-400' : 'text-[10px] text-green-500/60'}`}>{r.total_correct_picks ?? 0}✓</span>
+                    <span className="text-[10px] text-gray-700">·</span>
                     <span className={`${isMe ? 'text-[11px] text-red-400/80' : 'text-[10px] text-red-400/40'}`}>{r.total_incorrect_picks ?? 0}✗</span>
-                    {(r.pending_picks ?? 0) > 0 && <span className={`${isMe ? 'text-[11px] text-gray-400' : 'text-[10px] text-gray-500'}`}>{r.pending_picks}{isGwLocked ? '🔒' : '⏳'}</span>}
-                    {accuracy !== null && <span className={`${isMe ? 'text-[11px] text-gray-400' : 'text-[10px] text-gray-600'}`}>{accuracy}%</span>}
-                    {r.gameweeks_participated > 0 && <span className={`${isMe ? 'text-[11px] text-gray-500' : 'text-[10px] text-gray-700'}`}>{r.gameweeks_participated} GW</span>}
-                    {r.perfect_weeks > 0 && <span className="text-[10px] text-yellow-500">⭐{r.perfect_weeks}</span>}
+                    {(r.pending_picks ?? 0) > 0 && <>
+                      <span className="text-[10px] text-gray-700">·</span>
+                      <span className={`${isMe ? 'text-[11px] text-gray-400' : 'text-[10px] text-gray-500'}`}>{r.pending_picks}{isGwLocked ? '🔒' : '⏳'}</span>
+                    </>}
+                    {(r.energy_used ?? 0) > 0 && <>
+                      <span className="text-[10px] text-gray-700">·</span>
+                      <span className={`${isMe ? 'text-[11px] text-orange-400' : 'text-[10px] text-orange-400/60'}`}>{r.energy_used}⚡</span>
+                    </>}
+                    {r.perfect_weeks > 0 && <>
+                      <span className="text-[10px] text-gray-700">·</span>
+                      <span className="text-[10px] text-yellow-500">⭐{r.perfect_weeks}</span>
+                    </>}
                   </div>
                 </div>
 
