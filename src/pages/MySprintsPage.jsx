@@ -3,7 +3,7 @@ import { useNavigate } from 'react-router-dom'
 import { getMyRelevantSprints, getSprintDetail, getGloryGameweek } from '../api/glory'
 import BottomNav from '../components/layout/BottomNav'
 import SprintClosingPopup from '../components/SprintClosingPopup'
-import GloryRankingList from '../components/GloryRankingList'
+import GloryRankingList, { GloryRankingHeader } from '../components/GloryRankingList'
 
 function getPlayerTier(correct, incorrect) {
   const total = (correct || 0) + (incorrect || 0)
@@ -130,46 +130,14 @@ function RankingsScreen({ sprint, division, rankings, myUserId, onClose, onUserC
 
   return (
     <div className="fixed inset-0 z-50 bg-[#0a0d12] flex flex-col">
-      {/* Header */}
-      <div className="flex-shrink-0 border-b border-white/8">
-        <div className="max-w-md mx-auto flex items-center gap-3 px-4 pt-5 pb-3">
-          <button onClick={onClose}
-            className="w-9 h-9 rounded-xl bg-white/6 flex items-center justify-center text-gray-300 hover:bg-white/10 flex-shrink-0">
-            ←
-          </button>
-          <div className="flex-1 min-w-0">
-            <p className="text-white font-bold text-base leading-tight">{division?.name || 'Division'} — Final Rankings</p>
-            {sprint?.name && <p className="text-gray-500 text-xs mt-0.5">{sprint.name}</p>}
-          </div>
-          {rankings.length > 0 && (
-            <p className="text-gray-500 text-xs flex-shrink-0">{rankings.length} players</p>
-          )}
-        </div>
-      </div>
-
-      {/* Zone legend */}
-      {(promLP !== null || relLP !== null) && (
-        <div className="flex-shrink-0 border-b border-white/5">
-          <div className="max-w-md mx-auto flex items-center gap-3 px-4 py-2">
-            {promLP !== null && (
-              <span className="flex items-center gap-1 text-[10px] text-green-400">
-                <span className="w-2 h-2 rounded-full bg-green-500 inline-block flex-shrink-0" />
-                Promotion ≥{promLP} LP
-              </span>
-            )}
-            <span className="flex items-center gap-1 text-[10px] text-gray-500">
-              <span className="w-2 h-2 rounded-full bg-gray-600 inline-block flex-shrink-0" />
-              Retained
-            </span>
-            {relLP !== null && (
-              <span className="flex items-center gap-1 text-[10px] text-red-400">
-                <span className="w-2 h-2 rounded-full bg-red-500 inline-block flex-shrink-0" />
-                Relegation ≤{relLP} LP
-              </span>
-            )}
-          </div>
-        </div>
-      )}
+      <GloryRankingHeader
+        division={division}
+        sprintName={sprint?.name}
+        playerCount={rankings.length}
+        promLP={promLP}
+        relLP={relLP}
+        onBack={onClose}
+      />
 
       <div className="flex-1 overflow-y-auto">
         <div className="max-w-md mx-auto">

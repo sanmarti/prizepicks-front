@@ -1,5 +1,7 @@
 import { useNavigate } from 'react-router-dom'
 
+// ── Tier badge helpers ─────────────────────────────────────────────────────────
+
 export function getPlayerTier(correct, incorrect) {
   const total = (correct || 0) + (incorrect || 0)
   if (total === 0) return null
@@ -33,18 +35,134 @@ export function TierBadgeSm({ row }) {
   )
 }
 
+// ── Division cover images (keyed by display_order) ────────────────────────────
+
+export const DIVISION_COVER_IMAGES = {
+  1: 'https://images.unsplash.com/photo-1431324155629-1a6deb1dec8d?w=900&q=80&auto=format&fit=crop',
+  2: 'https://images.unsplash.com/photo-1529900748604-07564a03e7a6?w=900&q=80&auto=format&fit=crop',
+  3: 'https://images.unsplash.com/photo-1574629810360-7efbbe195018?w=900&q=80&auto=format&fit=crop',
+  4: 'https://images.unsplash.com/photo-1508098682722-e99c43a406b2?w=900&q=80&auto=format&fit=crop',
+  5: 'https://images.unsplash.com/photo-1540747913346-19212a4b23b4?w=900&q=80&auto=format&fit=crop',
+  6: 'https://images.unsplash.com/photo-1522778526097-ce0a22ceb253?w=900&q=80&auto=format&fit=crop',
+}
+
+// ── Shared ranking header (hero image + zone legend + tiebreaker) ─────────────
+
 /**
- * Shared ranking rows renderer used by every full-screen ranking screen.
- *
+ * Props:
+ *   division        – { name, icon, display_order, badge_url, is_highest }
+ *   sprintName      – string | null
+ *   playerCount     – number
+ *   promLP          – number | null
+ *   relLP           – number | null
+ *   onBack          – () => void
+ *   onDivisionsClick– () => void (optional; defaults to navigate('/divisions'))
+ */
+export function GloryRankingHeader({ division, sprintName, playerCount, promLP, relLP, onBack, onDivisionsClick }) {
+  const navigate  = useNavigate()
+  const coverSrc  = division?.badge_url || DIVISION_COVER_IMAGES[division?.display_order] || DIVISION_COVER_IMAGES[1]
+  const goToDivs  = onDivisionsClick ?? (() => navigate('/divisions'))
+
+  return (
+    <>
+      {/* Hero cover */}
+      <div className="flex-shrink-0 h-36 bg-[#0a0d12]">
+        <div className="relative h-36 max-w-md mx-auto overflow-hidden">
+          <img
+            src={coverSrc}
+            alt={division?.name || ''}
+            className="w-full h-full object-cover object-center opacity-65"
+            onError={e => { e.target.style.display = 'none' }}
+          />
+          <div className="absolute inset-0 bg-gradient-to-t from-[#0a0d12] via-[#0a0d12]/25 to-transparent" />
+
+          {/* ← back */}
+          <button
+            onClick={onBack}
+            className="absolute top-3 left-4 w-9 h-9 flex items-center justify-center rounded-xl border border-white/10 text-white text-sm backdrop-blur-sm"
+            style={{ background: 'rgba(0,0,0,0.45)' }}
+          >
+            ←
+          </button>
+
+          {/* Player count */}
+          <div
+            className="absolute top-3 right-4 px-2.5 py-1 rounded-xl border border-white/10 backdrop-blur-sm"
+            style={{ background: 'rgba(0,0,0,0.40)' }}
+          >
+            <p className="text-white/70 text-[11px] font-semibold">{playerCount ?? 0} players</p>
+          </div>
+
+          {/* Division info + divisions button */}
+          <div className="absolute bottom-3 left-4 right-4 flex items-end justify-between">
+            <div className="flex items-center gap-2">
+              {division?.icon && (
+                <span className="text-2xl leading-none">{division.icon}</span>
+              )}
+              <div>
+                <p className="font-black text-base leading-tight text-white drop-shadow-sm">
+                  {division?.name || 'Division'}
+                </p>
+                {sprintName && (
+                  <p className="text-white/50 text-[11px] leading-tight">{sprintName}</p>
+                )}
+              </div>
+            </div>
+
+            <button
+              onClick={goToDivs}
+              className="flex items-center gap-1 text-[10px] font-semibold text-white/60 hover:text-white/90 border border-white/15 rounded-lg px-2 py-1 backdrop-blur-sm transition-colors"
+              style={{ background: 'rgba(0,0,0,0.35)' }}
+            >
+              All divisions
+              <svg width="10" height="10" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
+                <polyline points="9 18 15 12 9 6" />
+              </svg>
+            </button>
+          </div>
+        </div>
+      </div>
+
+      {/* Zone legend + tiebreaker */}
+      <div className="flex-shrink-0 border-b border-white/5">
+        <div className="max-w-md mx-auto px-4 pt-2 pb-1.5 flex items-center gap-3 flex-wrap">
+          {promLP !== null && !division?.is_highest && (
+            <span className="flex items-center gap-1 text-[10px] text-green-400">
+              <span className="w-2 h-2 rounded-full bg-green-500 inline-block flex-shrink-0" />
+              Promotion ≥{promLP} LP
+            </span>
+          )}
+          <span className="flex items-center gap-1 text-[10px] text-gray-500">
+            <span className="w-2 h-2 rounded-full bg-gray-600 inline-block flex-shrink-0" />
+            Retained
+          </span>
+          {relLP !== null && (
+            <span className="flex items-center gap-1 text-[10px] text-red-400">
+              <span className="w-2 h-2 rounded-full bg-red-500 inline-block flex-shrink-0" />
+              Relegation ≤{relLP} LP
+            </span>
+          )}
+        </div>
+        <p className="max-w-md mx-auto px-4 pb-2 text-[9px] text-gray-600">
+          ⚡ Tiebreaker: equal LP → fewer energy used ranks higher
+        </p>
+      </div>
+    </>
+  )
+}
+
+// ── Ranking rows list ──────────────────────────────────────────────────────────
+
+/**
  * Props:
  *   rows        – array of leaderboard row objects
- *   myUserId    – current user's ID (string/number)
- *   promLP      – promotion LP threshold (number|null)
- *   relLP       – relegation LP threshold (number|null)
- *   isHighestDiv– true if this is the top division (no promotion zone)
- *   isGwLocked  – boolean: show 🔒 instead of ⏳
- *   myRowRef    – React ref attached to the "me" row for scrolling
- *   onUserClick – (userId) => void  (optional; falls back to navigate)
+ *   myUserId    – current user's ID
+ *   promLP      – promotion LP threshold (number | null)
+ *   relLP       – relegation LP threshold (number | null)
+ *   isHighestDiv– true if no promotion zone
+ *   isGwLocked  – boolean: locked gameweek → show LIVE badge + 🔒 instead of ⏳
+ *   myRowRef    – React ref for the "me" row auto-scroll
+ *   onUserClick – (userId) => void (optional; defaults to navigate)
  *   loading     – show spinner while true
  */
 export default function GloryRankingList({
@@ -98,6 +216,7 @@ export default function GloryRankingList({
         const isRel       = relLP  !== null && row.total_league_points <= relLP
         const showRelDiv  = firstRel === i && i > 0
         const showPromDiv = lastPromo === i && i < rows.length - 1 && !isHighestDiv
+        const isLive      = isGwLocked && (row.pending_picks ?? 0) > 0
 
         return (
           <div key={row.user_id} ref={isMe ? myRowRef : null}>
@@ -179,6 +298,12 @@ export default function GloryRankingList({
                       YOU
                     </span>
                   )}
+                  {isLive && (
+                    <span className="flex items-center gap-1 text-[9px] font-black px-1.5 py-0.5 rounded-full border flex-shrink-0 bg-red-500/10 border-red-500/30 text-red-400">
+                      <span className="w-1.5 h-1.5 rounded-full bg-red-500 animate-pulse inline-block" />
+                      LIVE
+                    </span>
+                  )}
                 </div>
 
                 <div className="flex items-center gap-1.5 mt-0.5 flex-wrap">
@@ -219,7 +344,7 @@ export default function GloryRankingList({
               {/* LP */}
               <div className="flex-shrink-0 text-right">
                 <span className={`font-black tabular-nums ${
-                  isMe    ? 'text-xl text-white'      :
+                  isMe    ? 'text-xl text-white'       :
                   isPromo ? 'text-base text-green-400' :
                   isRel   ? 'text-base text-red-400'   :
                             'text-base text-indigo-300'

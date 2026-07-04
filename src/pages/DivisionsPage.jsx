@@ -1,7 +1,7 @@
 import { useEffect, useState, useRef } from 'react'
 import { getGloryDivisions, getGloryLeaderboard, getGloryStatus } from '../api/glory'
 import BottomNav from '../components/layout/BottomNav'
-import GloryRankingList from '../components/GloryRankingList'
+import GloryRankingList, { GloryRankingHeader } from '../components/GloryRankingList'
 
 const V = {
   1: { accent: '#6b7280', bg: 'rgba(107,114,128,0.12)', border: 'rgba(107,114,128,0.30)', glow: 'rgba(107,114,128,0.15)', label: 'Academy Pitch',   grad: 'from-slate-800  to-slate-950', image: 'https://images.unsplash.com/photo-1431324155629-1a6deb1dec8d?w=900&q=80&auto=format&fit=crop' },
@@ -239,46 +239,15 @@ function RankingsScreen({ div, sprintId, sprintName, myUserId, myDivId, onOpenPi
 
   return (
     <div className="fixed inset-0 z-40 flex flex-col bg-[#0a0d12]">
-      {/* Header */}
-      <div className="flex-shrink-0 border-b border-white/8">
-        <div className="max-w-md mx-auto flex items-center gap-3 px-4 pt-5 pb-3">
-          <button onClick={onBack}
-            className="w-9 h-9 rounded-xl bg-white/6 flex items-center justify-center text-gray-300 hover:bg-white/10 flex-shrink-0">
-            ←
-          </button>
-          <div className="flex-1 min-w-0">
-            <p className="text-white font-bold text-base leading-tight">{div.name} — Rankings</p>
-            {sprintName && <p className="text-gray-500 text-xs mt-0.5">{sprintName}</p>}
-          </div>
-          {rows.length > 0 && (
-            <p className="text-gray-500 text-xs flex-shrink-0">{rows.length} players</p>
-          )}
-        </div>
-      </div>
-
-      {/* Zone legend */}
-      {(promLP !== null || relLP !== null) && (
-        <div className="flex-shrink-0 border-b border-white/5">
-          <div className="max-w-md mx-auto flex items-center gap-3 px-4 py-2">
-            {promLP !== null && !div.is_highest && (
-              <span className="flex items-center gap-1 text-[10px] text-green-400">
-                <span className="w-2 h-2 rounded-full bg-green-500 inline-block flex-shrink-0" />
-                Promotion ≥{promLP} LP
-              </span>
-            )}
-            <span className="flex items-center gap-1 text-[10px] text-gray-500">
-              <span className="w-2 h-2 rounded-full bg-gray-600 inline-block flex-shrink-0" />
-              Retained
-            </span>
-            {relLP !== null && (
-              <span className="flex items-center gap-1 text-[10px] text-red-400">
-                <span className="w-2 h-2 rounded-full bg-red-500 inline-block flex-shrink-0" />
-                Relegation ≤{relLP} LP
-              </span>
-            )}
-          </div>
-        </div>
-      )}
+      <GloryRankingHeader
+        division={div}
+        sprintName={sprintName}
+        playerCount={rows.length}
+        promLP={promLP}
+        relLP={relLP}
+        onBack={onBack}
+        onDivisionsClick={onOpenPicker}
+      />
 
       {/* List */}
       <div className="flex-1 overflow-y-auto">
