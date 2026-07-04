@@ -463,6 +463,7 @@ function InsightsDropdown({ fixtureId, liveEv }) {
               const detailLc    = e.detail?.toLowerCase() ?? ''
               const isMissedPen = detailLc.includes('missed')
               const isOwnGoal   = detailLc.includes('own goal')
+              const isPenGoal   = e.type === 'Goal' && detailLc.includes('penalty') && !isMissedPen
               const icon = e.type === 'Goal'
                 ? isMissedPen ? '✗' : isOwnGoal ? '⚽ OG' : '⚽'
                 : e.detail === 'Yellow Card'   ? '🟨'
@@ -478,7 +479,9 @@ function InsightsDropdown({ fixtureId, liveEv }) {
                     <span className="w-7 flex-shrink-0" />
                   )}
                   <span className={`flex-shrink-0 text-xs ${isMissedPen ? 'text-red-400' : ''}`}>{icon}</span>
-                  <span className="text-gray-300 truncate flex-1 min-w-0">{e.player}</span>
+                  <span className="text-gray-300 truncate flex-1 min-w-0">
+                    {e.player}{isPenGoal && <span className="text-gray-500 text-[9px] ml-1">(pen)</span>}
+                  </span>
                   <span className="text-gray-600 text-[9px] flex-shrink-0 truncate max-w-[60px]">
                     {e.team?.split(' ').slice(-1)[0]}
                   </span>
