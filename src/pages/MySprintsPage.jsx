@@ -127,28 +127,55 @@ function RankingsScreen({ sprint, division, rankings, myUserId, onClose, onUserC
   const myIdx = rankings.findIndex(r => r.user_id === myUserId)
   const myRow = rankings[myIdx]
 
+  const heroSrc = division?.badge_url || DIVISION_IMAGES[division?.display_order] || DIVISION_IMAGES[1]
+
   return (
     <div className="fixed inset-0 z-50 bg-[#0a0d12] flex flex-col">
-      <div className="border-b border-white/8">
-        <div className="max-w-md mx-auto flex items-center gap-3 px-4 pt-5 pb-3">
-          <button onClick={onClose} className="w-9 h-9 rounded-xl bg-white/6 flex items-center justify-center text-gray-300 hover:bg-white/10">←</button>
-          <div>
-            <p className="text-white font-bold text-base">{division?.name || 'Division'} — Final Rankings</p>
-            <p className="text-gray-500 text-xs">{sprint?.name}</p>
-          </div>
-          <div className="ml-auto text-right">
-            <p className="text-gray-500 text-xs">{rankings.length} players</p>
+      {/* Hero */}
+      <div className="flex-shrink-0 h-36 bg-[#0a0d12]">
+        <div className="relative h-36 max-w-md mx-auto overflow-hidden">
+          <img src={heroSrc} alt={division?.name || ''} className="w-full h-full object-cover object-center opacity-70"
+            onError={e => { e.target.style.display = 'none' }} />
+          <div className="absolute inset-0 bg-gradient-to-t from-[#0a0d12] via-[#0a0d12]/30 to-transparent" />
+          <button onClick={onClose}
+            className="absolute top-12 left-4 w-9 h-9 flex items-center justify-center rounded-xl backdrop-blur-sm border border-white/10 text-white text-sm"
+            style={{ background: 'rgba(0,0,0,0.40)' }}>
+            ←
+          </button>
+          <div className="absolute bottom-3 left-4 flex items-end gap-3">
+            <div className="w-9 h-9 rounded-xl flex items-center justify-center text-lg border border-white/20 bg-black/30">
+              {division?.icon}
+            </div>
+            <div>
+              <p className="font-black text-lg leading-tight text-white">{division?.name || 'Division'}</p>
+              <p className="text-white/40 text-[11px]">
+                {rankings.length} players
+                {sprint?.name && <> · <span className="text-white/60">{sprint.name}</span></>}
+              </p>
+            </div>
           </div>
         </div>
       </div>
 
-      <div className="border-b border-white/5">
-        <div className="max-w-md mx-auto flex gap-2 px-4 py-2.5">
-          <span className="flex items-center gap-1 text-[10px] text-green-400"><span className="w-2 h-2 rounded-full bg-green-500 inline-block" /> Promotion ≥{promLP ?? '?'} LP</span>
-          <span className="flex items-center gap-1 text-[10px] text-gray-500 ml-auto"><span className="w-2 h-2 rounded-full bg-gray-600 inline-block" /> Retained</span>
-          {relLP !== null && <span className="flex items-center gap-1 text-[10px] text-red-400"><span className="w-2 h-2 rounded-full bg-red-500 inline-block" /> Relegation ≤{relLP} LP</span>}
+      {/* Zone legend */}
+      {(promLP !== null || relLP !== null) && (
+        <div className="flex-shrink-0 border-b border-white/5">
+          <div className="max-w-md mx-auto flex">
+            {promLP !== null && (
+              <div className="flex-1 flex items-center gap-2 px-4 py-2 bg-green-950/40 border-r border-white/5">
+                <span className="w-2 h-2 rounded-sm bg-green-500" />
+                <span className="text-[10px] text-green-300 font-bold">Promotion ≥{promLP} LP</span>
+              </div>
+            )}
+            {relLP !== null && (
+              <div className="flex-1 flex items-center gap-2 px-4 py-2 bg-red-950/40 justify-end">
+                <span className="text-[10px] text-red-300 font-bold">Relegation ≤{relLP} LP</span>
+                <span className="w-2 h-2 rounded-sm bg-red-500" />
+              </div>
+            )}
+          </div>
         </div>
-      </div>
+      )}
 
       <div className="flex-1 overflow-y-auto pb-6">
         <div className="max-w-md mx-auto">
@@ -231,8 +258,12 @@ function RankingsScreen({ sprint, division, rankings, myUserId, onClose, onUserC
                           <span className="text-[10px] text-yellow-500">{row.perfect_weeks}⭐</span>
                         </>
                       )}
-                      <span className="text-[10px] text-gray-600">·</span>
-                      <span className="text-[10px] text-orange-400">{row.energy_used ?? 0}⚡</span>
+                      {(row.energy_used ?? 0) > 0 && (
+                        <>
+                          <span className="text-[10px] text-gray-600">·</span>
+                          <span className="text-[10px] text-orange-400">{row.energy_used}⚡</span>
+                        </>
+                      )}
                     </div>
                   </div>
 
@@ -252,11 +283,26 @@ function RankingsScreen({ sprint, division, rankings, myUserId, onClose, onUserC
       </div>
 
       {myRow && (
-        <div className="border-t border-white/8 bg-[#0a0d12]">
-          <div className="max-w-md mx-auto px-4 py-3 flex items-center gap-3">
-            <span className="text-xs text-gray-500">Your final position</span>
-            <span className="text-indigo-400 font-bold text-sm">#{myRow.rank}</span>
-            <span className="text-indigo-400 font-black text-lg ml-auto">{myRow.total_league_points} LP</span>
+        <div className="flex-shrink-0 border-t border-white/8" style={{ backdropFilter: 'blur(12px)', background: 'rgba(10,13,18,0.95)' }}>
+          <div className="max-w-md mx-auto px-4 py-3 flex items-center justify-between">
+            <div>
+              <p className="text-white text-xs font-semibold">Your position</p>
+              <p className="text-purple-400 text-[11px] mt-0.5">#{myRow.rank} of {rankings.length}</p>
+            </div>
+            <div className="flex items-center gap-3">
+              {promLP !== null && (
+                <div className="text-right">
+                  <p className="text-[10px] text-gray-500">to promotion</p>
+                  <p className="font-bold text-sm text-green-400">
+                    {Math.max(0, promLP - (myRow.total_league_points ?? 0))} LP
+                  </p>
+                </div>
+              )}
+              <div className="text-right">
+                <p className="font-black text-2xl leading-none text-white">{myRow.total_league_points}</p>
+                <p className="text-[10px] text-gray-500">LP</p>
+              </div>
+            </div>
           </div>
         </div>
       )}

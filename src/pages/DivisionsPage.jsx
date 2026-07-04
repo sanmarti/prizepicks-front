@@ -367,7 +367,9 @@ function RankingsScreen({ div, sprintId, sprintName, myUserId, myDivId, onOpenPi
                   <div className={`w-full flex items-center gap-3 border-b relative transition-colors ${
                     isMe ? 'px-4 py-3' : 'px-4 py-2.5'
                   } ${
-                    !isMe ? 'border-white/4' : ''
+                    !isMe && isPromo ? 'bg-green-950/15 border-green-900/40' :
+                    !isMe && isRel   ? 'bg-red-950/12 border-red-900/40' :
+                    !isMe            ? 'border-white/4' : ''
                   }`}
                     style={isMe ? {
                       background: 'linear-gradient(90deg, rgba(88,28,135,0.35) 0%, rgba(88,28,135,0.15) 60%, transparent 100%)',
@@ -375,9 +377,10 @@ function RankingsScreen({ div, sprintId, sprintName, myUserId, myDivId, onOpenPi
                       boxShadow: 'inset 0 0 40px -10px rgba(168,85,247,0.2)',
                     } : {}}
                   >
-                    {isMe && (
-                      <span className="absolute left-0 top-0 bottom-0 w-1 rounded-r-full bg-purple-500" />
-                    )}
+                    {isMe
+                      ? <span className="absolute left-0 top-0 bottom-0 w-1 rounded-r-full bg-purple-500" />
+                      : (isPromo || isRel) && <span className={`absolute left-0 top-0 bottom-0 w-0.5 ${isPromo ? 'bg-green-500' : 'bg-red-500'}`} />
+                    }
 
                     <span className={`text-center font-black flex-shrink-0 ${
                       isMe ? 'w-8 text-base text-purple-300' : 'w-7 text-sm'
@@ -435,8 +438,12 @@ function RankingsScreen({ div, sprintId, sprintName, myUserId, myDivId, onOpenPi
                     </div>
 
                     <div className="flex-shrink-0 text-right">
-                      <span className={`font-black tabular-nums ${isMe ? 'text-xl text-white' : 'text-base text-indigo-300'}`}
-                        style={isMe ? { textShadow: '0 0 16px rgba(168,85,247,0.6)' } : {}}>
+                      <span className={`font-black tabular-nums ${
+                        isMe    ? 'text-xl text-white' :
+                        isPromo ? 'text-base text-green-400' :
+                        isRel   ? 'text-base text-red-400' :
+                                  'text-base text-indigo-300'
+                      }`} style={isMe ? { textShadow: '0 0 16px rgba(168,85,247,0.6)' } : {}}>
                         {row.total_league_points}
                       </span>
                       <p className={`font-normal ${isMe ? 'text-[11px] text-purple-400/70' : 'text-[10px] text-gray-500'}`}>LP</p>

@@ -1045,17 +1045,21 @@ function SprintLeaderboard({ myUserId, data, isGwLocked }) {
           return (
             <div key={r.user_id} className={`relative border-b border-white/5 last:border-0 ${
               isMe
-                ? 'bg-gradient-to-r from-indigo-950/80 via-indigo-900/40 to-indigo-950/80 border-b-indigo-500/20'
+                ? 'border-b-purple-500/20'
+                : !isMe && isPromo ? 'bg-green-950/15 border-b-green-900/40'
+                : !isMe && isRel   ? 'bg-red-950/12 border-b-red-900/40'
                 : ''
-            }`}>
-              {isMe && (
-                <div className="absolute inset-y-0 left-0 w-0.5 bg-gradient-to-b from-indigo-400 via-violet-400 to-indigo-400 rounded-r" />
-              )}
+            }`}
+              style={isMe ? { background: 'linear-gradient(90deg, rgba(88,28,135,0.35) 0%, rgba(88,28,135,0.15) 60%, transparent 100%)' } : {}}>
+              {isMe
+                ? <div className="absolute inset-y-0 left-0 w-1 bg-purple-500 rounded-r" />
+                : (isPromo || isRel) && <div className={`absolute inset-y-0 left-0 w-0.5 ${isPromo ? 'bg-green-500' : 'bg-red-500'} rounded-r`} />
+              }
               <div className={`flex items-center gap-3 ${isMe ? 'px-4 py-3.5' : 'px-4 py-2.5'}`}>
                 {/* Rank */}
                 <span className={`text-center font-black flex-shrink-0 ${
                   isMe
-                    ? 'w-7 text-sm text-indigo-300'
+                    ? 'w-7 text-sm text-purple-300'
                     : `w-6 text-xs ${rank === 1 ? 'text-yellow-400' : rank === 2 ? 'text-gray-300' : rank === 3 ? 'text-amber-600' : 'text-gray-600'}`
                 }`}>{rank}</span>
 
@@ -1065,12 +1069,12 @@ function SprintLeaderboard({ myUserId, data, isGwLocked }) {
                   return (
                     <div className="relative flex-shrink-0">
                       {r.avatar_url
-                        ? <img src={r.avatar_url} alt="" className={`rounded-full object-cover ${isMe ? 'w-10 h-10 ring-2 ring-indigo-500/60 ring-offset-1 ring-offset-transparent' : 'w-8 h-8'}`} />
+                        ? <img src={r.avatar_url} alt="" className={`rounded-full object-cover ${isMe ? 'w-9 h-9' : 'w-8 h-8'}`}
+                            style={isMe ? { boxShadow: '0 0 0 2px rgba(168,85,247,0.8), 0 0 12px rgba(168,85,247,0.35)' } : {}} />
                         : <div className={`rounded-full flex items-center justify-center font-bold ${
-                            isMe
-                              ? 'w-10 h-10 text-sm bg-indigo-600 text-white ring-2 ring-indigo-400/50 ring-offset-1 ring-offset-transparent shadow-[0_0_12px_rgba(99,102,241,0.5)]'
-                              : 'w-8 h-8 text-xs bg-white/8 text-gray-400'
-                          }`}>
+                            isMe ? 'w-9 h-9 text-sm' : 'w-8 h-8 text-xs bg-white/8 text-gray-400'
+                          }`}
+                          style={isMe ? { background: 'rgba(88,28,135,0.6)', color: '#d8b4fe', boxShadow: '0 0 0 2px rgba(168,85,247,0.7), 0 0 12px rgba(168,85,247,0.35)' } : {}}>
                             {(r.display_name || '?')[0].toUpperCase()}
                           </div>
                       }
@@ -1089,7 +1093,7 @@ function SprintLeaderboard({ myUserId, data, isGwLocked }) {
                       {r.display_name || 'Jugador'}
                     </span>
                     {isMe && (
-                      <span className="text-[10px] font-black bg-indigo-500/25 text-indigo-300 border border-indigo-500/30 px-1.5 py-0.5 rounded-full flex-shrink-0 tracking-wide">YOU</span>
+                      <span className="text-[10px] font-black bg-purple-900/50 text-purple-300 border border-purple-500/50 px-1.5 py-0.5 rounded-full flex-shrink-0">YOU</span>
                     )}
                     {r.is_rookie && <span className="text-[9px] bg-blue-900/40 text-blue-400 px-1.5 py-0.5 rounded-full flex-shrink-0">ROOKIE</span>}
                   </div>
@@ -1106,15 +1110,14 @@ function SprintLeaderboard({ myUserId, data, isGwLocked }) {
                 {/* Points */}
                 <div className="text-right flex-shrink-0">
                   <p className={`font-black tabular-nums ${
-                    isMe
-                      ? 'text-xl text-white drop-shadow-[0_0_8px_rgba(99,102,241,0.6)]'
-                      : isPromo ? 'text-base text-green-400'
-                      : isRel   ? 'text-base text-red-400'
-                      : 'text-base text-gray-600'
-                  }`}>
+                    isMe    ? 'text-xl text-white'
+                    : isPromo ? 'text-base text-green-400'
+                    : isRel   ? 'text-base text-red-400'
+                    :           'text-base text-indigo-300'
+                  }`} style={isMe ? { textShadow: '0 0 12px rgba(168,85,247,0.5)' } : {}}>
                     {r.total_league_points}
                   </p>
-                  <p className={`text-[9px] -mt-0.5 ${isMe ? 'text-indigo-400/60' : 'text-gray-700'}`}>pts</p>
+                  <p className={`text-[9px] -mt-0.5 ${isMe ? 'text-purple-400/60' : 'text-gray-700'}`}>pts</p>
                 </div>
               </div>
             </div>
