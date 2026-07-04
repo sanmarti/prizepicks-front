@@ -2,6 +2,7 @@ import { useEffect, useState, useRef } from 'react'
 import { useParams, useNavigate } from 'react-router-dom'
 import { getPublicProfile } from '../api/glory'
 import BottomNav from '../components/layout/BottomNav'
+import SprintPicksModal from '../components/SprintPicksModal'
 
 // ── Tier helpers ──────────────────────────────────────────────────────────────
 const TIERS = [
@@ -249,9 +250,10 @@ function MatchweekPicksCard({ gw, defaultOpen = false, isLive = false }) {
 export default function UserPublicProfilePage() {
   const { id }    = useParams()
   const navigate  = useNavigate()
-  const [data, setData]     = useState(null)
+  const [data, setData]       = useState(null)
   const [loading, setLoading] = useState(true)
   const [tab, setTab]         = useState(0)
+  const [picksModal, setPicksModal] = useState(null) // { sprintId, sprintName }
   const touchStartX           = useRef(null)
 
   useEffect(() => {
@@ -513,7 +515,11 @@ export default function UserPublicProfilePage() {
                     const outcomeIcon  = { promoted: '⬆', retained: '=', relegated: '⬇', pending: '⏳' }[s.sprint_outcome] ?? ''
                     const outcomeColor = { promoted: 'text-green-400', retained: 'text-gray-400', relegated: 'text-red-400', pending: 'text-indigo-400' }[s.sprint_outcome] ?? 'text-gray-500'
                     return (
-                      <div key={i} className="flex items-center justify-between px-4 py-3.5 border-b border-white/5 last:border-0">
+                      <button
+                        key={i}
+                        onClick={() => setPicksModal({ sprintId: s.sprint_id, sprintName: s.sprint_name })}
+                        className="w-full flex items-center justify-between px-4 py-3.5 border-b border-white/5 last:border-0 hover:bg-white/3 transition-colors text-left"
+                      >
                         <div>
                           <p className="text-white text-sm font-semibold">{s.sprint_name}</p>
                           <p className="text-gray-600 text-[11px] mt-0.5">{s.division_icon} {s.division_name || '—'}</p>
@@ -521,8 +527,9 @@ export default function UserPublicProfilePage() {
                         <div className="flex items-center gap-3">
                           <span className="text-indigo-400 font-black text-sm">{s.total_league_points} LP</span>
                           {s.sprint_outcome && <span className={`font-bold text-sm ${outcomeColor}`}>{outcomeIcon}</span>}
+                          <span className="text-gray-700 text-xs">›</span>
                         </div>
-                      </div>
+                      </button>
                     )
                   })}
                 </div>
@@ -648,6 +655,15 @@ export default function UserPublicProfilePage() {
         </div>
       </div>
       <BottomNav />
+
+      {picksModal && (
+        <SprintPicksModal
+          sprintId={picksModal.sprintId}
+          sprintName={picksModal.sprintName}
+          userId={user.id}
+          onClose={() => setPicksModal(null)}
+        />
+      )}
     </div>
   )
 }

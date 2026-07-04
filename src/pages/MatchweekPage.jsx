@@ -20,7 +20,7 @@ const TIER_BG = { gold: 'linear-gradient(135deg,#78350f,#b45309)', silver: 'line
 const EVENT_TYPE_LABELS = {
   MATCH_RESULT:  { label: 'Match Result',       icon: '⚽' },
   WHO_QUALIFIES: { label: 'Who Qualifies?',     icon: '💥' },
-  GOALS:         { label: 'Goals Over/Under',   icon: '🥅' },
+  GOALS:         { label: 'Goals Over/Under',   icon: '⚽' },
   CLEAN_SHEET:   { label: 'Clean Sheet',        icon: '🧤' },
   BTTS:          { label: 'Both Teams Score',   icon: '🎯' },
   PLAYER_SCORE:  { label: 'Player Scores',      icon: '⭐' },
@@ -93,6 +93,20 @@ const MAX_WEEKLY_EXTRA = 5
 
 const LIVE_STATUSES     = ['1H', 'HT', '2H', 'ET', 'BT', 'P', 'SUSP', 'INT', 'LIVE']
 const FINISHED_STATUSES = ['FT', 'AET', 'PEN', 'AWD', 'WO']
+
+// Sort events: live fixtures first, then by match_time, then WHO_QUALIFIES first within each fixture
+function sortWithLiveFirst(events, liveData) {
+  return [...events].sort((a, b) => {
+    const aLive = (liveData[a.id] && LIVE_STATUSES.includes(liveData[a.id].fixture_status_short)) ? 0 : 1
+    const bLive = (liveData[b.id] && LIVE_STATUSES.includes(liveData[b.id].fixture_status_short)) ? 0 : 1
+    if (aLive !== bLive) return aLive - bLive
+    const timeDiff = new Date(a.match_time) - new Date(b.match_time)
+    if (timeDiff !== 0) return timeDiff
+    const aIsWQ = a.event_type === 'WHO_QUALIFIES' ? 0 : 1
+    const bIsWQ = b.event_type === 'WHO_QUALIFIES' ? 0 : 1
+    return aIsWQ - bIsWQ
+  })
+}
 
 // Compute the live color for a user's picked option given live fixture data
 function computePickLiveStatus(event, pickedOptionId, liveEvent) {
@@ -211,14 +225,14 @@ function computePickLiveStatus(event, pickedOptionId, liveEvent) {
 }
 
 const LIVE_STATUS_STYLES = {
-  upcoming:         { bg: 'bg-gray-800/50',      text: 'text-gray-500',    border: 'border-gray-700/50',    dot: 'bg-gray-600',     label: 'Starting soon'    },
-  live_neutral:     { bg: 'bg-blue-900/25',       text: 'text-blue-300',    border: 'border-blue-700/30',    dot: 'bg-blue-400',     label: 'Live'             },
-  live_winning:     { bg: 'bg-blue-900/25',       text: 'text-blue-300',    border: 'border-blue-700/30',    dot: 'bg-blue-400',     label: 'On track'         },
-  likely:           { bg: 'bg-purple-900/30',     text: 'text-purple-300',  border: 'border-purple-700/40',  dot: 'bg-purple-400',   label: 'Very likely ✓'   },
-  unlikely:         { bg: 'bg-orange-900/25',     text: 'text-orange-300',  border: 'border-orange-700/30',  dot: 'bg-orange-400',   label: 'At risk'          },
-  won:              { bg: 'bg-green-900/30',       text: 'text-green-300',   border: 'border-green-700/40',   dot: 'bg-green-400',    label: 'Won ✓'            },
-  lost:             { bg: 'bg-red-900/25',         text: 'text-red-300',     border: 'border-red-700/30',     dot: 'bg-red-400',      label: 'Lost'             },
-  finished_unknown: { bg: 'bg-gray-800/50',       text: 'text-gray-500',    border: 'border-gray-700/50',    dot: 'bg-gray-500',     label: 'Settled'          },
+  upcoming:         { bg: 'bg-gray-800/50',       text: 'text-gray-500',    border: 'border-gray-700/50',    dot: 'bg-gray-600',      label: 'Starting soon'  },
+  live_neutral:     { bg: 'bg-blue-900/25',        text: 'text-blue-300',    border: 'border-blue-700/30',    dot: 'bg-blue-400',      label: 'Live'           },
+  live_winning:     { bg: 'bg-green-900/30',       text: 'text-green-300',   border: 'border-green-700/40',   dot: 'bg-green-400',     label: 'Favorable'      },
+  likely:           { bg: 'bg-green-900/40',       text: 'text-green-300',   border: 'border-green-600/50',   dot: 'bg-green-400',     label: 'Looking good ✓' },
+  unlikely:         { bg: 'bg-red-900/30',         text: 'text-red-300',     border: 'border-red-700/40',     dot: 'bg-red-400',       label: 'At risk'        },
+  won:              { bg: 'bg-green-900/30',       text: 'text-green-300',   border: 'border-green-700/40',   dot: 'bg-green-400',     label: 'Won ✓'          },
+  lost:             { bg: 'bg-red-900/25',         text: 'text-red-300',     border: 'border-red-700/30',     dot: 'bg-red-400',       label: 'Lost'           },
+  finished_unknown: { bg: 'bg-gray-800/50',        text: 'text-gray-500',    border: 'border-gray-700/50',    dot: 'bg-gray-500',      label: 'Settled'        },
 }
 
 function LivePickBadge({ status, elapsed, matchTime }) {
@@ -423,9 +437,14 @@ function InsightsDropdown({ fixtureId, liveEv }) {
           )}
 
           {!loading && data && (() => {
-            const goals  = (data.events || []).filter(e => e.type === 'Goal')
-            const cards  = (data.events || []).filter(e => e.type === 'Card')
-            const timeline = [...goals, ...cards].sort((a, b) => (a.elapsed ?? 0) - (b.elapsed ?? 0))
+            const allGoals = (data.events || []).filter(e => e.type === 'Goal')
+            const allCards = (data.events || []).filter(e => e.type === 'Card')
+
+            // Split by elapsed: null means penalty shootout event (no clock)
+            const gameEvents    = [...allGoals, ...allCards].filter(e => e.elapsed != null)
+              .sort((a, b) => (a.elapsed ?? 0) - (b.elapsed ?? 0))
+            const shootoutEvents = allGoals.filter(e => e.elapsed == null)
+
             const stats  = data.statistics || []
             const [hStats, aStats] = stats.length >= 2 ? [stats[0], stats[1]] : [null, null]
             const KEY_STATS = ['Ball Possession', 'Total Shots', 'Shots on Goal', 'Corner Kicks', 'Fouls']
@@ -437,33 +456,54 @@ function InsightsDropdown({ fixtureId, liveEv }) {
                 })).filter(r => r.h !== '—' || r.a !== '—')
               : []
 
-            const hasData = timeline.length > 0 || statRows.length > 0
+            const hasData = gameEvents.length > 0 || shootoutEvents.length > 0 || statRows.length > 0
             if (!hasData) return <p className="text-gray-700 text-[10px]">No data yet — check back during the match</p>
+
+            const renderEvent = (e, i) => {
+              const detailLc    = e.detail?.toLowerCase() ?? ''
+              const isMissedPen = detailLc.includes('missed')
+              const isOwnGoal   = detailLc.includes('own goal')
+              const icon = e.type === 'Goal'
+                ? isMissedPen ? '✗' : isOwnGoal ? '⚽ OG' : '⚽'
+                : e.detail === 'Yellow Card'   ? '🟨'
+                : e.detail === 'Red Card'      ? '🟥'
+                : e.detail?.includes('Second') ? '🟨🟥' : '📋'
+              return (
+                <div key={i} className="flex items-center gap-2 text-[11px]">
+                  {e.elapsed != null ? (
+                    <span className="text-gray-600 w-7 text-right font-mono flex-shrink-0">
+                      {e.elapsed}{e.extra ? `+${e.extra}` : ''}′
+                    </span>
+                  ) : (
+                    <span className="w-7 flex-shrink-0" />
+                  )}
+                  <span className={`flex-shrink-0 text-xs ${isMissedPen ? 'text-red-400' : ''}`}>{icon}</span>
+                  <span className="text-gray-300 truncate flex-1 min-w-0">{e.player}</span>
+                  <span className="text-gray-600 text-[9px] flex-shrink-0 truncate max-w-[60px]">
+                    {e.team?.split(' ').slice(-1)[0]}
+                  </span>
+                </div>
+              )
+            }
 
             return (
               <>
-                {/* Goal / card timeline */}
-                {timeline.length > 0 && (
+                {/* Regular game events: goals + cards */}
+                {gameEvents.length > 0 && (
                   <div className="space-y-1">
-                    {timeline.map((e, i) => {
-                      const icon = e.type === 'Goal'
-                        ? (e.detail?.toLowerCase().includes('own goal') ? '⚽ OG' : '⚽')
-                        : e.detail === 'Yellow Card' ? '🟨'
-                        : e.detail === 'Red Card'    ? '🟥'
-                        : e.detail?.includes('Second') ? '🟨🟥' : '📋'
-                      return (
-                        <div key={i} className="flex items-center gap-2 text-[11px]">
-                          <span className="text-gray-600 w-7 text-right font-mono flex-shrink-0">
-                            {e.elapsed}{e.extra ? `+${e.extra}` : ''}′
-                          </span>
-                          <span className="flex-shrink-0 text-xs">{icon}</span>
-                          <span className="text-gray-300 truncate flex-1 min-w-0">{e.player}</span>
-                          <span className="text-gray-600 text-[9px] flex-shrink-0 truncate max-w-[60px]">
-                            {e.team?.split(' ').slice(-1)[0]}
-                          </span>
-                        </div>
-                      )
-                    })}
+                    {gameEvents.map(renderEvent)}
+                  </div>
+                )}
+
+                {/* Penalty shootout */}
+                {shootoutEvents.length > 0 && (
+                  <div className="space-y-1">
+                    <div className="flex items-center gap-2 pt-1">
+                      <div className="flex-1 h-px bg-white/8" />
+                      <span className="text-[9px] font-bold text-gray-500 uppercase tracking-wider flex-shrink-0">Penalty shootout</span>
+                      <div className="flex-1 h-px bg-white/8" />
+                    </div>
+                    {shootoutEvents.map(renderEvent)}
                   </div>
                 )}
 
@@ -982,7 +1022,7 @@ function SprintLeaderboard({ myUserId, data }) {
         <p className="text-gray-600 text-xs">{data.rows.length} players</p>
       </div>
 
-      {promPts && (
+      {promPts != null && promPts > 0 && (
         <div className="px-4 py-2 bg-green-900/10 border-b border-green-500/10 flex items-center justify-between text-xs">
           <span className="text-green-400 font-semibold">⬆ Promotion zone</span>
           <span className="text-green-400">{Math.max(0, promPts - myPts)} pts to go</span>
@@ -1056,6 +1096,7 @@ function SprintLeaderboard({ myUserId, data }) {
                   <div className="flex items-center gap-2 mt-0.5 flex-wrap">
                     <span className={`font-semibold ${isMe ? 'text-[11px] text-green-400' : 'text-[10px] text-green-500/60'}`}>{r.total_correct_picks ?? 0}✓</span>
                     <span className={`${isMe ? 'text-[11px] text-red-400/80' : 'text-[10px] text-red-400/40'}`}>{r.total_incorrect_picks ?? 0}✗</span>
+                    {(r.pending_picks ?? 0) > 0 && <span className={`${isMe ? 'text-[11px] text-gray-400' : 'text-[10px] text-gray-500'}`}>{r.pending_picks}⏳</span>}
                     {accuracy !== null && <span className={`${isMe ? 'text-[11px] text-gray-400' : 'text-[10px] text-gray-600'}`}>{accuracy}%</span>}
                     {r.gameweeks_participated > 0 && <span className={`${isMe ? 'text-[11px] text-gray-500' : 'text-[10px] text-gray-700'}`}>{r.gameweeks_participated} GW</span>}
                     {r.perfect_weeks > 0 && <span className="text-[10px] text-yellow-500">⭐{r.perfect_weeks}</span>}
@@ -1083,7 +1124,7 @@ function SprintLeaderboard({ myUserId, data }) {
 
       {end < data.rows.length && <p className="text-center text-gray-700 text-xs py-1.5">· · · {data.rows.length - end} below · · ·</p>}
 
-      {relPts !== null && (
+      {relPts != null && (
         <div className="px-4 py-2 bg-red-900/10 border-t border-red-500/10 flex items-center justify-between text-xs">
           <span className="text-red-400 font-semibold">⬇ Relegation ≤{relPts} pts</span>
           {myPts <= relPts && <span className="text-red-400 font-bold animate-pulse">⚠ You're at risk!</span>}
@@ -1574,7 +1615,7 @@ export default function MatchweekPage() {
             {!gwLoading && effectiveEntry?.status === 'completed' && (
               effectiveEntry.is_perfect_week ? (
                 /* ── Perfect week — spectacular treatment ── */
-                <div className="rounded-2xl overflow-hidden"
+                <div className="relative rounded-2xl overflow-hidden"
                   style={{ background: 'linear-gradient(135deg, #1a1200, #2d1f00, #1a0800)', border: '1px solid rgba(250,204,21,0.45)', boxShadow: '0 0 40px -8px rgba(250,204,21,0.55)' }}>
                   <div className="absolute pointer-events-none inset-0 rounded-2xl"
                     style={{ background: 'radial-gradient(ellipse at 50% 0%, rgba(250,204,21,0.12) 0%, transparent 65%)' }} />
@@ -1605,6 +1646,18 @@ export default function MatchweekPage() {
                       <div className="flex items-center justify-between text-xs">
                         <span className="text-yellow-300 font-bold">Total this week</span>
                         <span className="text-yellow-300 font-black">+{effectiveEntry.league_points} LP</span>
+                      </div>
+                    </div>
+                    {/* Sprint total + rank */}
+                    <div className="flex items-center justify-between mt-2.5 pt-2.5 border-t border-yellow-500/15">
+                      <p className="text-yellow-700 text-[11px] font-semibold">Sprint total</p>
+                      <div className="flex items-center gap-2">
+                        <p className="text-yellow-200 font-bold text-sm tabular-nums">{lp} pts</p>
+                        {myRank && (
+                          <span className="text-[11px] bg-yellow-900/30 text-yellow-400 border border-yellow-500/30 px-2 py-0.5 rounded-full font-bold">
+                            #{myRank}{divSize > 0 ? ` / ${divSize}` : ''}
+                          </span>
+                        )}
                       </div>
                     </div>
                   </div>
@@ -1814,8 +1867,7 @@ export default function MatchweekPage() {
                         <p className="text-green-500 text-[11px] font-bold tracking-wider uppercase px-1">
                           ✓ Confirmed picks ({myPickedEvents.length})
                         </p>
-                        {[...myPickedEvents]
-                          .sort((a, b) => new Date(a.match_time) - new Date(b.match_time))
+                        {sortWithLiveFirst(myPickedEvents, liveData)
                           .map(ev => {
                             const liveStatus = computePickLiveStatus(ev, displayPicks[ev.id], liveData[ev.id])
                             const liveEv = liveData[ev.id]
@@ -1861,7 +1913,7 @@ export default function MatchweekPage() {
                       <p className="text-gray-600 text-[11px] font-medium tracking-wider uppercase px-1">
                         {effectiveEvents.length} events — choose 6 ({pickCount}/6 selected)
                       </p>
-                      {eventsWithCounts.map(ev => (
+                      {sortWithLiveFirst(eventsWithCounts, liveData).map(ev => (
                         <EventCard key={ev.id} event={ev} selectedOptionId={picks[ev.id]}
                           onSelect={handleSelect} isLocked={false} dimmed={false}
                           remainingEnergy={remainingEnergy} picksLocked={picksLocked} />
@@ -1878,8 +1930,8 @@ export default function MatchweekPage() {
                   <>
                     {myPickedEvents.length > 0 && (
                       <div className="space-y-2.5">
-                        {/* Live tally bar */}
-                        {liveTally && (
+                        {/* Live tally bar — hidden when perfect week card above already covers results */}
+                        {liveTally && !effectiveEntry?.is_perfect_week && (
                           <div className={`rounded-2xl border px-4 py-3 ${
                             liveTally.pending === 0 && liveTally.won === 6
                               ? 'bg-yellow-900/20 border-yellow-500/30'
@@ -1931,8 +1983,7 @@ export default function MatchweekPage() {
                         )}
 
                         <p className="text-gray-400 text-xs font-semibold tracking-wider uppercase px-1">Your picks</p>
-                        {[...myPickedEvents]
-                          .sort((a, b) => new Date(a.match_time) - new Date(b.match_time))
+                        {sortWithLiveFirst(myPickedEvents, liveData)
                           .map(ev => {
                             const liveEvData = liveData[ev.id]
                             const liveStatus = computePickLiveStatus(ev, displayPicks[ev.id], liveEvData)
@@ -2003,7 +2054,7 @@ export default function MatchweekPage() {
                         {myPickedEvents.length > 0 && (
                           <p className="text-gray-600 text-xs font-medium tracking-wider uppercase px-1">Picks not played</p>
                         )}
-                        {unpickedEvents.map(ev => {
+                        {sortWithLiveFirst(unpickedEvents, liveData).map(ev => {
                           const liveEvData = liveData[ev.id]
                           const isLive = liveEvData && LIVE_STATUSES.includes(liveEvData.fixture_status_short)
                           const isDone = liveEvData && FINISHED_STATUSES.includes(liveEvData.fixture_status_short)

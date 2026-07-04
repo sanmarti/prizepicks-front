@@ -157,12 +157,12 @@ export function SubmitBtn({ loading, children }) {
         cursor: loading ? 'not-allowed' : 'pointer',
         fontFamily: "'Syne', sans-serif", fontWeight: 700,
         fontSize: 14, letterSpacing: '0.1em', color: '#fff',
-        background: 'linear-gradient(90deg, #7c6ef5 0%, #9b8ef8 48%, #7c6ef5 100%)',
+        background: 'linear-gradient(90deg, #16a34a 0%, #22c55e 48%, #16a34a 100%)',
         backgroundSize: '200% auto',
         animation: loading ? 'none' : 'auth-shimmer 3s linear infinite',
         opacity: loading ? 0.6 : 1,
         display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 6,
-        boxShadow: loading ? 'none' : '0 4px 22px rgba(124,110,245,0.32)',
+        boxShadow: loading ? 'none' : '0 4px 22px rgba(34,197,94,0.32)',
         transition: 'transform 0.15s, opacity 0.2s',
       }}
       onMouseEnter={e => { if (!loading) e.currentTarget.style.transform = 'translateY(-1px)' }}

@@ -339,8 +339,9 @@ function RankingsScreen({ div, sprintId, sprintName, myUserId, myDivId, onOpenPi
         )}
         {!loading && rows.length === 0 && (
           <div className="flex flex-col items-center justify-center py-24 gap-2">
-            <span className="text-4xl">{div.icon}</span>
-            <p className="text-gray-500 text-sm">No players ranked yet</p>
+            <span className="text-5xl">🏟️</span>
+            <p className="text-gray-300 text-sm font-semibold">No players have reached this level yet</p>
+            <p className="text-gray-600 text-xs mt-0.5">The stadium is empty… be the first to get here! 👀</p>
           </div>
         )}
         {!loading && rows.length > 0 && (
@@ -356,52 +357,43 @@ function RankingsScreen({ div, sprintId, sprintName, myUserId, myDivId, onOpenPi
               return (
                 <div key={row.user_id} ref={isMe ? myRowRef : null}>
                   {showRelDiv && (
-                    <div className="flex items-center gap-2 px-4 py-2 bg-red-950/60 border-y border-red-500/30">
-                      <span className="text-red-400 text-[10px] font-black tracking-wider">⬇ RELEGATION ZONE — ≤{relLP} LP</span>
+                    <div className="flex items-center gap-2 px-4 py-1">
+                      <div className="flex-1 h-px bg-red-500/20" />
+                      <span className="text-[9px] text-red-600 tracking-widest font-semibold">RELEGATION LINE</span>
+                      <div className="flex-1 h-px bg-red-500/20" />
                     </div>
                   )}
 
                   <div className={`w-full flex items-center gap-3 border-b relative transition-colors ${
                     isMe ? 'px-4 py-3' : 'px-4 py-2.5'
                   } ${
-                    isPromo ? 'bg-green-950/50 border-green-900/60' :
-                    isRel   ? 'bg-red-950/45 border-red-900/50' :
-                    !isMe   ? 'border-white/4' : ''
+                    !isMe ? 'border-white/4' : ''
                   }`}
                     style={isMe ? {
-                      background: isPromo
-                        ? `linear-gradient(90deg, rgba(5,46,22,0.95) 0%, ${v.bg}88 60%, ${v.bg}33 100%)`
-                        : isRel
-                        ? `linear-gradient(90deg, rgba(69,10,10,0.95) 0%, ${v.bg}88 60%, ${v.bg}33 100%)`
-                        : `linear-gradient(90deg, ${v.bg}ee 0%, ${v.bg}99 60%, ${v.bg}44 100%)`,
-                      borderColor: isPromo ? 'rgba(34,197,94,0.4)' : isRel ? 'rgba(239,68,68,0.4)' : v.border,
-                      boxShadow: `inset 0 0 40px -10px ${isPromo ? 'rgba(34,197,94,0.2)' : isRel ? 'rgba(239,68,68,0.2)' : v.glow}44`,
+                      background: 'linear-gradient(90deg, rgba(88,28,135,0.35) 0%, rgba(88,28,135,0.15) 60%, transparent 100%)',
+                      borderColor: 'rgba(168,85,247,0.35)',
+                      boxShadow: 'inset 0 0 40px -10px rgba(168,85,247,0.2)',
                     } : {}}
                   >
-                    {/* Left accent bar — zone color takes priority over division color */}
-                    {isMe
-                      ? <span className="absolute left-0 top-0 bottom-0 w-1 rounded-r-full"
-                          style={{ background: isPromo ? '#22c55e' : isRel ? '#ef4444' : `linear-gradient(180deg, ${v.accent}, ${v.accent}88)` }} />
-                      : (isPromo || isRel) && <span className={`absolute left-0 top-0 bottom-0 w-0.5 ${isPromo ? 'bg-green-500' : 'bg-red-500'}`} />
-                    }
+                    {isMe && (
+                      <span className="absolute left-0 top-0 bottom-0 w-1 rounded-r-full bg-purple-500" />
+                    )}
 
                     <span className={`text-center font-black flex-shrink-0 ${
-                      isMe ? 'w-8 text-base' : 'w-7 text-sm'
+                      isMe ? 'w-8 text-base text-purple-300' : 'w-7 text-sm'
                     } ${
-                      isMe ? '' : rank === 1 ? 'text-yellow-400' : rank === 2 ? 'text-gray-300' : rank === 3 ? 'text-amber-600' : 'text-gray-600'
-                    }`} style={isMe ? { color: v.accent } : {}}>{rank}</span>
+                      !isMe ? (rank === 1 ? 'text-yellow-400' : rank === 2 ? 'text-gray-300' : rank === 3 ? 'text-amber-600' : 'text-gray-600') : ''
+                    }`}>{rank}</span>
 
                     <div className="relative flex-shrink-0 cursor-pointer"
                       onClick={() => navigate(`/users/${row.user_id}`)}>
                       {row.avatar_url
                         ? <img src={row.avatar_url} alt="" className={`rounded-full object-cover ${isMe ? 'w-9 h-9' : 'w-8 h-8'}`}
-                            style={isMe ? { boxShadow: `0 0 0 2px ${v.accent}99, 0 0 16px ${v.glow}66` } : {}} />
+                            style={isMe ? { boxShadow: '0 0 0 2px rgba(168,85,247,0.8), 0 0 16px rgba(168,85,247,0.4)' } : {}} />
                         : <div className={`rounded-full flex items-center justify-center font-bold ${isMe ? 'w-9 h-9 text-sm' : 'w-8 h-8 text-sm'}`}
-                            style={{
-                              background: isMe ? v.bg : 'rgba(255,255,255,0.08)',
-                              color: isMe ? v.accent : '#9ca3af',
-                              ...(isMe ? { boxShadow: `0 0 0 2px ${v.accent}80, 0 0 16px ${v.glow}55` } : {}),
-                            }}>
+                            style={isMe
+                              ? { background: 'rgba(88,28,135,0.6)', color: '#d8b4fe', boxShadow: '0 0 0 2px rgba(168,85,247,0.7), 0 0 16px rgba(168,85,247,0.35)' }
+                              : { background: 'rgba(255,255,255,0.08)', color: '#9ca3af' }}>
                             {(row.display_name || '?')[0].toUpperCase()}
                           </div>
                       }
@@ -410,53 +402,52 @@ function RankingsScreen({ div, sprintId, sprintName, myUserId, myDivId, onOpenPi
 
                     <div className="flex-1 min-w-0">
                       <div className="flex items-center gap-1.5 flex-wrap">
-                        <p className={`font-semibold truncate ${isMe ? 'text-white text-sm' : 'text-gray-400 text-sm'}`}>
+                        <p className={`font-semibold truncate ${isMe ? 'text-white text-sm' : 'text-gray-300 text-sm'}`}>
                           {row.display_name || 'Player'}
                         </p>
                         {isMe && (
-                          <span className="text-[10px] font-black px-1.5 py-0.5 rounded-full border flex-shrink-0"
-                            style={{ background: v.bg, borderColor: v.border, color: v.accent }}>YOU</span>
+                          <span className="text-[10px] font-black px-1.5 py-0.5 rounded-full border flex-shrink-0 bg-purple-900/50 border-purple-500/50 text-purple-300">YOU</span>
                         )}
                       </div>
-                      {(() => {
-                        const wrong = row.total_incorrect_picks ?? row.total_wrong_picks ?? 0
-                        const total = (row.total_correct_picks || 0) + wrong
-                        const acc = total > 0 ? Math.round((row.total_correct_picks || 0) / total * 100) : null
-                        const gw  = row.gameweeks_participated
-                        return (
-                          <div className="flex items-center gap-2 mt-0.5 flex-wrap">
-                            <span className={`font-semibold ${isMe ? 'text-[11px] text-green-400' : 'text-[10px] text-green-500/50'}`}>{row.total_correct_picks ?? 0}✓</span>
-                            <span className={`${isMe ? 'text-[11px] text-red-400/80' : 'text-[10px] text-red-400/35'}`}>{wrong}✗</span>
-                            {acc !== null && <span className={`${isMe ? 'text-[11px] text-gray-400' : 'text-[10px] text-gray-700'}`}>{acc}%</span>}
-                            {gw > 0 && <span className={`${isMe ? 'text-[11px] text-gray-500' : 'text-[10px] text-gray-700'}`}>{gw} GW</span>}
-                            {row.perfect_weeks > 0 && <span className="text-[10px] text-yellow-500">⭐{row.perfect_weeks}</span>}
-                          </div>
-                        )
-                      })()}
+                      <div className="flex items-center gap-1.5 mt-0.5 flex-wrap">
+                        <span className={`font-semibold ${isMe ? 'text-[11px] text-green-400' : 'text-[10px] text-green-400'}`}>{row.total_correct_picks ?? 0}✓</span>
+                        <span className="text-[10px] text-gray-600">·</span>
+                        <span className={`${isMe ? 'text-[11px] text-red-400' : 'text-[10px] text-red-400'}`}>{row.total_incorrect_picks ?? 0}✗</span>
+                        {(row.pending_picks ?? 0) > 0 && (
+                          <>
+                            <span className="text-[10px] text-gray-600">·</span>
+                            <span className={`${isMe ? 'text-[11px] text-gray-400' : 'text-[10px] text-gray-400'}`}>{row.pending_picks}⏳</span>
+                          </>
+                        )}
+                        {row.perfect_weeks > 0 && (
+                          <>
+                            <span className="text-[10px] text-gray-600">·</span>
+                            <span className={`${isMe ? 'text-[11px] text-yellow-400' : 'text-[10px] text-yellow-500'}`}>{row.perfect_weeks}⭐</span>
+                          </>
+                        )}
+                        {row.energy_used > 0 && (
+                          <>
+                            <span className="text-[10px] text-gray-600">·</span>
+                            <span className={`${isMe ? 'text-[11px] text-orange-400' : 'text-[10px] text-orange-400'}`}>{row.energy_used}⚡</span>
+                          </>
+                        )}
+                      </div>
                     </div>
 
-                    <div className="flex items-center gap-1.5 flex-shrink-0">
-                      {isPromo && <span className="text-green-400 text-xs">⬆</span>}
-                      {isRel   && <span className="text-red-400 text-xs">⬇</span>}
-                      <div className="text-right">
-                        <span className={`font-black tabular-nums ${isMe ? 'text-lg' : 'text-base'}`}
-                          style={{
-                            color: isPromo ? '#4ade80' : isRel ? '#f87171' : isMe ? '#fff' : '#818cf8',
-                            ...(isMe ? { textShadow: `0 0 16px ${v.glow}` } : {}),
-                          }}>
-                          {row.total_league_points}
-                        </span>
-                        <p className={`font-normal ${isMe ? 'text-[11px]' : 'text-[10px] text-gray-600'}`}
-                          style={isMe ? { color: v.accent + 'aa' } : {}}>LP</p>
-                      </div>
+                    <div className="flex-shrink-0 text-right">
+                      <span className={`font-black tabular-nums ${isMe ? 'text-xl text-white' : 'text-base text-indigo-300'}`}
+                        style={isMe ? { textShadow: '0 0 16px rgba(168,85,247,0.6)' } : {}}>
+                        {row.total_league_points}
+                      </span>
+                      <p className={`font-normal ${isMe ? 'text-[11px] text-purple-400/70' : 'text-[10px] text-gray-500'}`}>LP</p>
                     </div>
                   </div>
 
                   {showPromDiv && (
-                    <div className="flex items-center gap-2 px-4 py-1.5 border-b border-white/5">
-                      <div className="flex-1 h-px bg-white/6" />
-                      <span className="text-gray-700 text-[9px] font-bold tracking-widest">RETENTION ZONE</span>
-                      <div className="flex-1 h-px bg-white/6" />
+                    <div className="flex items-center gap-2 px-4 py-1">
+                      <div className="flex-1 h-px bg-green-500/20" />
+                      <span className="text-[9px] text-green-600 tracking-widest font-semibold">PROMOTION LINE</span>
+                      <div className="flex-1 h-px bg-green-500/20" />
                     </div>
                   )}
                 </div>

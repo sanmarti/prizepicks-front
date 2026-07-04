@@ -234,7 +234,7 @@ const MAX_PICKS    = 6
 const EVENT_TYPE_LABELS = {
   MATCH_RESULT:  { label: 'Match Result',     icon: '⚽' },
   WHO_QUALIFIES: { label: 'Who Qualifies?',   icon: '💥' },
-  GOALS:         { label: 'Goals Over/Under', icon: '🥅' },
+  GOALS:         { label: 'Goals Over/Under', icon: '⚽' },
   CLEAN_SHEET:   { label: 'Clean Sheet',      icon: '🧤' },
   BTTS:          { label: 'Both Teams Score', icon: '🎯' },
   PLAYER_SCORE:  { label: 'Player Scores',    icon: '⭐' },

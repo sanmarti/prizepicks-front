@@ -21,3 +21,4 @@ export const purchaseEnergyPack    = (id)         => client.post(`/glory/energy-
 export const getPurchaseHistory    = ()           => client.get('/glory/purchase-history')
 export const markPopupSeen         = (id)         => client.post(`/glory/sprints/${id}/mark-popup-seen`)
 export const getSprintPicks        = (id)         => client.get(`/glory/sprints/${id}/picks`)
+export const getPublicSprintPicks  = (userId, sprintId) => client.get(`/glory/users/${userId}/sprints/${sprintId}/picks`)

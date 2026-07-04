@@ -88,6 +88,79 @@ const FIXTURE_POOL = {
 }
 const PICK_TYPES = ['Match Result', 'Goals Over/Under', 'BTTS', 'Clean Sheet']
 
+// ── Team logos ────────────────────────────────────────────────────────────────
+const TEAM_LOGOS = {
+  // Premier League
+  'Arsenal':       'https://media.api-sports.io/football/teams/42.png',
+  'Liverpool':     'https://media.api-sports.io/football/teams/40.png',
+  'Man City':      'https://media.api-sports.io/football/teams/50.png',
+  'Chelsea':       'https://media.api-sports.io/football/teams/49.png',
+  'Tottenham':     'https://media.api-sports.io/football/teams/47.png',
+  'Man United':    'https://media.api-sports.io/football/teams/33.png',
+  // La Liga
+  'Real Madrid':   'https://media.api-sports.io/football/teams/541.png',
+  'Barcelona':     'https://media.api-sports.io/football/teams/529.png',
+  'Atletico':      'https://media.api-sports.io/football/teams/530.png',
+  'Sevilla':       'https://media.api-sports.io/football/teams/536.png',
+  // Bundesliga
+  'Bayern Munich': 'https://media.api-sports.io/football/teams/157.png',
+  'Dortmund':      'https://media.api-sports.io/football/teams/165.png',
+  'Leverkusen':    'https://media.api-sports.io/football/teams/168.png',
+  'Leipzig':       'https://media.api-sports.io/football/teams/173.png',
+  // Serie A
+  'Inter':         'https://media.api-sports.io/football/teams/505.png',
+  'Juventus':      'https://media.api-sports.io/football/teams/496.png',
+  'AC Milan':      'https://media.api-sports.io/football/teams/489.png',
+  'Roma':          'https://media.api-sports.io/football/teams/497.png',
+  // Ligue 1
+  'PSG':           'https://media.api-sports.io/football/teams/85.png',
+  'Marseille':     'https://media.api-sports.io/football/teams/81.png',
+  'Monaco':        'https://media.api-sports.io/football/teams/91.png',
+  // National teams
+  'France':        'https://media.api-sports.io/football/teams/2.png',
+  'Argentina':     'https://media.api-sports.io/football/teams/26.png',
+  'Brazil':        'https://media.api-sports.io/football/teams/24.png',
+  'Germany':       'https://media.api-sports.io/football/teams/25.png',
+  'Spain':         'https://media.api-sports.io/football/teams/9.png',
+  'England':       'https://media.api-sports.io/football/teams/10.png',
+  'Portugal':      'https://media.api-sports.io/football/teams/27.png',
+  'Netherlands':   'https://media.api-sports.io/football/teams/1118.png',
+  'Italy':         'https://media.api-sports.io/football/teams/768.png',
+  'Morocco':       'https://media.api-sports.io/football/teams/1020.png',
+  'USA':           'https://media.api-sports.io/football/teams/2856.png',
+  'Mexico':        'https://media.api-sports.io/football/teams/769.png',
+  'Australia':     'https://media.api-sports.io/football/teams/2763.png',
+  'Panama':        'https://media.api-sports.io/football/teams/2816.png',
+  'Denmark':       'https://media.api-sports.io/football/teams/21.png',
+  'Georgia':       'https://media.api-sports.io/football/teams/1530.png',
+  'Croatia':       'https://media.api-sports.io/football/teams/3.png',
+}
+
+function parseTeams(fixture) {
+  const clean = fixture.replace(/\s*\(.*\)$/, '').trim()
+  const parts = clean.split(' vs ')
+  return parts.length === 2 ? [parts[0].trim(), parts[1].trim()] : [clean, '']
+}
+
+function TeamLogo({ name, size = 20 }) {
+  const [failed, setFailed] = useState(false)
+  const url = TEAM_LOGOS[name]
+  if (!url || failed) return (
+    <span
+      className="inline-flex items-center justify-center rounded-full bg-white/10 text-gray-400 font-black flex-shrink-0"
+      style={{ width: size, height: size, fontSize: size * 0.45 }}
+    >{name?.[0] ?? '?'}</span>
+  )
+  return (
+    <img
+      src={url} alt={name}
+      onError={() => setFailed(true)}
+      className="object-contain flex-shrink-0"
+      style={{ width: size, height: size }}
+    />
+  )
+}
+
 // ── Add fixture modal ─────────────────────────────────────────────────────────
 function AddFixtureModal({ weekNum, currentCount, onAdd, onClose }) {
   const [search,    setSearch]    = useState('')
@@ -252,10 +325,15 @@ function WeekCard({ weekNum, weekStart, lockDt, settleDt, events, canEdit, onAdd
       <div className="px-4 pb-3.5">
         {events.length > 0 ? (
           <div className="space-y-2">
-            {Object.entries(grouped).map(([fix, picks]) => (
+            {Object.entries(grouped).map(([fix, picks]) => {
+              const [home, away] = parseTeams(fix)
+              return (
               <div key={fix} className="rounded-xl bg-white/3 border border-white/6 overflow-hidden">
                 <div className="px-3 py-1.5 border-b border-white/5 flex items-center gap-1.5">
-                  <span className="text-[10px] text-gray-500">⚽</span>
+                  <div className="flex items-center gap-0.5 flex-shrink-0">
+                    <TeamLogo name={home} size={18} />
+                    <TeamLogo name={away} size={18} />
+                  </div>
                   <span className="text-xs text-gray-200 font-semibold flex-1 truncate">{fix}</span>
                   <span className="text-[10px] text-gray-600">{picks.length} pick{picks.length > 1 ? 's' : ''}</span>
                 </div>
@@ -271,7 +349,8 @@ function WeekCard({ weekNum, weekStart, lockDt, settleDt, events, canEdit, onAdd
                   ))}
                 </div>
               </div>
-            ))}
+              )
+            })}
           </div>
         ) : (
           <div className={`border border-dashed rounded-xl px-3 py-3 text-center ${isLocked ? 'border-white/5' : 'border-indigo-500/15'}`}>

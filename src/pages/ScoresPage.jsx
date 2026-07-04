@@ -88,7 +88,7 @@ function MatchDetail({ fix, data, loading }) {
               className={`flex-1 py-1.5 rounded-lg text-xs font-semibold capitalize transition-all ${
                 activeTab === t ? 'bg-indigo-600 text-white' : 'text-gray-500 hover:text-gray-300'
               }`}>
-              {t === 'events' ? '⚡ Events' : '📊 Stats'}
+              {t === 'events' ? 'Events' : 'Stats'}
             </button>
           ))}
         </div>

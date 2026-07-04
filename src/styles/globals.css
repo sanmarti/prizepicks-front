@@ -34,12 +34,15 @@ body {
   font-family: 'IBM Plex Mono', monospace;
   min-height: 100dvh;
   -webkit-font-smoothing: antialiased;
+  overflow-x: clip;
+  max-width: 100vw;
 }
 
 #root {
   min-height: 100dvh;
   display: flex;
   flex-direction: column;
+  overflow-x: clip;
 }
 
 /* Scrollbar */
