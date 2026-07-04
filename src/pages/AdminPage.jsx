@@ -1,5 +1,6 @@
 import { useState, useMemo } from 'react'
 import { useNavigate } from 'react-router-dom'
+import client from '../api/client'
 
 // ── Fixed sprint calendar ─────────────────────────────────────────────────────
 // Each sprint is 4 × Mon–Sun weeks. Dates are definitive — no manual input.
@@ -383,6 +384,8 @@ function SprintStatusPill({ status }) {
 export default function AdminPage() {
   const navigate = useNavigate()
   const [activeTab,      setActiveTab]      = useState('sprints')
+  const [toolResult,     setToolResult]     = useState(null)
+  const [toolLoading,    setToolLoading]    = useState(false)
   const [selectedSprint, setSelectedSprint] = useState(() => {
     // Default to the live sprint, or next upcoming one
     const live = SPRINT_SCHEDULE.find(s => getSprintStatus(s.start) === 'LIVE')
@@ -436,7 +439,7 @@ export default function AdminPage() {
 
         {/* Tabs */}
         <div className="max-w-md mx-auto px-4 pb-2 flex gap-1">
-          {[['sprints', 'Sprints'], ['rules', 'Lifecycle rules']].map(([k, label]) => (
+          {[['sprints', 'Sprints'], ['rules', 'Lifecycle rules'], ['tools', 'Tools']].map(([k, label]) => (
             <button key={k} onClick={() => setActiveTab(k)}
               className={`flex-1 py-1.5 rounded-lg text-xs font-semibold transition-colors ${
                 activeTab === k ? 'bg-white/10 text-white' : 'text-gray-600 hover:text-gray-400'
@@ -591,6 +594,54 @@ export default function AdminPage() {
               </>
             )}
           </>
+        )}
+
+        {/* ── TOOLS TAB ────────────────────────────────────────────────────── */}
+        {activeTab === 'tools' && (
+          <div className="space-y-4">
+            <div className="bg-[#0d1117] border border-white/8 rounded-2xl overflow-hidden">
+              <div className="px-4 py-3 border-b border-white/6">
+                <p className="text-white font-bold text-sm">Settlement repair</p>
+                <p className="text-gray-500 text-xs mt-0.5">Fix picks that were settled incorrectly due to timing issues</p>
+              </div>
+              <div className="px-4 py-4 space-y-3">
+                <div className="rounded-xl border border-orange-500/20 bg-orange-950/20 p-4">
+                  <p className="text-orange-300 font-semibold text-sm mb-1">Fix broken WHO_QUALIFIES picks</p>
+                  <p className="text-gray-400 text-xs mb-3">
+                    Detects events where all options ended up as LOST — impossible in real knockout football.
+                    Happens when a game settled at FT before going to extra time / penalties.
+                    Re-fetches fixture data and resettles picks and LP correctly.
+                  </p>
+                  <button
+                    disabled={toolLoading}
+                    onClick={async () => {
+                      setToolLoading(true)
+                      setToolResult(null)
+                      try {
+                        const res = await client.post('/admin/debug/fix-who-qualifies')
+                        setToolResult({ ok: true, data: res.data })
+                      } catch (e) {
+                        setToolResult({ ok: false, error: e.response?.data?.error || e.message })
+                      } finally {
+                        setToolLoading(false)
+                      }
+                    }}
+                    className="w-full py-2.5 rounded-xl bg-orange-600 hover:bg-orange-500 disabled:opacity-40 disabled:pointer-events-none text-white font-bold text-sm transition-colors"
+                  >
+                    {toolLoading ? 'Running…' : 'Run fix now'}
+                  </button>
+                </div>
+
+                {toolResult && (
+                  <div className={`rounded-xl border p-4 text-xs font-mono whitespace-pre-wrap break-all ${
+                    toolResult.ok ? 'border-green-500/30 bg-green-950/20 text-green-300' : 'border-red-500/30 bg-red-950/20 text-red-300'
+                  }`}>
+                    {toolResult.ok ? JSON.stringify(toolResult.data, null, 2) : `Error: ${toolResult.error}`}
+                  </div>
+                )}
+              </div>
+            </div>
+          </div>
         )}
       </div>
     </div>
