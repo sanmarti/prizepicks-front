@@ -1832,10 +1832,9 @@ export default function MatchweekPage() {
                   <div className="flex items-start gap-3 px-4 py-4 rounded-2xl bg-yellow-950/25 border border-yellow-500/30">
                     <span className="text-xl mt-0.5">🔒</span>
                     <div className="flex-1 min-w-0">
-                      <p className="font-bold text-sm text-yellow-300">Picks are locked — matches are live</p>
+                      <p className="font-bold text-sm text-yellow-300">Picks are locked — matches are live for this week.</p>
                       <p className="text-yellow-600 text-xs mt-0.5">
-                        Results will be scored automatically once all fixtures finish.
-                        Your picks are locked in — sit back and watch.
+                        Sit back and watch your predictions become wins or losses.
                       </p>
                     </div>
                   </div>
