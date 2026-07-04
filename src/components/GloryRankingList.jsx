@@ -216,7 +216,7 @@ export default function GloryRankingList({
         const isRel       = relLP  !== null && row.total_league_points <= relLP
         const showRelDiv  = firstRel === i && i > 0
         const showPromDiv = lastPromo === i && i < rows.length - 1 && !isHighestDiv
-        const isLive      = isGwLocked && (row.pending_picks ?? 0) > 0
+        const isLive      = (row.live_picks ?? 0) > 0
 
         return (
           <div key={row.user_id} ref={isMe ? myRowRef : null}>
