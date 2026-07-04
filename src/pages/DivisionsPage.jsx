@@ -237,6 +237,12 @@ function RankingsScreen({ div, sprintId, sprintName, myUserId, myDivId, onOpenPi
   const rows  = lb?.rows || []
   const myIdx = rows.findIndex(r => r.user_id === myUserId)
 
+  useEffect(() => {
+    if (!loading && myRowRef.current) {
+      setTimeout(() => myRowRef.current?.scrollIntoView({ block: 'center', behavior: 'smooth' }), 120)
+    }
+  }, [loading])
+
   return (
     <div className="fixed inset-0 z-40 flex flex-col bg-[#0a0d12]">
       <GloryRankingHeader
