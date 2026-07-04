@@ -19,3 +19,5 @@ export const getGameweekLive       = (id)         => client.get(`/glory/gameweek
 export const getEnergyPacks        = ()           => client.get('/glory/energy-packs')
 export const purchaseEnergyPack    = (id)         => client.post(`/glory/energy-packs/${id}/purchase`)
 export const getPurchaseHistory    = ()           => client.get('/glory/purchase-history')
+export const markPopupSeen         = (id)         => client.post(`/glory/sprints/${id}/mark-popup-seen`)
+export const getSprintPicks        = (id)         => client.get(`/glory/sprints/${id}/picks`)
