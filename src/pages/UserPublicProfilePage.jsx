@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react'
+import { useEffect, useState, useRef } from 'react'
 import { useParams, useNavigate } from 'react-router-dom'
 import { getPublicProfile } from '../api/glory'
 import BottomNav from '../components/layout/BottomNav'
@@ -54,81 +54,192 @@ const BADGE_ACCENTS = {
   DIV_CHAMP_CHAMPIONS: { glow: '#fde047', border: 'rgba(253,224,71,0.55)',  text: 'text-yellow-200'  },
 }
 
-// ── Pick result icon ───────────────────────────────────────────────────────────
-function PickResult({ result }) {
-  if (result === 'WON')  return <span className="text-green-400 font-black text-sm">✓</span>
-  if (result === 'LOST') return <span className="text-red-400 font-black text-sm">✗</span>
-  return <span className="text-gray-600 font-bold text-sm">·</span>
+function TeamLogo({ src, alt, size = 28 }) {
+  const [err, setErr] = useState(false)
+  if (!src || err) {
+    return (
+      <div style={{ width: size, height: size }}
+        className="rounded-full bg-white/5 border border-white/10 flex items-center justify-center text-[9px] text-gray-600 font-bold shrink-0">
+        ?
+      </div>
+    )
+  }
+  return (
+    <img src={src} alt={alt} onError={() => setErr(true)}
+      style={{ width: size, height: size }}
+      className="rounded-full object-contain bg-white/5 shrink-0" />
+  )
 }
 
+const LIVE_STATUSES     = ['1H','HT','2H','ET','BT','P','SUSP','INT','LIVE']
+const FINISHED_STATUSES = ['FT','AET','PEN','AWD','WO']
+
 // ── Matchweek picks card ───────────────────────────────────────────────────────
-function MatchweekPicksCard({ gw }) {
+function MatchweekPicksCard({ gw, defaultOpen = false, isLive = false }) {
   const { sprint_week, status, entry, picks } = gw
   const isPerfect = entry?.is_perfect_week
+  const [open, setOpen] = useState(defaultOpen)
 
   // Group picks by fixture
   const byFixture = {}
   for (const p of picks) {
-    if (!byFixture[p.fixture_name]) byFixture[p.fixture_name] = []
-    byFixture[p.fixture_name].push(p)
+    const key = p.fixture_name
+    if (!byFixture[key]) byFixture[key] = { picks: [], home_team: p.home_team, away_team: p.away_team, home_logo: p.home_logo, away_logo: p.away_logo, match_time: p.match_time, competition: p.competition, home_goals: p.home_goals, away_goals: p.away_goals, status_short: p.status_short, status_elapsed: p.status_elapsed }
+    byFixture[key].picks.push(p)
   }
 
   const statusColor = status === 'FINISHED' ? 'text-purple-400' : 'text-yellow-400'
   const statusBg    = status === 'FINISHED' ? 'bg-purple-900/30 border-purple-500/25' : 'bg-yellow-900/30 border-yellow-500/25'
 
+  const totalEnergy = picks.reduce((s, p) => s + (p.energy_cost ?? 0), 0)
+
   return (
     <div className="bg-[#0d1117] border border-white/8 rounded-2xl overflow-hidden">
       {/* Header */}
-      <div className="flex items-center justify-between px-4 py-3 border-b border-white/5">
+      <button
+        onClick={() => setOpen(o => !o)}
+        className="w-full flex items-center justify-between px-4 py-3 border-b border-white/5 text-left"
+      >
         <div className="flex items-center gap-2.5">
           <div className="w-7 h-7 rounded-lg bg-indigo-500/15 border border-indigo-500/25 flex items-center justify-center text-xs font-black text-indigo-400">
             W{sprint_week}
           </div>
-          <span className={`text-[10px] font-bold px-2 py-0.5 rounded-full border ${statusBg} ${statusColor}`}>
-            {status}
-          </span>
+          {isLive
+            ? <span className="text-[10px] font-bold px-2 py-0.5 rounded-full border bg-green-900/40 border-green-500/40 text-green-300">● LIVE</span>
+            : <span className={`text-[10px] font-bold px-2 py-0.5 rounded-full border ${statusBg} ${statusColor}`}>{status}</span>
+          }
           {isPerfect && <span className="text-yellow-400 text-sm">⭐ Perfect</span>}
         </div>
-        {entry && (
-          <div className="flex items-center gap-3 text-xs">
-            <span className="text-indigo-400 font-black">{entry.league_points} LP</span>
-            <span className="text-green-400">{entry.correct_picks}✓</span>
-            <span className="text-red-400/70">{entry.incorrect_picks}✗</span>
-          </div>
-        )}
-      </div>
+        <div className="flex items-center gap-3">
+          {entry && (
+            <div className="flex items-center gap-3 text-xs">
+              <span className="text-indigo-400 font-black">{entry.league_points} LP</span>
+              <span className="text-green-400">{entry.correct_picks}✓</span>
+              <span className="text-red-400/70">{entry.incorrect_picks}✗</span>
+              {totalEnergy > 0 && <span className="text-yellow-500/70">⚡{totalEnergy}</span>}
+            </div>
+          )}
+          <span className="text-gray-600 text-xs">{open ? '▲' : '▼'}</span>
+        </div>
+      </button>
 
       {/* Picks */}
-      {picks.length === 0 ? (
-        <div className="px-4 py-5 text-center">
-          <p className="text-gray-600 text-sm">Did not participate</p>
-        </div>
-      ) : (
-        <div className="divide-y divide-white/5">
-          {Object.entries(byFixture).map(([fixture, fps], i) => (
-            <div key={i} className="px-4 py-3">
-              <p className="text-gray-400 text-xs font-semibold mb-2 truncate">{fixture}</p>
-              <div className="space-y-1.5">
-                {fps.map((p, j) => (
-                  <div key={j} className={`flex items-center gap-2.5 rounded-xl px-3 py-2 ${
-                    p.option_result === 'WON'  ? 'bg-green-900/20 border border-green-500/20' :
-                    p.option_result === 'LOST' ? 'bg-white/3 border border-white/6' :
-                    'bg-white/3 border border-white/6'
-                  }`}>
-                    <PickResult result={p.option_result} />
-                    <span className={`flex-1 text-xs font-medium ${
-                      p.option_result === 'WON' ? 'text-green-300' :
-                      p.option_result === 'LOST' ? 'text-gray-500' : 'text-gray-300'
-                    }`}>
-                      {p.option_label}
-                    </span>
-                    <span className="text-indigo-400/60 text-[10px]">⚡{p.energy_cost}</span>
+      {open && (
+        picks.length === 0 ? (
+          <div className="px-4 py-5 text-center">
+            <p className="text-gray-600 text-sm">Did not participate</p>
+          </div>
+        ) : (
+          <div className="divide-y divide-white/5">
+            {Object.entries(byFixture)
+              .sort(([, a], [, b]) => {
+                const aLive = LIVE_STATUSES.includes(a.status_short) ? 0 : 1
+                const bLive = LIVE_STATUSES.includes(b.status_short) ? 0 : 1
+                if (aLive !== bLive) return aLive - bLive
+                return (a.match_time ? new Date(a.match_time) : 0) - (b.match_time ? new Date(b.match_time) : 0)
+              })
+              .map(([fixture, fx], i) => {
+              const matchDate = fx.match_time ? new Date(fx.match_time) : null
+              const dateStr = matchDate ? matchDate.toLocaleDateString('en-GB', { day: 'numeric', month: 'short' }) : null
+              const timeStr = matchDate ? matchDate.toLocaleTimeString('en-GB', { hour: '2-digit', minute: '2-digit' }) : null
+              const isVsStyle = fx.home_team && fx.away_team
+
+              return (
+                <div key={i} className="px-3 py-3">
+                  {/* Fixture header with logos */}
+                  <div className="flex items-center gap-2 mb-2.5">
+                    {isVsStyle ? (
+                      <div className="flex-1 min-w-0">
+                        {(() => {
+                          const hasScore    = fx.home_goals != null && fx.away_goals != null
+                          const isLiveMatch = hasScore && LIVE_STATUSES.includes(fx.status_short)
+                          const isDoneMatch = hasScore && FINISHED_STATUSES.includes(fx.status_short)
+                          const isPen       = fx.status_short === 'PEN'
+                          return (
+                            <div className="flex items-center gap-1.5">
+                              <TeamLogo src={fx.home_logo} alt={fx.home_team} size={20} />
+                              <span className="text-white text-xs font-bold">{fx.home_team}</span>
+                              {(isLiveMatch || isDoneMatch) ? (
+                                <div className="flex flex-col items-center mx-0.5">
+                                  <span className={`font-black text-sm tabular-nums leading-none ${isLiveMatch ? 'text-green-400' : 'text-white'}`}>
+                                    {fx.home_goals}–{fx.away_goals}
+                                  </span>
+                                  {isDoneMatch && (
+                                    <span className="text-[8px] text-gray-600 font-semibold uppercase tracking-wide">{isPen ? 'pens' : 'FT'}</span>
+                                  )}
+                                  {isPen && fx.pen_home != null && (
+                                    <span className="text-[7px] text-gray-700 tabular-nums">({fx.pen_home}–{fx.pen_away})</span>
+                                  )}
+                                  {isLiveMatch && fx.status_elapsed && <span className="text-[8px] text-green-500/70 font-semibold">{fx.status_elapsed}'</span>}
+                                </div>
+                              ) : (
+                                <span className="text-gray-600 text-[10px] mx-0.5">vs</span>
+                              )}
+                              <TeamLogo src={fx.away_logo} alt={fx.away_team} size={20} />
+                              <span className="text-white text-xs font-bold">{fx.away_team}</span>
+                            </div>
+                          )
+                        })()}
+                        {(dateStr || fx.competition) && (
+                          <p className="text-gray-600 text-[10px] leading-tight mt-0.5">
+                            {fx.competition && <span>{fx.competition}</span>}
+                            {fx.competition && dateStr && <span className="mx-1 opacity-40">·</span>}
+                            {dateStr && <span>{dateStr} {timeStr}</span>}
+                          </p>
+                        )}
+                      </div>
+                    ) : (
+                      <p className="text-gray-400 text-xs font-semibold truncate">{fixture}</p>
+                    )}
                   </div>
-                ))}
-              </div>
-            </div>
-          ))}
-        </div>
+
+                  {/* Individual picks */}
+                  <div className="space-y-1.5">
+                    {fx.picks.map((p, j) => {
+                      const won  = p.option_result === 'WON'
+                      const lost = p.option_result === 'LOST'
+                      return (
+                        <div key={j} className={`flex items-center gap-2.5 rounded-xl px-3 py-2.5 ${
+                          won  ? 'bg-green-900/20 border border-green-500/20' :
+                          lost ? 'bg-red-900/10 border border-red-500/15' :
+                                 'bg-white/3 border border-white/6'
+                        }`}>
+                          {/* Result icon */}
+                          <div className={`w-5 h-5 rounded-full flex items-center justify-center shrink-0 ${
+                            won  ? 'bg-green-500/20' :
+                            lost ? 'bg-red-500/20' :
+                                   'bg-white/8'
+                          }`}>
+                            {won  && <span className="text-green-400 font-black text-xs leading-none">✓</span>}
+                            {lost && <span className="text-red-400 font-black text-xs leading-none">✗</span>}
+                            {!won && !lost && <span className="text-gray-600 font-bold text-xs leading-none">·</span>}
+                          </div>
+                          {/* Pick label */}
+                          <span className={`flex-1 text-xs font-semibold ${
+                            won  ? 'text-green-300' :
+                            lost ? 'text-gray-500'  : 'text-gray-300'
+                          }`}>
+                            {p.option_label}
+                          </span>
+                          {/* Energy badge */}
+                          {p.energy_cost > 0 && (
+                            <span className={`text-[10px] font-bold px-1.5 py-0.5 rounded-md ${
+                              won  ? 'bg-yellow-500/15 text-yellow-400' :
+                              lost ? 'bg-white/5 text-gray-600' :
+                                     'bg-yellow-500/10 text-yellow-500/60'
+                            }`}>
+                              ⚡{p.energy_cost}
+                            </span>
+                          )}
+                        </div>
+                      )
+                    })}
+                  </div>
+                </div>
+              )
+            })}
+          </div>
+        )
       )}
     </div>
   )
@@ -140,7 +251,6 @@ export default function UserPublicProfilePage() {
   const navigate  = useNavigate()
   const [data, setData]     = useState(null)
   const [loading, setLoading] = useState(true)
-  const [tab, setTab]       = useState('stats') // stats | picks | history
 
   useEffect(() => {
     setLoading(true)
@@ -166,32 +276,43 @@ export default function UserPublicProfilePage() {
   const { user, division, lifetime_stats: stats, sprint_history, badges, current_sprint } = data
   const name = user.display_name || user.id.slice(0, 8)
   const totalPicks = (stats?.lifetime_correct ?? 0) + (Number(stats?.lifetime_incorrect) || 0)
-  const accuracyPct = totalPicks > 0 ? Math.round((stats.lifetime_correct / totalPicks) * 100) : null
+  const accuracyPct = totalPicks > 0 ? Math.ceil((stats.lifetime_correct / totalPicks) * 100) : null
   const tier = getTier(accuracyPct)
 
-  const earnedBadges = (badges ?? []).filter(b => (b.earned_count ?? 0) > 0)
-  const lockedGws    = current_sprint?.gameweeks ?? []
-  const sprintProg   = current_sprint?.progress
-  const hasPicksToShow = lockedGws.some(gw => gw.picks.length > 0)
+  const earnedBadges      = (badges ?? []).filter(b => (b.earned_count ?? 0) > 0)
+  const lockedGws         = current_sprint?.gameweeks ?? []
+  const sprintProg        = current_sprint?.progress
+  const hasPicksToShow    = lockedGws.some(gw => gw.picks.length > 0)
+  const openWeekSubmitted = current_sprint?.open_week_submitted ?? false
+  const openWeekLockTime  = current_sprint?.open_week_lock_time ?? null
 
-  const TABS = [
-    { id: 'stats',   label: 'Stats' },
-    { id: 'picks',   label: `Picks${lockedGws.length > 0 ? ` (${lockedGws.length})` : ''}` },
-    { id: 'history', label: 'History' },
-  ]
+  const [tab, setTab] = useState(0)
+  const touchStartX = useRef(null)
+  const TABS = ['Picks', 'History', 'Stats']
+
+  function handleTouchStart(e) { touchStartX.current = e.touches[0].clientX }
+  function handleTouchEnd(e) {
+    if (touchStartX.current === null) return
+    const diff = touchStartX.current - e.changedTouches[0].clientX
+    if (Math.abs(diff) > 50) {
+      if (diff > 0) setTab(t => Math.min(t + 1, 2))
+      else          setTab(t => Math.max(t - 1, 0))
+    }
+    touchStartX.current = null
+  }
 
   return (
     <div className="min-h-screen bg-[#0a0d12] text-white pb-24">
-      <div className="max-w-md mx-auto px-4 pt-5 space-y-4">
+      <div className="max-w-md mx-auto px-4 pt-5">
 
         {/* Back button */}
         <button onClick={() => navigate(-1)}
-          className="flex items-center gap-1.5 text-gray-500 hover:text-white text-sm transition-colors">
+          className="flex items-center gap-1.5 text-gray-500 hover:text-white text-sm transition-colors mb-4">
           ← Back
         </button>
 
         {/* ── Hero ──────────────────────────────────────────────────────── */}
-        <div className="relative rounded-2xl p-4 overflow-hidden"
+        <div className="relative rounded-2xl p-4 overflow-hidden mb-4"
           style={{
             background: tier ? tier.heroBg : 'linear-gradient(135deg, #0d1117, #0a0d14)',
             boxShadow: tier ? tier.heroShadow : undefined,
@@ -209,7 +330,6 @@ export default function UserPublicProfilePage() {
           )}
 
           <div className="relative flex items-center gap-4">
-            {/* Avatar */}
             <div className="relative flex-shrink-0">
               {user.avatar_url
                 ? <img src={user.avatar_url} alt={name}
@@ -221,8 +341,6 @@ export default function UserPublicProfilePage() {
                   </div>
               }
             </div>
-
-            {/* Name + division */}
             <div className="min-w-0 flex-1">
               <p className="text-white font-bold text-xl truncate">{name}</p>
               <p className="text-gray-500 text-xs mt-0.5">
@@ -235,8 +353,6 @@ export default function UserPublicProfilePage() {
                 </div>
               )}
             </div>
-
-            {/* Accuracy badge */}
             {accuracyPct != null && (
               <div className="flex-shrink-0 flex flex-col items-center justify-center w-16 h-16 rounded-2xl"
                 style={{
@@ -256,7 +372,6 @@ export default function UserPublicProfilePage() {
             )}
           </div>
 
-          {/* Current sprint mini */}
           {current_sprint && sprintProg && (
             <div className="relative mt-3 rounded-xl px-3 py-2 flex items-center justify-between"
               style={tier ? { background: `${tier.accentColor}10`, border: `1px solid ${tier.accentColor}20` } : { background: 'rgba(255,255,255,0.04)' }}>
@@ -272,231 +387,260 @@ export default function UserPublicProfilePage() {
           )}
         </div>
 
-        {/* ── Tabs ──────────────────────────────────────────────────────── */}
-        <div className="flex gap-1 bg-white/3 border border-white/8 rounded-2xl p-1">
-          {TABS.map(t => (
-            <button key={t.id} onClick={() => setTab(t.id)}
-              className={`flex-1 py-2 px-2 rounded-xl text-xs font-medium transition-colors whitespace-nowrap ${
-                tab === t.id ? 'bg-indigo-600 text-white' : 'text-gray-500 hover:text-gray-300'
+        {/* ── Tab bar ───────────────────────────────────────────────────── */}
+        <div className="flex bg-[#0d1117] border border-white/8 rounded-2xl p-1 mb-4 gap-1">
+          {TABS.map((label, i) => (
+            <button key={i} onClick={() => setTab(i)}
+              className={`flex-1 py-2.5 text-xs font-bold rounded-xl transition-all duration-200 ${
+                tab === i
+                  ? 'bg-indigo-600 text-white shadow-lg shadow-indigo-900/40'
+                  : 'text-gray-500 hover:text-gray-300'
               }`}>
-              {t.label}
+              {label}
             </button>
           ))}
         </div>
 
-        {/* ── STATS TAB ─────────────────────────────────────────────────── */}
-        {tab === 'stats' && (
-          <div className="space-y-3">
+        {/* ── Tab content (swipeable) ────────────────────────────────────── */}
+        <div onTouchStart={handleTouchStart} onTouchEnd={handleTouchEnd}>
 
-            {/* Accuracy hero */}
-            {accuracyPct != null && (
-              <div className="relative rounded-2xl overflow-hidden"
-                style={{
-                  background: tier ? tier.badgeBg : 'linear-gradient(135deg, #1c1000, #2d1900 50%, #1c0a00)',
-                  border: `1px solid ${tier ? tier.badgeBorder : 'rgba(245,158,11,0.3)'}`,
-                  boxShadow: tier ? tier.badgeShadow : '0 0 22px -6px rgba(245,158,11,0.35)',
-                }}>
-                <div className="absolute -top-8 -right-8 w-40 h-40 rounded-full blur-3xl pointer-events-none"
-                  style={{ background: tier ? tier.accentColor : '#f59e0b', opacity: 0.18 }} />
-                <div className="relative p-5">
-                  <div className="flex items-center justify-between mb-3">
-                    <div className="flex items-center gap-2">
-                      <span className="text-2xl">{tier ? tier.icon : '📊'}</span>
-                      <span className={`text-[10px] font-black uppercase tracking-[0.18em] ${tier ? tier.badgeText : 'text-amber-500/60'}`}>
-                        {tier ? tier.label : 'Prediction accuracy'}
-                      </span>
-                    </div>
-                    <span className="text-white/25 text-[10px] font-semibold uppercase tracking-widest">lifetime</span>
-                  </div>
-                  <p className={`font-black leading-none mb-1 ${tier ? tier.badgeText : 'text-amber-300'}`} style={{ fontSize: 56 }}>
-                    {accuracyPct}<span style={{ fontSize: 28, opacity: 0.55 }}>%</span>
-                  </p>
-                  <p className="text-white/35 text-[11px] font-medium mb-3">
-                    {stats.lifetime_correct} correct out of {totalPicks} picks
-                  </p>
-                  <div className="h-2 rounded-full bg-white/8 overflow-hidden mb-1.5">
-                    <div className="h-full rounded-full transition-all duration-700"
-                      style={{
-                        width: `${Math.min(accuracyPct, 100)}%`,
-                        background: tier ? `linear-gradient(to right, ${tier.barFrom}, ${tier.barTo})` : 'linear-gradient(to right, #f59e0b, #fbbf24)',
-                      }} />
-                  </div>
-                  <div className="flex justify-between text-[9px] text-white/20 font-semibold">
-                    <span>0%</span><span>🥉 70%</span><span>🥈 80%</span><span>🥇 90%</span>
-                  </div>
-                </div>
-              </div>
-            )}
-
-            {/* Stats grid */}
-            <div className="grid grid-cols-2 gap-3">
-              {[
-                { label: 'League Points', value: stats?.lifetime_lp ?? 0, icon: '⚡', color: 'text-violet-300', grad: 'bg-gradient-to-br from-violet-950 via-purple-900/60 to-violet-950', border: 'border-violet-500/25', glow: 'shadow-[0_0_16px_-4px_rgba(139,92,246,0.28)]' },
-                { label: 'Picks made',    value: totalPicks,               icon: '🎮', color: 'text-cyan-300',   grad: 'bg-gradient-to-br from-cyan-950 via-teal-900/50 to-cyan-950',   border: 'border-cyan-500/25',   glow: 'shadow-[0_0_16px_-4px_rgba(6,182,212,0.22)]' },
-                { label: 'Correct picks', value: stats?.lifetime_correct ?? 0, icon: '✅', color: 'text-emerald-300', grad: 'bg-gradient-to-br from-emerald-950 via-green-900/60 to-emerald-950', border: 'border-emerald-500/25', glow: 'shadow-[0_0_16px_-4px_rgba(52,211,153,0.28)]' },
-                { label: 'Perfect weeks', value: stats?.total_perfect_weeks ?? 0, icon: '⭐', color: 'text-yellow-300', grad: 'bg-gradient-to-br from-yellow-950 via-amber-900/60 to-yellow-950', border: 'border-yellow-500/25', glow: 'shadow-[0_0_16px_-4px_rgba(250,204,21,0.22)]' },
-                { label: 'Sprints played', value: stats?.sprints_played ?? 0, icon: '🏁', color: 'text-sky-300', grad: 'bg-gradient-to-br from-sky-950 via-blue-900/60 to-sky-950', border: 'border-sky-500/25', glow: 'shadow-[0_0_16px_-4px_rgba(56,189,248,0.2)]' },
-                { label: 'Matchweeks',    value: stats?.matchweeks_played ?? 0, icon: '📅', color: 'text-pink-300', grad: 'bg-gradient-to-br from-pink-950 via-rose-900/40 to-pink-950', border: 'border-pink-500/20', glow: 'shadow-[0_0_16px_-4px_rgba(244,114,182,0.18)]' },
-              ].map(({ label, value, icon, color, grad, border, glow }) => (
-                <div key={label} className={`relative rounded-2xl overflow-hidden ${grad} ${glow} border ${border}`}>
-                  <div className="absolute -top-4 -right-4 w-20 h-20 rounded-full blur-2xl opacity-40 pointer-events-none" style={{ background: 'white' }} />
-                  <div className="relative p-4">
-                    <div className="flex items-start justify-between mb-2">
-                      <span className="text-xl">{icon}</span>
-                    </div>
-                    <p className={`font-black text-3xl leading-none mb-1 ${color}`}>{value ?? '—'}</p>
-                    <p className="text-white/40 text-[11px] font-medium">{label}</p>
-                  </div>
-                </div>
-              ))}
-            </div>
-
-            {/* Earned badges */}
-            {earnedBadges.length > 0 && (
-              <div className="bg-[#0d1117] border border-white/8 rounded-2xl overflow-hidden">
-                <div className="px-4 py-3 border-b border-white/5">
-                  <p className="text-gray-500 text-[11px] font-semibold tracking-widest uppercase">Achievements ({earnedBadges.length})</p>
-                </div>
-                <div className="p-4 space-y-2">
-                  {earnedBadges.map((b, i) => {
-                    const ac = BADGE_ACCENTS[b.code] ?? { glow: '#6366f1', border: 'rgba(99,102,241,0.35)', text: 'text-indigo-400' }
-                    return (
-                      <div key={i} className="relative rounded-2xl overflow-hidden"
-                        style={{
-                          background: 'rgba(255,255,255,0.055)',
-                          border: `1px solid ${ac.border}`,
-                          boxShadow: `0 0 26px -4px ${ac.glow}55`,
-                        }}>
-                        <div className="absolute -top-6 -right-6 w-32 h-32 rounded-full blur-3xl pointer-events-none" style={{ background: ac.glow, opacity: 0.2 }} />
-                        <div className="relative flex items-center gap-4 p-4">
-                          <span className="text-5xl flex-shrink-0 leading-none">{b.icon}</span>
-                          <div className="min-w-0 flex-1">
-                            <p className="font-black text-lg leading-tight text-white">{b.name}</p>
-                            <p className="text-white/50 text-xs mt-0.5">{b.description}</p>
-                            {b.last_earned_at && (
-                              <p className={`text-[10px] mt-1 ${ac.text} opacity-70`}>
-                                {new Date(b.last_earned_at).toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' })}
-                              </p>
-                            )}
+          {/* PICKS */}
+          {tab === 0 && (
+            <div className="space-y-3">
+              {current_sprint ? (
+                <>
+                  <div className="bg-gradient-to-br from-indigo-950 via-violet-900/50 to-indigo-950 border border-indigo-500/25 rounded-2xl p-4">
+                    <p className="text-indigo-400 text-[10px] font-black uppercase tracking-widest mb-1">{current_sprint.sprint.name}</p>
+                    {sprintProg ? (
+                      <div className="flex items-center gap-4">
+                        <div className="text-center">
+                          <p className="text-indigo-400 font-black text-2xl leading-none">{sprintProg.total_league_points}</p>
+                          <p className="text-white/25 text-[10px] uppercase tracking-wider mt-0.5">LP</p>
+                        </div>
+                        <div className="text-center">
+                          <p className="text-emerald-400 font-black text-2xl leading-none">{sprintProg.total_correct_picks}</p>
+                          <p className="text-white/25 text-[10px] uppercase tracking-wider mt-0.5">Correct</p>
+                        </div>
+                        <div className="text-center">
+                          <p className="text-yellow-400 font-black text-2xl leading-none">{sprintProg.perfect_weeks ?? 0}</p>
+                          <p className="text-white/25 text-[10px] uppercase tracking-wider mt-0.5">Perfect</p>
+                        </div>
+                        {current_sprint.division_rank != null && (
+                          <div className="text-center ml-auto">
+                            <p className="text-white font-black text-2xl leading-none">#{current_sprint.division_rank}</p>
+                            <p className="text-white/25 text-[10px] uppercase tracking-wider mt-0.5">of {current_sprint.division_total}</p>
                           </div>
-                          {b.earned_count > 1 && <span className={`text-xs font-black ${ac.text}`}>×{b.earned_count}</span>}
+                        )}
+                      </div>
+                    ) : (
+                      <p className="text-white/40 text-sm">No sprint data</p>
+                    )}
+                  </div>
+
+                  {openWeekSubmitted && (
+                    <div className="flex items-start gap-3 bg-indigo-950/40 border border-indigo-500/25 rounded-2xl px-4 py-3.5">
+                      <span className="text-xl mt-0.5">✅</span>
+                      <div className="min-w-0">
+                        <p className="text-white text-sm font-bold leading-snug">
+                          {name.split(' ')[0]} has completed their 6-pick selection.
+                        </p>
+                        <p className="text-indigo-300/60 text-xs mt-1">
+                          Picks not visible until matchweek lock time has been reached
+                          {openWeekLockTime ? ` · ${new Date(openWeekLockTime).toLocaleString('en-GB', { weekday: 'short', day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit' })}` : ''}.
+                        </p>
+                      </div>
+                    </div>
+                  )}
+
+                  {lockedGws.length === 0 ? (
+                    !openWeekSubmitted && (
+                      <div className="bg-[#0d1117] border border-white/8 rounded-2xl p-8 text-center">
+                        <p className="text-4xl mb-3">🔒</p>
+                        <p className="text-white font-semibold text-sm">Picks not visible yet</p>
+                        <p className="text-gray-500 text-xs mt-2">
+                          {name.split(' ')[0]}'s picks will show here once a matchweek is locked.
+                          <br />This protects fair play — you can't see picks before the deadline.
+                        </p>
+                      </div>
+                    )
+                  ) : !hasPicksToShow ? (
+                    <div className="bg-[#0d1117] border border-white/8 rounded-2xl p-8 text-center">
+                      <p className="text-4xl mb-3">📭</p>
+                      <p className="text-gray-500 text-sm">{name.split(' ')[0]} hasn't submitted picks yet</p>
+                    </div>
+                  ) : (
+                    (() => {
+                      const sorted = [...lockedGws].sort((a, b) => (b.sprint_week ?? 0) - (a.sprint_week ?? 0))
+                      const liveWeek = sorted.find(gw => gw.status === 'LOCKED')?.sprint_week ?? null
+                      return sorted.map((gw, i) => (
+                        <MatchweekPicksCard
+                          key={gw.sprint_week ?? i}
+                          gw={gw}
+                          defaultOpen={i === 0}
+                          isLive={gw.status === 'LOCKED' && gw.sprint_week === liveWeek}
+                        />
+                      ))
+                    })()
+                  )}
+
+                  {lockedGws.length > 0 && (
+                    <div className="flex items-center gap-2 px-3 py-2.5 bg-indigo-950/30 border border-indigo-500/15 rounded-xl">
+                      <span className="text-indigo-400 text-sm">🔒</span>
+                      <p className="text-indigo-400/60 text-[11px]">Picks are revealed only after the matchweek locks — picks from open weeks are always hidden.</p>
+                    </div>
+                  )}
+                </>
+              ) : (
+                <div className="bg-[#0d1117] border border-white/8 rounded-2xl p-8 text-center">
+                  <p className="text-4xl mb-3">🏁</p>
+                  <p className="text-gray-500 text-sm">No active sprint</p>
+                </div>
+              )}
+            </div>
+          )}
+
+          {/* HISTORY */}
+          {tab === 1 && (
+            <div className="space-y-3">
+              {sprint_history?.length > 0 ? (
+                <div className="bg-[#0d1117] border border-white/8 rounded-2xl overflow-hidden">
+                  {sprint_history.map((s, i) => {
+                    const outcomeIcon  = { promoted: '⬆', retained: '=', relegated: '⬇', pending: '⏳' }[s.sprint_outcome] ?? ''
+                    const outcomeColor = { promoted: 'text-green-400', retained: 'text-gray-400', relegated: 'text-red-400', pending: 'text-indigo-400' }[s.sprint_outcome] ?? 'text-gray-500'
+                    return (
+                      <div key={i} className="flex items-center justify-between px-4 py-3.5 border-b border-white/5 last:border-0">
+                        <div>
+                          <p className="text-white text-sm font-semibold">{s.sprint_name}</p>
+                          <p className="text-gray-600 text-[11px] mt-0.5">{s.division_icon} {s.division_name || '—'}</p>
+                        </div>
+                        <div className="flex items-center gap-3">
+                          <span className="text-indigo-400 font-black text-sm">{s.total_league_points} LP</span>
+                          {s.sprint_outcome && <span className={`font-bold text-sm ${outcomeColor}`}>{outcomeIcon}</span>}
                         </div>
                       </div>
                     )
                   })}
                 </div>
-              </div>
-            )}
-          </div>
-        )}
-
-        {/* ── PICKS TAB ─────────────────────────────────────────────────── */}
-        {tab === 'picks' && (
-          <div className="space-y-3">
-            {current_sprint ? (
-              <>
-                {/* Sprint header */}
-                <div className="bg-gradient-to-br from-indigo-950 via-violet-900/50 to-indigo-950 border border-indigo-500/25 rounded-2xl p-4">
-                  <p className="text-indigo-400 text-[10px] font-black uppercase tracking-widest mb-1">{current_sprint.sprint.name}</p>
-                  {sprintProg ? (
-                    <div className="flex items-center gap-4">
-                      <div className="text-center">
-                        <p className="text-indigo-400 font-black text-2xl leading-none">{sprintProg.total_league_points}</p>
-                        <p className="text-white/25 text-[10px] uppercase tracking-wider mt-0.5">LP</p>
-                      </div>
-                      <div className="text-center">
-                        <p className="text-emerald-400 font-black text-2xl leading-none">{sprintProg.total_correct_picks}</p>
-                        <p className="text-white/25 text-[10px] uppercase tracking-wider mt-0.5">Correct</p>
-                      </div>
-                      <div className="text-center">
-                        <p className="text-yellow-400 font-black text-2xl leading-none">{sprintProg.perfect_weeks ?? 0}</p>
-                        <p className="text-white/25 text-[10px] uppercase tracking-wider mt-0.5">Perfect</p>
-                      </div>
-                      {current_sprint.division_rank != null && (
-                        <div className="text-center ml-auto">
-                          <p className="text-white font-black text-2xl leading-none">#{current_sprint.division_rank}</p>
-                          <p className="text-white/25 text-[10px] uppercase tracking-wider mt-0.5">of {current_sprint.division_total}</p>
-                        </div>
-                      )}
-                    </div>
-                  ) : (
-                    <p className="text-white/40 text-sm">No sprint data</p>
-                  )}
+              ) : (
+                <div className="bg-[#0d1117] border border-white/8 rounded-2xl p-8 text-center">
+                  <p className="text-4xl mb-3">📭</p>
+                  <p className="text-gray-500 text-sm">{name.split(' ')[0]} hasn't competed in any sprint yet</p>
                 </div>
+              )}
+            </div>
+          )}
 
-                {lockedGws.length === 0 ? (
-                  <div className="bg-[#0d1117] border border-white/8 rounded-2xl p-8 text-center">
-                    <p className="text-4xl mb-3">🔒</p>
-                    <p className="text-white font-semibold text-sm">Picks not visible yet</p>
-                    <p className="text-gray-500 text-xs mt-2">
-                      {name.split(' ')[0]}'s picks will show here once a matchweek is locked.
-                      <br />This protects fair play — you can't see picks before the deadline.
+          {/* STATS */}
+          {tab === 2 && (
+            <div className="space-y-3">
+              {accuracyPct != null && (
+                <div className="relative rounded-2xl overflow-hidden"
+                  style={{
+                    background: tier ? tier.badgeBg : 'linear-gradient(135deg, #1c1000, #2d1900 50%, #1c0a00)',
+                    border: `1px solid ${tier ? tier.badgeBorder : 'rgba(245,158,11,0.3)'}`,
+                    boxShadow: tier ? tier.badgeShadow : '0 0 22px -6px rgba(245,158,11,0.35)',
+                  }}>
+                  <div className="absolute -top-8 -right-8 w-40 h-40 rounded-full blur-3xl pointer-events-none"
+                    style={{ background: tier ? tier.accentColor : '#f59e0b', opacity: 0.18 }} />
+                  <div className="relative p-5">
+                    <div className="flex items-center justify-between mb-3">
+                      <div className="flex items-center gap-2">
+                        <span className="text-2xl">{tier ? tier.icon : '📊'}</span>
+                        <span className={`text-[10px] font-black uppercase tracking-[0.18em] ${tier ? tier.badgeText : 'text-amber-500/60'}`}>
+                          {tier ? tier.label : 'Prediction accuracy'}
+                        </span>
+                      </div>
+                      <span className="text-[10px] font-black uppercase tracking-widest px-2 py-0.5 rounded-full"
+                        style={{ background: 'rgba(245,158,11,0.12)', color: 'rgba(251,191,36,0.65)', border: '1px solid rgba(245,158,11,0.2)' }}>
+                        lifetime
+                      </span>
+                    </div>
+                    <p className={`font-black leading-none mb-1 ${tier ? tier.badgeText : 'text-amber-300'}`} style={{ fontSize: 56 }}>
+                      {accuracyPct}<span style={{ fontSize: 28, opacity: 0.55 }}>%</span>
                     </p>
-                  </div>
-                ) : !hasPicksToShow ? (
-                  <div className="bg-[#0d1117] border border-white/8 rounded-2xl p-8 text-center">
-                    <p className="text-4xl mb-3">📭</p>
-                    <p className="text-gray-500 text-sm">{name.split(' ')[0]} hasn't submitted picks yet</p>
-                  </div>
-                ) : (
-                  lockedGws.map((gw, i) => <MatchweekPicksCard key={i} gw={gw} />)
-                )}
-
-                {/* Lock notice */}
-                {lockedGws.length > 0 && (
-                  <div className="flex items-center gap-2 px-3 py-2.5 bg-indigo-950/30 border border-indigo-500/15 rounded-xl">
-                    <span className="text-indigo-400 text-sm">🔒</span>
-                    <p className="text-indigo-400/60 text-[11px]">Picks are revealed only after the matchweek locks — picks from open weeks are always hidden.</p>
-                  </div>
-                )}
-              </>
-            ) : (
-              <div className="bg-[#0d1117] border border-white/8 rounded-2xl p-8 text-center">
-                <p className="text-4xl mb-3">🏁</p>
-                <p className="text-gray-500 text-sm">No active sprint</p>
-              </div>
-            )}
-          </div>
-        )}
-
-        {/* ── HISTORY TAB ───────────────────────────────────────────────── */}
-        {tab === 'history' && (
-          <div className="space-y-3">
-            {sprint_history?.length > 0 ? (
-              <div className="bg-[#0d1117] border border-white/8 rounded-2xl overflow-hidden">
-                <div className="px-4 py-3 border-b border-white/5">
-                  <p className="text-gray-500 text-[11px] font-semibold tracking-widest uppercase">Sprint history</p>
-                </div>
-                {sprint_history.map((s, i) => {
-                  const outcomeIcon  = { promoted: '⬆', retained: '=', relegated: '⬇', pending: '⏳' }[s.sprint_outcome] ?? ''
-                  const outcomeColor = { promoted: 'text-green-400', retained: 'text-gray-400', relegated: 'text-red-400', pending: 'text-indigo-400' }[s.sprint_outcome] ?? 'text-gray-500'
-                  return (
-                    <div key={i} className="flex items-center justify-between px-4 py-3.5 border-b border-white/5 last:border-0">
-                      <div>
-                        <p className="text-white text-sm font-semibold">{s.sprint_name}</p>
-                        <p className="text-gray-600 text-[11px] mt-0.5">
-                          {s.division_icon} {s.division_name || '—'}
-                        </p>
-                      </div>
-                      <div className="flex items-center gap-3">
-                        <span className="text-indigo-400 font-black text-sm">{s.total_league_points} LP</span>
-                        {s.sprint_outcome && (
-                          <span className={`font-bold text-sm ${outcomeColor}`}>{outcomeIcon}</span>
-                        )}
-                      </div>
+                    <p className="text-white/35 text-[11px] font-medium mb-3">
+                      {stats.lifetime_correct} correct out of {totalPicks} picks
+                    </p>
+                    <div className="h-2 rounded-full bg-white/8 overflow-hidden mb-1.5">
+                      <div className="h-full rounded-full transition-all duration-700"
+                        style={{
+                          width: `${Math.min(accuracyPct, 100)}%`,
+                          background: tier ? `linear-gradient(to right, ${tier.barFrom}, ${tier.barTo})` : 'linear-gradient(to right, #f59e0b, #fbbf24)',
+                        }} />
                     </div>
-                  )
-                })}
-              </div>
-            ) : (
-              <div className="bg-[#0d1117] border border-white/8 rounded-2xl p-8 text-center">
-                <p className="text-4xl mb-3">📭</p>
-                <p className="text-gray-500 text-sm">{name.split(' ')[0]} hasn't competed in any sprint yet</p>
-              </div>
-            )}
-          </div>
-        )}
+                    <div className="flex justify-between text-[9px] text-white/20 font-semibold">
+                      <span>0%</span><span>🥉 70%</span><span>🥈 80%</span><span>🥇 90%</span>
+                    </div>
+                  </div>
+                </div>
+              )}
 
+              <div className="flex items-center justify-between px-0.5">
+                <p className="text-gray-600 text-[10px] font-semibold tracking-widest uppercase">Stats</p>
+                <span className="text-[9px] font-black uppercase tracking-widest px-2 py-0.5 rounded-full"
+                  style={{ background: 'rgba(139,92,246,0.12)', color: 'rgba(167,139,250,0.6)', border: '1px solid rgba(139,92,246,0.2)' }}>
+                  lifetime
+                </span>
+              </div>
+              <div className="grid grid-cols-2 gap-3">
+                {[
+                  { label: 'League Points',  value: stats?.lifetime_lp ?? 0,            icon: '⚡', color: 'text-violet-300',  grad: 'bg-gradient-to-br from-violet-950 via-purple-900/60 to-violet-950',  border: 'border-violet-500/25',  glow: 'shadow-[0_0_16px_-4px_rgba(139,92,246,0.28)]' },
+                  { label: 'Picks made',     value: totalPicks,                          icon: '🎮', color: 'text-cyan-300',    grad: 'bg-gradient-to-br from-cyan-950 via-teal-900/50 to-cyan-950',        border: 'border-cyan-500/25',    glow: 'shadow-[0_0_16px_-4px_rgba(6,182,212,0.22)]' },
+                  { label: 'Correct picks',  value: stats?.lifetime_correct ?? 0,        icon: '✅', color: 'text-emerald-300', grad: 'bg-gradient-to-br from-emerald-950 via-green-900/60 to-emerald-950', border: 'border-emerald-500/25', glow: 'shadow-[0_0_16px_-4px_rgba(52,211,153,0.28)]' },
+                  { label: 'Perfect weeks',  value: stats?.total_perfect_weeks ?? 0,     icon: '⭐', color: 'text-yellow-300',  grad: 'bg-gradient-to-br from-yellow-950 via-amber-900/60 to-yellow-950',  border: 'border-yellow-500/25',  glow: 'shadow-[0_0_16px_-4px_rgba(250,204,21,0.22)]' },
+                  { label: 'Sprints played', value: stats?.sprints_played ?? 0,          icon: '🏁', color: 'text-sky-300',    grad: 'bg-gradient-to-br from-sky-950 via-blue-900/60 to-sky-950',          border: 'border-sky-500/25',     glow: 'shadow-[0_0_16px_-4px_rgba(56,189,248,0.2)]' },
+                  { label: 'Matchweeks',     value: stats?.matchweeks_played ?? 0,       icon: '📅', color: 'text-pink-300',   grad: 'bg-gradient-to-br from-pink-950 via-rose-900/40 to-pink-950',        border: 'border-pink-500/20',    glow: 'shadow-[0_0_16px_-4px_rgba(244,114,182,0.18)]' },
+                ].map(({ label, value, icon, color, grad, border, glow }) => (
+                  <div key={label} className={`relative rounded-2xl overflow-hidden ${grad} ${glow} border ${border}`}>
+                    <div className="absolute -top-4 -right-4 w-20 h-20 rounded-full blur-2xl opacity-40 pointer-events-none" style={{ background: 'white' }} />
+                    <div className="relative p-4">
+                      <span className="text-xl mb-2 block">{icon}</span>
+                      <p className={`font-black text-3xl leading-none mb-1 ${color}`}>{value ?? '—'}</p>
+                      <p className="text-white/40 text-[11px] font-medium">{label}</p>
+                    </div>
+                  </div>
+                ))}
+              </div>
+
+              {earnedBadges.length > 0 && (
+                <div className="bg-[#0d1117] border border-white/8 rounded-2xl overflow-hidden">
+                  <div className="px-4 py-3 border-b border-white/5">
+                    <p className="text-gray-500 text-[11px] font-semibold tracking-widest uppercase">Achievements ({earnedBadges.length})</p>
+                  </div>
+                  <div className="p-4 space-y-2">
+                    {earnedBadges.map((b, i) => {
+                      const ac = BADGE_ACCENTS[b.code] ?? { glow: '#6366f1', border: 'rgba(99,102,241,0.35)', text: 'text-indigo-400' }
+                      return (
+                        <div key={i} className="relative rounded-2xl overflow-hidden"
+                          style={{
+                            background: 'rgba(255,255,255,0.055)',
+                            border: `1px solid ${ac.border}`,
+                            boxShadow: `0 0 26px -4px ${ac.glow}55`,
+                          }}>
+                          <div className="absolute -top-6 -right-6 w-32 h-32 rounded-full blur-3xl pointer-events-none" style={{ background: ac.glow, opacity: 0.2 }} />
+                          <div className="relative flex items-center gap-4 p-4">
+                            <span className="text-5xl flex-shrink-0 leading-none">{b.icon}</span>
+                            <div className="min-w-0 flex-1">
+                              <p className="font-black text-lg leading-tight text-white">{b.name}</p>
+                              <p className="text-white/50 text-xs mt-0.5">{b.description}</p>
+                              {b.last_earned_at && (
+                                <p className={`text-[10px] mt-1 ${ac.text} opacity-70`}>
+                                  {new Date(b.last_earned_at).toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' })}
+                                </p>
+                              )}
+                            </div>
+                            {b.earned_count > 1 && <span className={`text-xs font-black ${ac.text}`}>×{b.earned_count}</span>}
+                          </div>
+                        </div>
+                      )
+                    })}
+                  </div>
+                </div>
+              )}
+            </div>
+          )}
+
+        </div>
       </div>
       <BottomNav />
     </div>
