@@ -437,38 +437,43 @@ export default function UserPublicProfilePage() {
                     )}
                   </div>
 
-                  {openWeekSubmitted && (
-                    <div className="flex items-start gap-3 bg-indigo-950/40 border border-indigo-500/25 rounded-2xl px-4 py-3.5">
-                      <span className="text-xl mt-0.5">✅</span>
+                  {/* Current week status */}
+                  {openWeekSubmitted ? (
+                    /* Submitted picks — hidden until deadline */
+                    <div className="flex items-center gap-3 bg-indigo-950/40 border border-indigo-500/25 rounded-2xl px-4 py-3.5">
+                      <div className="w-9 h-9 rounded-xl bg-indigo-500/20 border border-indigo-500/30 flex items-center justify-center text-lg flex-shrink-0">⏳</div>
                       <div className="min-w-0">
                         <p className="text-white text-sm font-bold leading-snug">
-                          {name.split(' ')[0]} has completed their 6-pick selection.
+                          {name.split(' ')[0]} has submitted their picks
                         </p>
-                        <p className="text-indigo-300/60 text-xs mt-1">
-                          Picks not visible until matchweek lock time has been reached
-                          {openWeekLockTime ? ` · ${new Date(openWeekLockTime).toLocaleString('en-GB', { weekday: 'short', day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit' })}` : ''}.
+                        <p className="text-indigo-300/50 text-xs mt-0.5">
+                          Hidden until the deadline
+                          {openWeekLockTime ? ` · ${new Date(openWeekLockTime).toLocaleString('en-GB', { weekday: 'short', day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit' })}` : ''}
                         </p>
                       </div>
                     </div>
-                  )}
+                  ) : openWeekLockTime ? (
+                    /* Open week exists but no picks submitted yet */
+                    <div className="flex items-center gap-3 bg-white/3 border border-white/8 rounded-2xl px-4 py-3.5">
+                      <div className="w-9 h-9 rounded-xl bg-white/6 border border-white/10 flex items-center justify-center text-lg flex-shrink-0">📋</div>
+                      <div className="min-w-0">
+                        <p className="text-gray-300 text-sm font-bold leading-snug">
+                          {name.split(' ')[0]} hasn't submitted their picks yet
+                        </p>
+                        <p className="text-gray-600 text-xs mt-0.5">
+                          Deadline · {new Date(openWeekLockTime).toLocaleString('en-GB', { weekday: 'short', day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit' })}
+                        </p>
+                      </div>
+                    </div>
+                  ) : null}
 
-                  {lockedGws.length === 0 ? (
-                    !openWeekSubmitted && (
-                      <div className="bg-[#0d1117] border border-white/8 rounded-2xl p-8 text-center">
-                        <p className="text-4xl mb-3">🔒</p>
-                        <p className="text-white font-semibold text-sm">Picks not visible yet</p>
-                        <p className="text-gray-500 text-xs mt-2">
-                          {name.split(' ')[0]}'s picks will show here once a matchweek is locked.
-                          <br />This protects fair play — you can't see picks before the deadline.
-                        </p>
-                      </div>
-                    )
-                  ) : !hasPicksToShow ? (
-                    <div className="bg-[#0d1117] border border-white/8 rounded-2xl p-8 text-center">
-                      <p className="text-4xl mb-3">📭</p>
-                      <p className="text-gray-500 text-sm">{name.split(' ')[0]} hasn't submitted picks yet</p>
+                  {/* Past locked/finished matchweek picks */}
+                  {lockedGws.length > 0 && !hasPicksToShow ? (
+                    <div className="bg-[#0d1117] border border-white/8 rounded-2xl p-6 text-center">
+                      <p className="text-3xl mb-2">📭</p>
+                      <p className="text-gray-500 text-sm">{name.split(' ')[0]} didn't participate in past matchweeks</p>
                     </div>
-                  ) : (
+                  ) : hasPicksToShow ? (
                     (() => {
                       const sorted = [...lockedGws].sort((a, b) => (b.sprint_week ?? 0) - (a.sprint_week ?? 0))
                       const liveWeek = sorted.find(gw => gw.status === 'LOCKED')?.sprint_week ?? null
@@ -481,7 +486,7 @@ export default function UserPublicProfilePage() {
                         />
                       ))
                     })()
-                  )}
+                  ) : null}
 
                   {lockedGws.length > 0 && (
                     <div className="flex items-center gap-2 px-3 py-2.5 bg-indigo-950/30 border border-indigo-500/15 rounded-xl">
