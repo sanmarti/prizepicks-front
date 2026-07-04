@@ -1,8 +1,7 @@
 import { useEffect, useState, useRef } from 'react'
 import { useParams, useNavigate } from 'react-router-dom'
-import { getPublicProfile } from '../api/glory'
+import { getPublicProfile, getPublicSprintPicks } from '../api/glory'
 import BottomNav from '../components/layout/BottomNav'
-import SprintPicksModal from '../components/SprintPicksModal'
 
 // ── Tier helpers ──────────────────────────────────────────────────────────────
 const TIERS = [
@@ -246,6 +245,150 @@ function MatchweekPicksCard({ gw, defaultOpen = false, isLive = false }) {
   )
 }
 
+const EVENT_TYPE_LABEL = {
+  MATCH_RESULT: 'Result', BTTS: 'BTTS', GOALS: 'Goals',
+  CLEAN_SHEET: 'Clean Sheet', WHO_QUALIFIES: 'Qualifies',
+}
+
+function SprintHistoryRow({ s, userId }) {
+  const [open, setOpen]         = useState(false)
+  const [weeks, setWeeks]       = useState(null)
+  const [lockedUntil, setLockedUntil] = useState(null)
+  const [loading, setLoading]   = useState(false)
+  const fetched = useRef(false)
+
+  const outcomeIcon  = { promoted: '⬆', retained: '=', relegated: '⬇', pending: '⏳' }[s.sprint_outcome] ?? ''
+  const outcomeColor = { promoted: 'text-green-400', retained: 'text-gray-400', relegated: 'text-red-400', pending: 'text-indigo-400' }[s.sprint_outcome] ?? 'text-gray-500'
+
+  function handleToggle() {
+    if (!open && !fetched.current && s.sprint_id) {
+      fetched.current = true
+      setLoading(true)
+      getPublicSprintPicks(userId, s.sprint_id)
+        .then(res => {
+          setWeeks(res.data?.weeks ?? [])
+          setLockedUntil(res.data?.locked_until ?? null)
+        })
+        .catch(() => setWeeks([]))
+        .finally(() => setLoading(false))
+    }
+    setOpen(o => !o)
+  }
+
+  const totalPicks = weeks?.reduce((acc, w) => acc + w.picks.length, 0) ?? 0
+  const totalWon   = weeks?.reduce((acc, w) => acc + (w.week_correct ?? 0), 0) ?? 0
+
+  return (
+    <div className="border-b border-white/5 last:border-0">
+      {/* Summary row */}
+      <div className="flex items-center justify-between px-4 py-3.5">
+        <div>
+          <p className="text-white text-sm font-semibold">{s.sprint_name}</p>
+          <p className="text-gray-600 text-[11px] mt-0.5">{s.division_icon} {s.division_name || '—'}</p>
+        </div>
+        <div className="flex items-center gap-3">
+          <span className="text-indigo-400 font-black text-sm">{s.total_league_points} LP</span>
+          {s.sprint_outcome && <span className={`font-bold text-sm ${outcomeColor}`}>{outcomeIcon}</span>}
+        </div>
+      </div>
+
+      {/* CTA */}
+      <div className="px-4 pb-3">
+        <button
+          onClick={handleToggle}
+          className="flex items-center gap-1.5 text-indigo-400 hover:text-indigo-300 text-[11px] font-semibold transition-colors"
+        >
+          <span>{open ? '▲' : '▼'}</span>
+          <span>{open ? 'Hide picks' : 'Review picks'}</span>
+        </button>
+      </div>
+
+      {/* Expandable picks */}
+      {open && (
+        <div className="px-4 pb-4 space-y-3">
+          {loading && (
+            <div className="py-4 flex justify-center">
+              <div className="w-4 h-4 border-2 border-white/10 border-t-white/50 rounded-full animate-spin" />
+            </div>
+          )}
+          {!loading && weeks?.length === 0 && (
+            lockedUntil ? (
+              <div className="flex items-center gap-2.5 px-3 py-3 rounded-xl bg-indigo-950/40 border border-indigo-500/20">
+                <span className="text-base">🔒</span>
+                <div>
+                  <p className="text-indigo-300 text-xs font-semibold">Picks locked</p>
+                  <p className="text-indigo-400/50 text-[10px] mt-0.5">
+                    Revealed {new Date(lockedUntil).toLocaleString('en-GB', { weekday: 'short', day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit' })}
+                  </p>
+                </div>
+              </div>
+            ) : (
+              <p className="text-gray-600 text-xs text-center py-3">No picks recorded.</p>
+            )
+          )}
+          {!loading && weeks && weeks.length > 0 && (
+            <>
+              <p className="text-gray-600 text-[10px]">
+                {totalWon}/{totalPicks} correct · {Math.round((totalWon / totalPicks) * 100)}% accuracy
+              </p>
+              {weeks.map(week => (
+                <div key={week.sprint_week}>
+                  {/* Week header */}
+                  <div className="flex items-center justify-between mb-1.5">
+                    <p className="text-gray-600 text-[10px] uppercase tracking-wider font-semibold">Week {week.sprint_week}</p>
+                    {(week.week_correct > 0 || week.week_incorrect > 0) && (
+                      <div className="flex items-center gap-2 text-[10px]">
+                        <span className="text-green-500 font-semibold">{week.week_correct}✓</span>
+                        <span className="text-red-500 font-semibold">{week.week_incorrect}✗</span>
+                      </div>
+                    )}
+                  </div>
+                  <div className="space-y-1.5">
+                    {week.picks.map((pick, i) => (
+                      <div key={i} className={`flex items-center gap-2.5 px-3 py-2 rounded-xl border ${
+                        pick.result === 'WON'  ? 'bg-green-900/15 border-green-700/25' :
+                        pick.result === 'LOST' ? 'bg-red-900/15 border-red-700/20' :
+                                                 'bg-white/3 border-white/6'
+                      }`}>
+                        {(pick.home_logo || pick.away_logo) ? (
+                          <div className="flex items-center gap-0.5 flex-shrink-0">
+                            {pick.home_logo && <img src={pick.home_logo} alt="" className="w-4 h-4 object-contain" />}
+                            {pick.away_logo && <img src={pick.away_logo} alt="" className="w-4 h-4 object-contain" />}
+                          </div>
+                        ) : (
+                          <div className={`w-2 h-2 rounded-full flex-shrink-0 ${
+                            pick.result === 'WON' ? 'bg-green-400' : pick.result === 'LOST' ? 'bg-red-400' : 'bg-gray-600'
+                          }`} />
+                        )}
+                        <div className="flex-1 min-w-0">
+                          <p className="text-white text-[12px] font-semibold leading-tight truncate">{pick.fixture_name}</p>
+                          <p className="text-gray-500 text-[10px] mt-0.5 truncate">
+                            {EVENT_TYPE_LABEL[pick.event_type] || pick.event_type} · {pick.picked_label}
+                          </p>
+                        </div>
+                        <div className="flex-shrink-0 flex flex-col items-end gap-0.5">
+                          {pick.energy_cost > 0 && (
+                            <span className="text-[9px] text-yellow-500/70 font-semibold">⚡{pick.energy_cost}</span>
+                          )}
+                          <span className={`text-[11px] font-black ${
+                            pick.result === 'WON' ? 'text-green-400' : pick.result === 'LOST' ? 'text-red-400' : 'text-gray-600'
+                          }`}>
+                            {pick.result === 'WON' ? '✓' : pick.result === 'LOST' ? '✗' : '–'}
+                          </span>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              ))}
+            </>
+          )}
+        </div>
+      )}
+    </div>
+  )
+}
+
 // ── Main ──────────────────────────────────────────────────────────────────────
 export default function UserPublicProfilePage() {
   const { id }    = useParams()
@@ -253,7 +396,6 @@ export default function UserPublicProfilePage() {
   const [data, setData]       = useState(null)
   const [loading, setLoading] = useState(true)
   const [tab, setTab]         = useState(0)
-  const [picksModal, setPicksModal] = useState(null) // { sprintId, sprintName }
   const touchStartX           = useRef(null)
 
   useEffect(() => {
@@ -511,27 +653,9 @@ export default function UserPublicProfilePage() {
             <div className="space-y-3">
               {sprint_history?.length > 0 ? (
                 <div className="bg-[#0d1117] border border-white/8 rounded-2xl overflow-hidden">
-                  {sprint_history.map((s, i) => {
-                    const outcomeIcon  = { promoted: '⬆', retained: '=', relegated: '⬇', pending: '⏳' }[s.sprint_outcome] ?? ''
-                    const outcomeColor = { promoted: 'text-green-400', retained: 'text-gray-400', relegated: 'text-red-400', pending: 'text-indigo-400' }[s.sprint_outcome] ?? 'text-gray-500'
-                    return (
-                      <button
-                        key={i}
-                        onClick={() => setPicksModal({ sprintId: s.sprint_id, sprintName: s.sprint_name })}
-                        className="w-full flex items-center justify-between px-4 py-3.5 border-b border-white/5 last:border-0 hover:bg-white/3 transition-colors text-left"
-                      >
-                        <div>
-                          <p className="text-white text-sm font-semibold">{s.sprint_name}</p>
-                          <p className="text-gray-600 text-[11px] mt-0.5">{s.division_icon} {s.division_name || '—'}</p>
-                        </div>
-                        <div className="flex items-center gap-3">
-                          <span className="text-indigo-400 font-black text-sm">{s.total_league_points} LP</span>
-                          {s.sprint_outcome && <span className={`font-bold text-sm ${outcomeColor}`}>{outcomeIcon}</span>}
-                          <span className="text-gray-700 text-xs">›</span>
-                        </div>
-                      </button>
-                    )
-                  })}
+                  {sprint_history.map((s, i) => (
+                    <SprintHistoryRow key={i} s={s} userId={user.id} />
+                  ))}
                 </div>
               ) : (
                 <div className="bg-[#0d1117] border border-white/8 rounded-2xl p-8 text-center">
@@ -655,15 +779,6 @@ export default function UserPublicProfilePage() {
         </div>
       </div>
       <BottomNav />
-
-      {picksModal && (
-        <SprintPicksModal
-          sprintId={picksModal.sprintId}
-          sprintName={picksModal.sprintName}
-          userId={user.id}
-          onClose={() => setPicksModal(null)}
-        />
-      )}
     </div>
   )
 }
