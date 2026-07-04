@@ -2,6 +2,7 @@ import { useEffect, useState, useRef } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { getMyRelevantSprints, getSprintDetail, getGloryGameweek } from '../api/glory'
 import BottomNav from '../components/layout/BottomNav'
+import SprintClosingPopup from '../components/SprintClosingPopup'
 
 function getPlayerTier(correct, incorrect) {
   const total = (correct || 0) + (incorrect || 0)
@@ -642,8 +643,11 @@ function InlineRankings({ rankings, myUserId, promLP, relLP, onViewFull, divisio
           <div key={row.user_id} className={`flex items-start gap-3 px-4 py-3 border-b border-white/4 ${isMe ? 'bg-indigo-900/20' : ''}`}>
             <span className={`w-6 text-center text-xs font-black flex-shrink-0 mt-0.5 ${rank === 1 ? 'text-yellow-400' : rank === 2 ? 'text-gray-300' : 'text-amber-600'}`}>{rank}</span>
             <button onClick={() => onUserClick?.(row.user_id)} className="relative flex-shrink-0 mt-0.5">
-              <div className="w-7 h-7 rounded-full bg-indigo-900/40 flex items-center justify-center text-xs text-indigo-300 font-bold">
-                {(row.display_name || '?')[0].toUpperCase()}
+              <div className="w-7 h-7 rounded-full overflow-hidden bg-indigo-900/40 flex items-center justify-center text-xs text-indigo-300 font-bold flex-shrink-0">
+                {row.avatar_url
+                  ? <img src={row.avatar_url} alt="" className="w-full h-full object-cover" />
+                  : (row.display_name || '?')[0].toUpperCase()
+                }
               </div>
               <TierBadgeSm correct={row.total_correct_picks} incorrect={row.total_incorrect_picks} />
             </button>
@@ -683,8 +687,11 @@ function InlineRankings({ rankings, myUserId, promLP, relLP, onViewFull, divisio
           <div className="flex items-start gap-3 px-4 py-3 bg-indigo-900/20 border-t border-indigo-500/15">
             <span className="w-6 text-center text-xs font-black text-indigo-400 flex-shrink-0 mt-0.5">{myIdx + 1}</span>
             <button onClick={() => onUserClick?.(myRow.user_id)} className="relative flex-shrink-0 mt-0.5">
-              <div className="w-7 h-7 rounded-full bg-indigo-700/50 flex items-center justify-center text-xs text-indigo-200 font-bold">
-                {(myRow.display_name || '?')[0].toUpperCase()}
+              <div className="w-7 h-7 rounded-full overflow-hidden bg-indigo-700/50 flex items-center justify-center text-xs text-indigo-200 font-bold flex-shrink-0">
+                {myRow.avatar_url
+                  ? <img src={myRow.avatar_url} alt="" className="w-full h-full object-cover" />
+                  : (myRow.display_name || '?')[0].toUpperCase()
+                }
               </div>
               <TierBadgeSm correct={myRow.total_correct_picks} incorrect={myRow.total_incorrect_picks} />
             </button>
@@ -734,7 +741,7 @@ function OverallRankingsScreen({ sprint, overallRanking, myUserId, onClose, onUs
         <div className="max-w-md mx-auto flex items-center gap-3 px-4 pt-5 pb-3">
           <button onClick={onClose} className="w-9 h-9 rounded-xl bg-white/6 flex items-center justify-center text-gray-300 hover:bg-white/10">←</button>
           <div className="flex-1 min-w-0">
-            <p className="text-white font-bold text-base">Overall Rankings</p>
+            <p className="text-white font-bold text-base">🌍 Overall Rankings</p>
             <p className="text-gray-500 text-xs">{sprint?.name} · {overallRanking.length} players</p>
           </div>
           {myRow && (
@@ -871,11 +878,13 @@ function SprintDetailScreen({ sprintSummary, myUserId, onClose }) {
       .sort((a, b) => (a.sprint_week ?? 99) - (b.sprint_week ?? 99))[0]
   )?.sprint_week ?? null
 
-  // LP/correct counts from FINISHED weeks only (settled, not partial)
-  const settledLP      = gameweeks.filter(g => g.status === 'FINISHED' && g.entry).reduce((s, g) => s + (g.entry.league_points ?? 0), 0)
-  const settledCorrect = gameweeks.filter(g => g.status === 'FINISHED' && g.entry).reduce((s, g) => s + (g.entry.correct_picks ?? 0), 0)
-  const settledPerfect = gameweeks.filter(g => g.status === 'FINISHED' && g.entry?.is_perfect_week).length
-  const hasSettled     = gameweeks.some(g => g.status === 'FINISHED' && g.entry)
+  // LP/correct counts — all weeks with an entry (FINISHED = final, LOCKED = live/in-progress)
+  const gwsWithEntry   = gameweeks.filter(g => g.entry)
+  const settledLP      = gwsWithEntry.reduce((s, g) => s + (g.entry.league_points ?? 0), 0)
+  const settledCorrect = gwsWithEntry.reduce((s, g) => s + (g.entry.correct_picks ?? 0), 0)
+  const settledPerfect = gwsWithEntry.filter(g => g.entry.is_perfect_week).length
+  const hasSettled     = gwsWithEntry.length > 0
+  const hasLiveEntry   = gameweeks.some(g => g.entry && (g.status === 'LOCKED' || g.status === 'PUBLISHED'))
 
   // Compute cumulative LP by week slot 1..gwCount
   const cumLP = []
@@ -971,6 +980,9 @@ function SprintDetailScreen({ sprintSummary, myUserId, onClose }) {
                                       'text-gray-700'
                     }`}>W{i + 1}</p>
                     {isLive && <p className="text-[8px] text-green-400 font-bold mt-0.5">LIVE</p>}
+                    {isLive && gw?.entry?.league_points != null && gw.entry.league_points > 0 && (
+                      <p className="text-[8px] text-green-300 mt-0.5">+{gw.entry.league_points} LP</p>
+                    )}
                     {isDone && has && gw?.entry?.league_points != null && (
                       <p className="text-[8px] text-indigo-400 mt-0.5">+{gw.entry.league_points} LP</p>
                     )}
@@ -1070,20 +1082,28 @@ function SprintDetailScreen({ sprintSummary, myUserId, onClose }) {
 
             {/* Sprint summary stats */}
             {(progress || hasSettled) ? (
-              <div className="grid grid-cols-3 gap-2">
-                <div className="bg-[#0d1117] border border-white/8 rounded-2xl py-3 text-center">
-                  <p className={`font-black text-2xl ${outcome === 'promoted' ? 'text-green-400' : outcome === 'relegated' ? 'text-red-400' : 'text-indigo-400'}`}>
-                    {isLive ? settledLP : (progress?.total_league_points ?? 0)}
-                  </p>
-                  <p className="text-gray-600 text-[10px] mt-0.5">{isLive ? 'LP earned' : 'Final LP'}</p>
-                </div>
-                <div className="bg-[#0d1117] border border-white/8 rounded-2xl py-3 text-center">
-                  <p className="text-white font-black text-2xl">{isLive ? settledCorrect : (progress?.total_correct_picks ?? 0)}</p>
-                  <p className="text-gray-600 text-[10px] mt-0.5">Correct picks</p>
-                </div>
-                <div className="bg-[#0d1117] border border-white/8 rounded-2xl py-3 text-center">
-                  <p className="text-yellow-400 font-black text-2xl">{isLive ? settledPerfect : (progress?.perfect_weeks ?? 0)}</p>
-                  <p className="text-gray-600 text-[10px] mt-0.5">Perfect weeks</p>
+              <div className="space-y-2">
+                {hasLiveEntry && (
+                  <div className="flex items-center gap-1.5 px-1">
+                    <span className="w-1.5 h-1.5 rounded-full bg-green-400 animate-pulse inline-block" />
+                    <p className="text-green-400 text-[10px] font-semibold tracking-wide">Live week included — updating as matches finish</p>
+                  </div>
+                )}
+                <div className="grid grid-cols-3 gap-2">
+                  <div className="bg-[#0d1117] border border-white/8 rounded-2xl py-3 text-center">
+                    <p className={`font-black text-2xl ${outcome === 'promoted' ? 'text-green-400' : outcome === 'relegated' ? 'text-red-400' : 'text-indigo-400'}`}>
+                      {isLive ? settledLP : (progress?.total_league_points ?? 0)}
+                    </p>
+                    <p className="text-gray-600 text-[10px] mt-0.5">{isLive ? 'LP so far' : 'Final LP'}</p>
+                  </div>
+                  <div className="bg-[#0d1117] border border-white/8 rounded-2xl py-3 text-center">
+                    <p className="text-white font-black text-2xl">{isLive ? settledCorrect : (progress?.total_correct_picks ?? 0)}</p>
+                    <p className="text-gray-600 text-[10px] mt-0.5">Correct picks</p>
+                  </div>
+                  <div className="bg-[#0d1117] border border-white/8 rounded-2xl py-3 text-center">
+                    <p className="text-yellow-400 font-black text-2xl">{isLive ? settledPerfect : (progress?.perfect_weeks ?? 0)}</p>
+                    <p className="text-gray-600 text-[10px] mt-0.5">Perfect weeks</p>
+                  </div>
                 </div>
               </div>
             ) : isLive ? (
@@ -1104,7 +1124,7 @@ function SprintDetailScreen({ sprintSummary, myUserId, onClose }) {
                     className="w-full flex items-center gap-3 px-4 py-3.5 rounded-2xl border border-indigo-500/25 bg-indigo-950/30 hover:bg-indigo-950/50 transition-colors"
                   >
                     <div className="text-left flex-1 min-w-0">
-                      <p className="text-white font-bold text-sm">Overall Sprint Rankings</p>
+                      <p className="text-white font-bold text-sm">🌍 Overall Sprint Rankings</p>
                       <p className="text-gray-500 text-xs mt-0.5">{overallRanking.length} players across all divisions</p>
                     </div>
                     {myOverallRow && (
@@ -1150,6 +1170,31 @@ function SprintDetailScreen({ sprintSummary, myUserId, onClose }) {
             })()}
 
 
+            {/* How sprints work */}
+            {isLive && (
+              <div className="rounded-2xl border border-white/8 bg-white/3 px-4 py-3.5 space-y-2.5">
+                <p className="text-gray-400 text-[10px] font-black uppercase tracking-widest">How this sprint ends</p>
+                <div className="flex items-start gap-2.5">
+                  <span className="text-base leading-none mt-0.5">⬆</span>
+                  <p className="text-gray-300 text-xs leading-relaxed"><span className="text-green-400 font-semibold">Top players get promoted</span> to the next division for the following sprint.</p>
+                </div>
+                <div className="flex items-start gap-2.5">
+                  <span className="text-base leading-none mt-0.5">⬇</span>
+                  <p className="text-gray-300 text-xs leading-relaxed"><span className="text-red-400 font-semibold">Bottom players get relegated</span> to a lower division.</p>
+                </div>
+                <div className="flex items-start gap-2.5">
+                  <span className="text-base leading-none mt-0.5">🔄</span>
+                  <p className="text-gray-300 text-xs leading-relaxed"><span className="text-indigo-300 font-semibold">League Points reset to 0</span> at the start of every new sprint — everyone starts fresh.</p>
+                </div>
+              </div>
+            )}
+            {isSprintCompleted && (
+              <div className="flex items-start gap-2.5 rounded-2xl border border-white/6 bg-white/2 px-4 py-3">
+                <span className="text-sm leading-none mt-0.5">🔄</span>
+                <p className="text-gray-500 text-xs leading-relaxed">Promotions and relegations from this sprint have been applied. LP resets to 0 at the start of each new sprint.</p>
+              </div>
+            )}
+
             {/* CTA for live sprint */}
             {isLive && (
               <a href="/" className="block w-full py-4 rounded-2xl bg-indigo-600 hover:bg-indigo-500 text-white font-bold text-sm text-center transition-colors shadow-lg shadow-indigo-500/20">
@@ -1164,19 +1209,25 @@ function SprintDetailScreen({ sprintSummary, myUserId, onClose }) {
 }
 
 // ── Current sprint card (prominent hero style) ────────────────────────────────
+const DIVISION_IMAGES = {
+  1: 'https://images.unsplash.com/photo-1431324155629-1a6deb1dec8d?w=900&q=80&auto=format&fit=crop',
+  2: 'https://images.unsplash.com/photo-1529900748604-07564a03e7a6?w=900&q=80&auto=format&fit=crop',
+  3: 'https://images.unsplash.com/photo-1574629810360-7efbbe195018?w=900&q=80&auto=format&fit=crop',
+  4: 'https://images.unsplash.com/photo-1508098682722-e99c43a406b2?w=900&q=80&auto=format&fit=crop',
+  5: 'https://images.unsplash.com/photo-1540747913346-19212a4b23b4?w=900&q=80&auto=format&fit=crop',
+  6: 'https://images.unsplash.com/photo-1522778526097-ce0a22ceb253?w=900&q=80&auto=format&fit=crop',
+}
+
 function CurrentSprintCard({ sprint, onEnter }) {
   const gws = sprint.gameweeks || []
 
-  // Totals from settled gameweek entries (more accurate than user_sprint_progress)
-  const settledGws = gws.filter(gw => {
-    const st = getWeekStatus(gw.lock_time, gw.status)
-    return (st === 'FINISHED' || st === 'LOCKED') && gw.entry
-  })
-  const earnedLP        = settledGws.reduce((s, gw) => s + (gw.entry?.league_points ?? 0), 0)
-  const earnedCorrect   = settledGws.reduce((s, gw) => s + (gw.entry?.correct_picks ?? 0), 0)
-  const earnedIncorrect = settledGws.reduce((s, gw) => s + (gw.entry?.incorrect_picks ?? 0), 0)
-  const earnedPerfect   = settledGws.filter(gw => gw.entry?.is_perfect_week).length
-  const hasStats        = settledGws.length > 0
+  // myRelevantSprints returns entry data nested under gw.entry (null when no entry)
+  const gwsWithEntry = gws.filter(gw => gw.entry != null)
+  const earnedLP        = gwsWithEntry.reduce((s, gw) => s + (gw.entry.league_points ?? 0), 0)
+  const earnedCorrect   = gwsWithEntry.reduce((s, gw) => s + (gw.entry.correct_picks ?? 0), 0)
+  const earnedIncorrect = gwsWithEntry.reduce((s, gw) => s + (gw.entry.incorrect_picks ?? 0), 0)
+  const earnedPerfect   = gwsWithEntry.filter(gw => gw.entry.is_perfect_week).length
+  const hasStats        = gwsWithEntry.length > 0
 
   // Rankings
   const divRank       = sprint.my_rank ?? null
@@ -1211,21 +1262,30 @@ function CurrentSprintCard({ sprint, onEnter }) {
       style={{ background: 'linear-gradient(160deg, rgba(99,102,241,0.13) 0%, rgba(13,17,23,1) 60%)', boxShadow: '0 0 50px -12px rgba(99,102,241,0.28)' }}>
 
       {/* Header */}
-      <div className="px-4 pt-4 pb-3">
-        <div className="flex items-start justify-between gap-2">
-          <div className="min-w-0 flex-1">
-            <span className="inline-flex items-center gap-1.5 text-[10px] font-black tracking-wider text-green-400 bg-green-900/35 border border-green-500/30 px-2.5 py-1 rounded-full mb-2.5">
-              <span className="w-1.5 h-1.5 rounded-full bg-green-400 animate-pulse inline-block" />
-              LIVE SPRINT
-            </span>
-            <h2 className="text-white font-black text-xl leading-tight">{sprint.name}</h2>
-            <p className="text-gray-600 text-[11px] mt-0.5">{fmtShort(sprint.start_date)} – {fmtShort(sprint.end_date)}</p>
-          </div>
-          {sprint.division_name && (
-            <div className="flex-shrink-0 text-right mt-1">
-              <p className="text-indigo-300 text-xs font-bold">{sprint.division_icon} {sprint.division_name}</p>
+      <div className="relative h-32 overflow-hidden">
+        <img
+          src={sprint.division_badge_url || DIVISION_IMAGES[sprint.division_display_order] || DIVISION_IMAGES[1]}
+          alt={sprint.division_name || ''}
+          className="w-full h-full object-cover object-center opacity-70"
+          onError={e => { e.target.style.display = 'none' }}
+        />
+        <div className="absolute inset-0 bg-gradient-to-t from-[#0a0d12] via-[#0a0d12]/40 to-transparent" />
+        <div className="absolute inset-0 px-4 pb-3 flex flex-col justify-end">
+          <span className="inline-flex items-center gap-1.5 text-[10px] font-black tracking-wider text-green-400 bg-green-900/50 border border-green-500/30 px-2.5 py-1 rounded-full mb-2 self-start">
+            <span className="w-1.5 h-1.5 rounded-full bg-green-400 animate-pulse inline-block" />
+            LIVE SPRINT
+          </span>
+          <div className="flex items-end justify-between gap-2">
+            <div className="min-w-0 flex-1">
+              <h2 className="text-white font-black text-xl leading-tight drop-shadow-lg">{sprint.name}</h2>
+              <p className="text-gray-400 text-[11px] mt-0.5">{fmtShort(sprint.start_date)} – {fmtShort(sprint.end_date)}</p>
             </div>
-          )}
+            {sprint.division_name && (
+              <div className="flex-shrink-0 text-right">
+                <p className="text-indigo-300 text-xs font-bold">{sprint.division_icon} {sprint.division_name}</p>
+              </div>
+            )}
+          </div>
         </div>
       </div>
 
@@ -1254,7 +1314,7 @@ function CurrentSprintCard({ sprint, onEnter }) {
         <div className="grid grid-cols-2 gap-2 px-4 pt-3 pb-2">
           {/* Global */}
           <div className="rounded-xl bg-white/4 border border-white/8 px-3 py-2.5">
-            <p className="text-gray-500 text-[9px] uppercase tracking-wider font-semibold mb-1">Global ranking</p>
+            <p className="text-gray-500 text-[9px] uppercase tracking-wider font-semibold mb-1">🌍 Global ranking</p>
             {globalRank ? (
               <div className="flex items-baseline gap-1">
                 <span className="text-white font-black text-xl leading-none">#{globalRank}</span>
@@ -1270,7 +1330,7 @@ function CurrentSprintCard({ sprint, onEnter }) {
             statusBanner?.icon === '⬇' ? 'bg-red-900/15 border-red-500/20' :
             'bg-white/4 border-white/8'
           }`}>
-            <p className="text-gray-500 text-[9px] uppercase tracking-wider font-semibold mb-1">Division ranking</p>
+            <p className="text-gray-500 text-[9px] uppercase tracking-wider font-semibold mb-1">{sprint.division_icon} Division ranking</p>
             {divRank ? (
               <div className="flex items-baseline gap-1.5">
                 <span className={`font-black text-xl leading-none ${
@@ -1362,7 +1422,7 @@ function CurrentSprintCard({ sprint, onEnter }) {
 }
 
 // ── Past sprint card (compact row) ────────────────────────────────────────────
-function PastSprintCard({ sprint, onEnter }) {
+function PastSprintCard({ sprint, onEnter, onViewSummary }) {
   const lp      = sprint.total_league_points ?? null
   const outcome = sprint.sprint_outcome
   const oc      = OUTCOME[outcome] || OUTCOME.retained
@@ -1412,12 +1472,23 @@ function PastSprintCard({ sprint, onEnter }) {
                 <span className="text-yellow-400 text-sm font-semibold">{sprint.perfect_weeks}⭐</span>
               )}
             </div>
-            <button
-              onClick={() => onEnter(sprint)}
-              className="flex-shrink-0 text-xs text-gray-400 hover:text-white font-semibold px-3 py-1.5 rounded-lg bg-white/5 hover:bg-white/10 transition-colors"
-            >
-              Details →
-            </button>
+            <div className="flex items-center gap-1.5 flex-shrink-0">
+              {onViewSummary && (
+                <button
+                  onClick={() => onViewSummary(sprint)}
+                  className="text-xs font-semibold px-2.5 py-1.5 rounded-lg transition-colors"
+                  style={{ color: oc.color, background: `${oc.color}15` }}
+                >
+                  Summary
+                </button>
+              )}
+              <button
+                onClick={() => onEnter(sprint)}
+                className="text-xs text-gray-400 hover:text-white font-semibold px-3 py-1.5 rounded-lg bg-white/5 hover:bg-white/10 transition-colors"
+              >
+                Details →
+              </button>
+            </div>
           </div>
         </div>
       </div>
@@ -1427,10 +1498,11 @@ function PastSprintCard({ sprint, onEnter }) {
 
 // ── Main page ──────────────────────────────────────────────────────────────────
 export default function MySprintsPage() {
-  const [data,     setData]     = useState(null)
-  const [loading,  setLoading]  = useState(true)
-  const [selected, setSelected] = useState(null)
-  const [myUserId, setMyUserId] = useState(null)
+  const [data,           setData]          = useState(null)
+  const [loading,        setLoading]       = useState(true)
+  const [selected,       setSelected]      = useState(null)
+  const [myUserId,       setMyUserId]      = useState(null)
+  const [summaryPopup,   setSummaryPopup]  = useState(null)
 
   useEffect(() => {
     getMyRelevantSprints()
@@ -1472,6 +1544,15 @@ export default function MySprintsPage() {
 
   return (
     <div className="min-h-screen bg-[#0a0d12] text-white pb-24">
+      {summaryPopup && (
+        <SprintClosingPopup
+          sprint={summaryPopup}
+          nextSprint={null}
+          readOnly={!!summaryPopup.closing_popup_seen_at}
+          onDismiss={() => setSummaryPopup(null)}
+        />
+      )}
+
       {selected && (
         <SprintDetailScreen
           sprintSummary={selected}
@@ -1507,7 +1588,7 @@ export default function MySprintsPage() {
             </div>
             <div className="space-y-2.5">
               {historicSprints.map(s => (
-                <PastSprintCard key={s.id} sprint={s} onEnter={setSelected} />
+                <PastSprintCard key={s.id} sprint={s} onEnter={setSelected} onViewSummary={setSummaryPopup} />
               ))}
             </div>
           </section>
