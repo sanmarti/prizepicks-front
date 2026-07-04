@@ -1004,7 +1004,7 @@ function EnergyCTABanner({ remainingEnergy, onSaveAndGo }) {
 }
 
 // ── Sprint leaderboard (compact) ───────────────────────────────────────────────
-function SprintLeaderboard({ myUserId, data }) {
+function SprintLeaderboard({ myUserId, data, isGwLocked }) {
   if (!data?.rows?.length) return null
 
   const myIdx   = data.rows.findIndex(r => r.user_id === myUserId)
@@ -1096,7 +1096,7 @@ function SprintLeaderboard({ myUserId, data }) {
                   <div className="flex items-center gap-2 mt-0.5 flex-wrap">
                     <span className={`font-semibold ${isMe ? 'text-[11px] text-green-400' : 'text-[10px] text-green-500/60'}`}>{r.total_correct_picks ?? 0}✓</span>
                     <span className={`${isMe ? 'text-[11px] text-red-400/80' : 'text-[10px] text-red-400/40'}`}>{r.total_incorrect_picks ?? 0}✗</span>
-                    {(r.pending_picks ?? 0) > 0 && <span className={`${isMe ? 'text-[11px] text-gray-400' : 'text-[10px] text-gray-500'}`}>{r.pending_picks}⏳</span>}
+                    {(r.pending_picks ?? 0) > 0 && <span className={`${isMe ? 'text-[11px] text-gray-400' : 'text-[10px] text-gray-500'}`}>{r.pending_picks}{isGwLocked ? '🔒' : '⏳'}</span>}
                     {accuracy !== null && <span className={`${isMe ? 'text-[11px] text-gray-400' : 'text-[10px] text-gray-600'}`}>{accuracy}%</span>}
                     {r.gameweeks_participated > 0 && <span className={`${isMe ? 'text-[11px] text-gray-500' : 'text-[10px] text-gray-700'}`}>{r.gameweeks_participated} GW</span>}
                     {r.perfect_weeks > 0 && <span className="text-[10px] text-yellow-500">⭐{r.perfect_weeks}</span>}
@@ -2084,6 +2084,7 @@ export default function MatchweekPage() {
                 <SprintLeaderboard
                   myUserId={myUserId}
                   data={leaderboard}
+                  isGwLocked={isLocked}
                 />
 
                 {/* Future week preview — only when viewing the current active week */}

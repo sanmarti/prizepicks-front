@@ -235,7 +235,7 @@ function DivisionsListScreen({ divisions, divStats, myDivId, activeDiv, onSelect
 }
 
 // ── Rankings screen ────────────────────────────────────────────────────────────
-function RankingsScreen({ div, sprintId, sprintName, myUserId, myDivId, onOpenPicker, onBack, totalPlayers }) {
+function RankingsScreen({ div, sprintId, sprintName, myUserId, myDivId, onOpenPicker, onBack, totalPlayers, isGwLocked }) {
   const navigate = useNavigate()
   const v        = getV(div)
   const coverSrc = div.badge_url || v.image
@@ -416,7 +416,7 @@ function RankingsScreen({ div, sprintId, sprintName, myUserId, myDivId, onOpenPi
                         {(row.pending_picks ?? 0) > 0 && (
                           <>
                             <span className="text-[10px] text-gray-600">·</span>
-                            <span className={`${isMe ? 'text-[11px] text-gray-400' : 'text-[10px] text-gray-400'}`}>{row.pending_picks}⏳</span>
+                            <span className={`${isMe ? 'text-[11px] text-gray-400' : 'text-[10px] text-gray-400'}`}>{row.pending_picks}{isGwLocked ? '🔒' : '⏳'}</span>
                           </>
                         )}
                         {row.perfect_weeks > 0 && (
@@ -545,6 +545,7 @@ export default function DivisionsPage() {
   const sprintId    = myStatus?.sprint?.id
   const sprintName  = myStatus?.sprint?.name
   const totalPlayers = Object.values(divStats).reduce((sum, s) => sum + (s.count || 0), 0)
+  const isGwLocked  = (myStatus?.sprint?.gameweeks ?? []).some(g => g.status === 'LOCKED')
 
   if (!activeDiv) return (
     <div className="min-h-screen bg-[#0a0d12] flex items-center justify-center text-gray-500 text-sm">
@@ -563,6 +564,7 @@ export default function DivisionsPage() {
         onOpenPicker={() => setListOpen(true)}
         onBack={() => setListOpen(true)}
         totalPlayers={totalPlayers}
+        isGwLocked={isGwLocked}
       />
       {listOpen && (
         <DivisionsListScreen

@@ -114,7 +114,7 @@ function getTeamLogoUrl(name) {
 }
 
 // ── Full-screen Division Rankings ──────────────────────────────────────────────
-function RankingsScreen({ sprint, division, rankings, myUserId, onClose, onUserClick }) {
+function RankingsScreen({ sprint, division, rankings, myUserId, onClose, onUserClick, isGwLocked }) {
   const promLP = division?.promotion_min_points ?? null
   const relLP  = division?.relegation_max_points ?? null
 
@@ -222,7 +222,7 @@ function RankingsScreen({ sprint, division, rankings, myUserId, onClose, onUserC
                       {(row.pending_picks ?? 0) > 0 && (
                         <>
                           <span className="text-[10px] text-gray-600">·</span>
-                          <span className="text-[10px] text-gray-400">{row.pending_picks}⏳</span>
+                          <span className="text-[10px] text-gray-400">{row.pending_picks}{isGwLocked ? '🔒' : '⏳'}</span>
                         </>
                       )}
                       {(row.perfect_weeks ?? 0) > 0 && (
@@ -722,7 +722,7 @@ function InlineRankings({ rankings, myUserId, promLP, relLP, onViewFull, divisio
 }
 
 // ── Overall sprint rankings across all divisions ──────────────────────────────
-function OverallRankingsScreen({ sprint, overallRanking, myUserId, onClose, onUserClick }) {
+function OverallRankingsScreen({ sprint, overallRanking, myUserId, onClose, onUserClick, isGwLocked }) {
   const myRow  = overallRanking.find(r => r.user_id === myUserId)
   const myRef  = useRef(null)
   const OUTCOME_ICON = { promoted:'⬆', retained:'=', relegated:'⬇' }
@@ -801,7 +801,7 @@ function OverallRankingsScreen({ sprint, overallRanking, myUserId, onClose, onUs
                     {(row.pending_picks ?? 0) > 0 && (
                       <>
                         <span className="text-[10px] text-gray-600">·</span>
-                        <span className="text-gray-400 text-[10px]">{row.pending_picks}⏳</span>
+                        <span className="text-gray-400 text-[10px]">{row.pending_picks}{isGwLocked ? '🔒' : '⏳'}</span>
                       </>
                     )}
                     <span className="text-[10px] text-gray-600">·</span>
@@ -864,6 +864,7 @@ function SprintDetailScreen({ sprintSummary, myUserId, onClose }) {
   const promLP    = division?.promotion_min_points ?? null
   const relLP     = division?.relegation_max_points ?? null
   const isSprintCompleted = sprint.status === 'completed' || sprint.status === 'archived'
+  const isGwLocked = gameweeks.some(g => g.status === 'LOCKED')
 
   // Build week lookup and find live week number
   const gwByWeek = {}
@@ -907,6 +908,7 @@ function SprintDetailScreen({ sprintSummary, myUserId, onClose }) {
         myUserId={effectiveUserId}
         onClose={() => setShowOverall(false)}
         onUserClick={goToUser}
+        isGwLocked={isGwLocked}
       />
     )
   }
@@ -919,6 +921,7 @@ function SprintDetailScreen({ sprintSummary, myUserId, onClose }) {
         myUserId={effectiveUserId}
         onClose={() => setShowRankings(false)}
         onUserClick={goToUser}
+        isGwLocked={isGwLocked}
       />
     )
   }
