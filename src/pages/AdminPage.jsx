@@ -266,7 +266,7 @@ function WeekCard({ weekNum, weekStart, lockDt, settleDt, events, canEdit, onAdd
   const dirty = Object.keys(datePatch).some(k => datePatch[k])
 
   const saveDates = async () => {
-    if (!dbGw || !sprintDbId || !dirty) return
+    if (!sprintDbId || !dirty) return
     setDateSaving(true)
     setDateSaved(null)
     try {
@@ -274,7 +274,15 @@ function WeekCard({ weekNum, weekStart, lockDt, settleDt, events, canEdit, onAdd
       if (datePatch.lock_time)  { body.lock_time = new Date(datePatch.lock_time).toISOString(); body.reveal_time = body.lock_time }
       if (datePatch.start_date)   body.start_date = datePatch.start_date
       if (datePatch.end_date)     body.end_date   = datePatch.end_date
-      await client.patch(`/admin/sprints/${sprintDbId}/gameweeks/${dbGw.id}`, body)
+
+      let gwId = dbGw?.id
+      if (!gwId) {
+        // Create an empty gameweek row for this sprint week so dates can be set
+        const created = await client.post(`/admin/sprints/${sprintDbId}/gameweeks`, { sprint_week: weekNum, events: [] })
+        gwId = created.data.gameweek_id
+      }
+
+      await client.patch(`/admin/sprints/${sprintDbId}/gameweeks/${gwId}`, body)
       setDateSaved('ok')
       setDatePatch({})
       onGwSaved?.()
@@ -346,7 +354,7 @@ function WeekCard({ weekNum, weekStart, lockDt, settleDt, events, canEdit, onAdd
               + Add
             </button>
           )}
-          {dbGw && (
+          {sprintDbId && (
             <button onClick={() => { setEditDates(v => !v); setDateSaved(null) }}
               className={`text-[10px] font-semibold px-2.5 py-1 rounded-lg border transition-colors ${
                 editDates ? 'bg-white/10 border-white/20 text-white' : 'bg-white/3 border-white/8 text-gray-500 hover:text-gray-300'
@@ -401,7 +409,7 @@ function WeekCard({ weekNum, weekStart, lockDt, settleDt, events, canEdit, onAdd
       </div>
 
       {/* Date editor panel */}
-      {editDates && dbGw && (
+      {editDates && (
         <div className="mx-4 mb-3.5 rounded-xl bg-white/3 border border-white/8 p-3 space-y-3">
           <p className="text-[10px] font-semibold text-gray-500 uppercase tracking-wider">Edit dates</p>
           <div className="grid grid-cols-1 gap-2">
