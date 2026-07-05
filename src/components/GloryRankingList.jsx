@@ -76,15 +76,6 @@ export function GloryRankingHeader({ division, sprintName, playerCount, promLP, 
           />
           <div className="absolute inset-0 bg-gradient-to-t from-[#0a0d12] via-[#0a0d12]/25 to-transparent" />
 
-          {/* ← back */}
-          <button
-            onClick={onBack}
-            className="absolute top-3 left-4 w-9 h-9 flex items-center justify-center rounded-xl border border-white/10 text-white text-sm backdrop-blur-sm"
-            style={{ background: 'rgba(0,0,0,0.45)' }}
-          >
-            ←
-          </button>
-
           {/* Player count */}
           <div
             className="absolute top-3 right-4 px-2.5 py-1 rounded-xl border border-white/10 backdrop-blur-sm"
