@@ -1156,25 +1156,40 @@ function CurrentSprintCard({ sprint, onEnter }) {
   const globalTotal   = sprint.total_global_players ?? null
 
   // Promotion / relegation status
-  const promLP   = sprint.promotion_min_points ?? null
-  const relLP    = sprint.relegation_max_points ?? null
-  const outcome  = sprint.sprint_outcome
+  const promLP    = sprint.promotion_min_points ?? null
+  const relLP     = sprint.relegation_max_points ?? null
+  const outcome   = sprint.sprint_outcome
+  const nextDiv   = sprint.next_division_name ? `${sprint.next_division_icon ?? ''} ${sprint.next_division_name}`.trim() : null
+  const finalDiv  = sprint.final_division_name ? `${sprint.final_division_icon ?? ''} ${sprint.final_division_name}`.trim() : null
 
   let statusBanner = null
   if (outcome && outcome !== 'pending') {
     if (outcome === 'promoted')
-      statusBanner = { text: 'You got promoted! Moving up next sprint.', cls: 'bg-green-900/40 border-green-500/30 text-green-300', icon: '⬆' }
+      statusBanner = { text: `Congratulations! You will be promoted to ${finalDiv ?? 'the next division'} at the end of the sprint.`, cls: 'bg-green-900/40 border-green-500/30 text-green-300', icon: '⬆' }
     else if (outcome === 'relegated')
       statusBanner = { text: 'You got relegated. Better luck next sprint!', cls: 'bg-red-900/30 border-red-500/25 text-red-300', icon: '⬇' }
     else
       statusBanner = { text: 'You stay in your division next sprint.', cls: 'bg-white/5 border-white/10 text-gray-400', icon: '=' }
   } else if (sprint.status === 'live' && hasStats) {
-    if (promLP !== null && earnedLP >= promLP)
-      statusBanner = { text: `Promotion zone — keep it up! (${earnedLP} / ${promLP} LP needed)`, cls: 'bg-green-900/40 border-green-500/30 text-green-300', icon: '⬆' }
-    else if (relLP !== null && earnedLP <= relLP)
-      statusBanner = { text: `Relegation risk — earn more LP! (${earnedLP} / ${relLP + 1} LP needed)`, cls: 'bg-red-900/30 border-red-500/25 text-red-300', icon: '⬇' }
-    else if (promLP !== null)
-      statusBanner = { text: `${promLP - earnedLP} LP needed for promotion`, cls: 'bg-indigo-900/30 border-indigo-500/25 text-indigo-300', icon: '=' }
+    if (promLP !== null && earnedLP >= promLP) {
+      statusBanner = {
+        text: `Congratulations! You will be promoted to ${nextDiv ?? 'the next division'} at the end of the sprint.`,
+        cls: 'bg-green-900/40 border-green-500/30 text-green-300', icon: '⬆',
+      }
+    } else if (relLP !== null && earnedLP <= relLP) {
+      const toSafe = relLP + 1 - earnedLP
+      const toProm = promLP !== null ? promLP - earnedLP : null
+      statusBanner = {
+        text: `Relegation risk! Need ${toSafe} more League Point${toSafe !== 1 ? 's' : ''} to stay in this division${toProm !== null && nextDiv ? `, or ${toProm} to get promoted to ${nextDiv}` : ''}.`,
+        cls: 'bg-red-900/30 border-red-500/25 text-red-300', icon: '⬇',
+      }
+    } else if (promLP !== null) {
+      const toProm = promLP - earnedLP
+      statusBanner = {
+        text: `Need ${toProm} more League Point${toProm !== 1 ? 's' : ''} to get promoted${nextDiv ? ` to ${nextDiv}` : ''}.`,
+        cls: 'bg-indigo-900/30 border-indigo-500/25 text-indigo-300', icon: '=',
+      }
+    }
   }
 
   return (
