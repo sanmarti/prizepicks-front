@@ -342,9 +342,11 @@ function WeekCard({ weekNum, weekStart, lockDt, settleDt, events, canEdit, onAdd
           <p className="text-white text-sm font-semibold">
             {fmtDay(weekStart)} → {fmtDay(weekEnd)}
           </p>
-          <p className="text-gray-600 text-[10px] mt-0.5">
-            Lock {fmtShort(lockDt)} {fmtTime(lockDt)} · Settle {fmtShort(settleDt)} 00:00
-          </p>
+          {events.length > 0 && (
+            <p className="text-gray-600 text-[10px] mt-0.5">
+              Lock {fmtShort(lockDt)} {fmtTime(lockDt)} · Settle {fmtShort(settleDt)} 00:00
+            </p>
+          )}
         </div>
 
         <div className="flex-shrink-0 flex flex-col items-end gap-1">
@@ -415,20 +417,20 @@ function WeekCard({ weekNum, weekStart, lockDt, settleDt, events, canEdit, onAdd
           <div className="grid grid-cols-1 gap-2">
             <label className="flex flex-col gap-0.5">
               <span className="text-[10px] text-gray-500">Lock time (picks freeze)</span>
-              <input type="datetime-local" defaultValue={toDtLocal(dbGw.lock_time)}
+              <input type="datetime-local" defaultValue={toDtLocal(dbGw?.lock_time)}
                 onChange={e => setField('lock_time', e.target.value)}
                 className="bg-white/5 border border-white/10 rounded-lg px-2.5 py-1.5 text-xs text-white focus:outline-none focus:border-indigo-500/50" />
             </label>
             <div className="grid grid-cols-2 gap-2">
               <label className="flex flex-col gap-0.5">
                 <span className="text-[10px] text-gray-500">Start date</span>
-                <input type="date" defaultValue={toDateVal(dbGw.start_date)}
+                <input type="date" defaultValue={toDateVal(dbGw?.start_date)}
                   onChange={e => setField('start_date', e.target.value)}
                   className="bg-white/5 border border-white/10 rounded-lg px-2.5 py-1.5 text-xs text-white focus:outline-none focus:border-indigo-500/50" />
               </label>
               <label className="flex flex-col gap-0.5">
                 <span className="text-[10px] text-gray-500">End date</span>
-                <input type="date" defaultValue={toDateVal(dbGw.end_date)}
+                <input type="date" defaultValue={toDateVal(dbGw?.end_date)}
                   onChange={e => setField('end_date', e.target.value)}
                   className="bg-white/5 border border-white/10 rounded-lg px-2.5 py-1.5 text-xs text-white focus:outline-none focus:border-indigo-500/50" />
               </label>
