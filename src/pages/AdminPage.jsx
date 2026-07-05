@@ -254,43 +254,42 @@ function AddFixtureModal({ weekNum, currentCount, onAdd, onClose }) {
 // ── Week card ─────────────────────────────────────────────────────────────────
 function WeekCard({ weekNum, weekStart, lockDt, settleDt, events, canEdit, onAdd, onRemove, dbGw, sprintDbId, onGwSaved }) {
   const [showAdd,    setShowAdd]    = useState(false)
-  const [editDates,  setEditDates]  = useState(false)
-  const [datePatch,  setDatePatch]  = useState({})
-  const [dateSaving, setDateSaving] = useState(false)
-  const [dateSaved,  setDateSaved]  = useState(null)  // null | 'ok' | string(error)
+  const [cfg,        setCfg]        = useState({})   // { base_energy, start_date, end_date, lock_time }
+  const [cfgSaving,  setCfgSaving]  = useState(false)
+  const [cfgSaved,   setCfgSaved]   = useState(null)
 
   const toDtLocal = (iso) => iso ? iso.slice(0, 16) : ''
   const toDateVal = (iso) => iso ? iso.slice(0, 10) : ''
+  const setF = (k, v) => setCfg(p => ({ ...p, [k]: v }))
+  const dirty = Object.keys(cfg).some(k => cfg[k] !== '' && cfg[k] != null)
 
-  const setField = (k, v) => setDatePatch(p => ({ ...p, [k]: v }))
-  const dirty = Object.keys(datePatch).some(k => datePatch[k])
-
-  const saveDates = async () => {
+  const saveCfg = async () => {
     if (!sprintDbId || !dirty) return
-    setDateSaving(true)
-    setDateSaved(null)
+    setCfgSaving(true)
+    setCfgSaved(null)
     try {
       const body = {}
-      if (datePatch.lock_time)  { body.lock_time = new Date(datePatch.lock_time).toISOString(); body.reveal_time = body.lock_time }
-      if (datePatch.start_date)   body.start_date = datePatch.start_date
-      if (datePatch.end_date)     body.end_date   = datePatch.end_date
+      if (cfg.lock_time)    { body.lock_time = new Date(cfg.lock_time).toISOString(); body.reveal_time = body.lock_time }
+      if (cfg.start_date)     body.start_date  = cfg.start_date
+      if (cfg.end_date)       body.end_date    = cfg.end_date
+      if (cfg.base_energy)    body.base_energy = Number(cfg.base_energy)
 
       let gwId = dbGw?.id
       if (!gwId) {
-        // Create an empty gameweek row for this sprint week so dates can be set
-        const created = await client.post(`/admin/sprints/${sprintDbId}/gameweeks`, { sprint_week: weekNum, events: [] })
+        const created = await client.post(`/admin/sprints/${sprintDbId}/gameweeks`, { sprint_week: weekNum, events: [], base_energy: body.base_energy || 30 })
         gwId = created.data.gameweek_id
+        delete body.base_energy  // already set by POST
       }
 
       await client.patch(`/admin/sprints/${sprintDbId}/gameweeks/${gwId}`, body)
-      setDateSaved('ok')
-      setDatePatch({})
+      setCfgSaved('ok')
+      setCfg({})
       onGwSaved?.()
-      setTimeout(() => setEditDates(false), 800)
+      setTimeout(() => setCfgSaved(null), 2000)
     } catch (e) {
-      setDateSaved(e.response?.data?.error || 'Save failed')
+      setCfgSaved(e.response?.data?.error || 'Save failed')
     }
-    setDateSaving(false)
+    setCfgSaving(false)
   }
   // Group events by fixture for display
   const grouped = events.reduce((acc, ev, i) => {
@@ -379,14 +378,6 @@ function WeekCard({ weekNum, weekStart, lockDt, settleDt, events, canEdit, onAdd
               + Add
             </button>
           )}
-          {sprintDbId && (
-            <button onClick={() => { setEditDates(v => !v); setDateSaved(null) }}
-              className={`text-[10px] font-semibold px-2.5 py-1 rounded-lg border transition-colors ${
-                editDates ? 'bg-white/10 border-white/20 text-white' : 'bg-white/3 border-white/8 text-gray-500 hover:text-gray-300'
-              }`}>
-              {editDates ? 'Done' : '⏱ Dates'}
-            </button>
-          )}
           <span className={`text-[10px] font-bold tabular-nums ${events.length >= 15 ? 'text-green-400' : events.length > 0 ? 'text-indigo-400' : 'text-gray-700'}`}>
             {events.length} / 15
           </span>
@@ -433,39 +424,51 @@ function WeekCard({ weekNum, weekStart, lockDt, settleDt, events, canEdit, onAdd
         )}
       </div>
 
-      {/* Date editor panel */}
-      {editDates && (
-        <div className="mx-4 mb-3.5 rounded-xl bg-white/3 border border-white/8 p-3 space-y-3">
-          <p className="text-[10px] font-semibold text-gray-500 uppercase tracking-wider">Edit dates</p>
-          <div className="grid grid-cols-1 gap-2">
+      {/* Gameweek config — base energy + dates */}
+      {sprintDbId && (
+        <div className="mx-4 mb-3.5 pt-3 border-t border-white/6 space-y-2">
+          <p className="text-[10px] font-semibold text-gray-600 uppercase tracking-wider">Gameweek config</p>
+          <div className="grid grid-cols-2 gap-2">
+            <label className="flex flex-col gap-0.5 col-span-2">
+              <span className="text-[10px] text-gray-500">Base energy per user ⚡</span>
+              <input type="number" min="10" max="60"
+                key={`be-${weekNum}-${dbGw?.id ?? 'new'}`}
+                defaultValue={dbGw?.base_energy ?? 30}
+                onChange={e => setF('base_energy', e.target.value)}
+                className="bg-white/5 border border-white/10 rounded-lg px-2.5 py-1.5 text-xs text-white focus:outline-none focus:border-indigo-500/50 w-24" />
+            </label>
             <label className="flex flex-col gap-0.5">
-              <span className="text-[10px] text-gray-500">Lock time (picks freeze)</span>
-              <input type="datetime-local" defaultValue={toDtLocal(dbGw?.lock_time)}
-                onChange={e => setField('lock_time', e.target.value)}
+              <span className="text-[10px] text-gray-500">Start date</span>
+              <input type="date"
+                key={`sd-${weekNum}-${dbGw?.id ?? 'new'}`}
+                defaultValue={toDateVal(dbGw?.start_date)}
+                onChange={e => setF('start_date', e.target.value)}
                 className="bg-white/5 border border-white/10 rounded-lg px-2.5 py-1.5 text-xs text-white focus:outline-none focus:border-indigo-500/50" />
             </label>
-            <div className="grid grid-cols-2 gap-2">
-              <label className="flex flex-col gap-0.5">
-                <span className="text-[10px] text-gray-500">Start date</span>
-                <input type="date" defaultValue={toDateVal(dbGw?.start_date)}
-                  onChange={e => setField('start_date', e.target.value)}
-                  className="bg-white/5 border border-white/10 rounded-lg px-2.5 py-1.5 text-xs text-white focus:outline-none focus:border-indigo-500/50" />
-              </label>
-              <label className="flex flex-col gap-0.5">
-                <span className="text-[10px] text-gray-500">End date</span>
-                <input type="date" defaultValue={toDateVal(dbGw?.end_date)}
-                  onChange={e => setField('end_date', e.target.value)}
-                  className="bg-white/5 border border-white/10 rounded-lg px-2.5 py-1.5 text-xs text-white focus:outline-none focus:border-indigo-500/50" />
-              </label>
-            </div>
+            <label className="flex flex-col gap-0.5">
+              <span className="text-[10px] text-gray-500">End date</span>
+              <input type="date"
+                key={`ed-${weekNum}-${dbGw?.id ?? 'new'}`}
+                defaultValue={toDateVal(dbGw?.end_date)}
+                onChange={e => setF('end_date', e.target.value)}
+                className="bg-white/5 border border-white/10 rounded-lg px-2.5 py-1.5 text-xs text-white focus:outline-none focus:border-indigo-500/50" />
+            </label>
+            <label className="flex flex-col gap-0.5 col-span-2">
+              <span className="text-[10px] text-gray-500">Lock time (picks freeze)</span>
+              <input type="datetime-local"
+                key={`lt-${weekNum}-${dbGw?.id ?? 'new'}`}
+                defaultValue={toDtLocal(dbGw?.lock_time)}
+                onChange={e => setF('lock_time', e.target.value)}
+                className="bg-white/5 border border-white/10 rounded-lg px-2.5 py-1.5 text-xs text-white focus:outline-none focus:border-indigo-500/50" />
+            </label>
           </div>
-          <div className="flex items-center gap-2">
-            <button onClick={saveDates} disabled={!dirty || dateSaving}
+          <div className="flex items-center gap-2 pt-0.5">
+            <button onClick={saveCfg} disabled={!dirty || cfgSaving}
               className="text-xs font-semibold px-3 py-1.5 rounded-lg bg-indigo-600/80 hover:bg-indigo-600 disabled:opacity-40 text-white transition-colors">
-              {dateSaving ? 'Saving…' : 'Save'}
+              {cfgSaving ? 'Saving…' : 'Save config'}
             </button>
-            {dateSaved === 'ok' && <span className="text-[11px] text-green-400">Saved</span>}
-            {dateSaved && dateSaved !== 'ok' && <span className="text-[11px] text-red-400">{dateSaved}</span>}
+            {cfgSaved === 'ok' && <span className="text-[11px] text-green-400">✓ Saved</span>}
+            {cfgSaved && cfgSaved !== 'ok' && <span className="text-[11px] text-red-400">{cfgSaved}</span>}
           </div>
         </div>
       )}
