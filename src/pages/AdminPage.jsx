@@ -465,13 +465,13 @@ function SprintStatusPill({ status }) {
 
 // ── Gameweek Date Editor ──────────────────────────────────────────────────────
 function GameweekDateEditor() {
-  const [sprints,    setSprints]    = useState([])
-  const [sprintId,   setSprintId]   = useState('')
-  const [gameweeks,  setGameweeks]  = useState([])
-  const [loading,    setLoading]    = useState(false)
-  const [edits,      setEdits]      = useState({})   // { [gwId]: { lock_time, start_date, end_date } }
-  const [saving,     setSaving]     = useState({})   // { [gwId]: bool }
-  const [saved,      setSaved]      = useState({})   // { [gwId]: 'ok'|'err' }
+  const [sprints,   setSprints]   = useState([])
+  const [sprintId,  setSprintId]  = useState('')
+  const [dbGws,     setDbGws]     = useState([])   // DB rows only
+  const [loading,   setLoading]   = useState(false)
+  const [edits,     setEdits]     = useState({})   // { [weekNum]: { lock_time, start_date, end_date } }
+  const [saving,    setSaving]    = useState({})   // { [weekNum]: bool }
+  const [saved,     setSaved]     = useState({})   // { [weekNum]: 'ok'|string }
 
   useEffect(() => {
     client.get('/admin/sprints').then(r => setSprints(r.data || [])).catch(() => {})
@@ -479,50 +479,65 @@ function GameweekDateEditor() {
 
   const loadSprint = async (id) => {
     setSprintId(id)
-    setGameweeks([])
+    setDbGws([])
     setEdits({})
+    setSaved({})
     if (!id) return
     setLoading(true)
     try {
       const r = await client.get(`/admin/sprints/${id}`)
-      setGameweeks(r.data.gameweeks || [])
+      setDbGws(r.data.gameweeks || [])
     } catch {}
     setLoading(false)
   }
 
-  const setField = (gwId, field, val) =>
-    setEdits(p => ({ ...p, [gwId]: { ...p[gwId], [field]: val } }))
+  const setField = (weekNum, field, val) =>
+    setEdits(p => ({ ...p, [weekNum]: { ...p[weekNum], [field]: val } }))
 
   const toIso = (dtLocal) => dtLocal ? new Date(dtLocal).toISOString() : undefined
   const toDateVal = (iso) => iso ? iso.slice(0, 10) : ''
   const toDtLocalVal = (iso) => iso ? iso.slice(0, 16) : ''
 
-  const save = async (gw) => {
-    const patch = edits[gw.id] || {}
-    if (!Object.keys(patch).length) return
-    setSaving(p => ({ ...p, [gw.id]: true }))
-    setSaved(p => ({ ...p, [gw.id]: null }))
+  const save = async (weekNum, dbGw) => {
+    const patch = edits[weekNum] || {}
+    if (!Object.keys(patch).some(k => patch[k])) return
+    setSaving(p => ({ ...p, [weekNum]: true }))
+    setSaved(p => ({ ...p, [weekNum]: null }))
     try {
       const body = {}
-      if (patch.lock_time  !== undefined) { body.lock_time   = toIso(patch.lock_time);  body.reveal_time = toIso(patch.lock_time) }
-      if (patch.start_date !== undefined)   body.start_date  = patch.start_date
-      if (patch.end_date   !== undefined)   body.end_date    = patch.end_date
-      await client.patch(`/admin/sprints/${sprintId}/gameweeks/${gw.id}`, body)
+      if (patch.lock_time)  { body.lock_time = toIso(patch.lock_time); body.reveal_time = body.lock_time }
+      if (patch.start_date)   body.start_date = patch.start_date
+      if (patch.end_date)     body.end_date   = patch.end_date
+
+      let gwId = dbGw?.id
+      if (!gwId) {
+        // Create empty gameweek row so dates can be stored
+        const cr = await client.post(`/admin/sprints/${sprintId}/gameweeks`, { sprint_week: weekNum, events: [] })
+        gwId = cr.data.gameweek_id
+      }
+
+      await client.patch(`/admin/sprints/${sprintId}/gameweeks/${gwId}`, body)
       const r = await client.get(`/admin/sprints/${sprintId}`)
-      setGameweeks(r.data.gameweeks || [])
-      setEdits(p => ({ ...p, [gw.id]: {} }))
-      setSaved(p => ({ ...p, [gw.id]: 'ok' }))
+      setDbGws(r.data.gameweeks || [])
+      setEdits(p => ({ ...p, [weekNum]: {} }))
+      setSaved(p => ({ ...p, [weekNum]: 'ok' }))
     } catch (e) {
-      setSaved(p => ({ ...p, [gw.id]: e.response?.data?.error || 'Error' }))
+      setSaved(p => ({ ...p, [weekNum]: e.response?.data?.error || 'Error' }))
     }
-    setSaving(p => ({ ...p, [gw.id]: false }))
+    setSaving(p => ({ ...p, [weekNum]: false }))
   }
+
+  // Always show all 4 weeks; merge with DB rows by sprint_week
+  const rows = [1, 2, 3, 4].map(weekNum => ({
+    weekNum,
+    dbGw: dbGws.find(g => g.sprint_week === weekNum) || null,
+  }))
 
   return (
     <div className="bg-[#0d1117] border border-white/8 rounded-2xl overflow-hidden">
       <div className="px-4 py-3 border-b border-white/6">
         <p className="text-white font-bold text-sm">Gameweek date windows</p>
-        <p className="text-gray-500 text-xs mt-0.5">Edit lock time, start and end dates for any gameweek</p>
+        <p className="text-gray-500 text-xs mt-0.5">Default: Monday 00:00 → Sunday 23:59 based on sprint start. Override per week if needed.</p>
       </div>
       <div className="px-4 py-4 space-y-3">
         <select
@@ -538,23 +553,21 @@ function GameweekDateEditor() {
 
         {loading && <p className="text-gray-600 text-xs text-center py-2">Loading…</p>}
 
-        {gameweeks.map((gw) => {
-          const e = edits[gw.id] || {}
-          const dirty = Object.keys(e).some(k => e[k] !== undefined && e[k] !== '')
-          const sv = saved[gw.id]
+        {sprintId && !loading && rows.map(({ weekNum, dbGw }) => {
+          const e = edits[weekNum] || {}
+          const dirty = Object.keys(e).some(k => e[k])
+          const sv = saved[weekNum]
           return (
-            <div key={gw.id} className="rounded-xl border border-white/6 bg-white/2 p-3 space-y-2.5">
+            <div key={weekNum} className="rounded-xl border border-white/6 bg-white/2 p-3 space-y-2.5">
               <div className="flex items-center justify-between">
-                <p className="text-white text-xs font-bold">
-                  Week {gw.sprint_week ?? '?'}
-                  <span className="ml-2 text-gray-600 font-normal text-[10px]">{gw.id.slice(0, 8)}…</span>
-                </p>
+                <p className="text-white text-xs font-bold">Week {weekNum}</p>
                 <span className={`text-[10px] font-bold px-2 py-0.5 rounded-full ${
-                  gw.status === 'FINISHED' ? 'bg-gray-800 text-gray-500' :
-                  gw.status === 'LOCKED'   ? 'bg-yellow-900/40 text-yellow-400' :
-                  gw.status === 'PUBLISHED'? 'bg-green-900/40 text-green-400' :
+                  !dbGw                      ? 'bg-white/5 text-gray-600'        :
+                  dbGw.status === 'FINISHED' ? 'bg-gray-800 text-gray-500'       :
+                  dbGw.status === 'LOCKED'   ? 'bg-yellow-900/40 text-yellow-400':
+                  dbGw.status === 'PUBLISHED'? 'bg-green-900/40 text-green-400'  :
                   'bg-white/5 text-gray-500'
-                }`}>{gw.status}</span>
+                }`}>{dbGw ? dbGw.status : 'EMPTY'}</span>
               </div>
 
               <div className="grid grid-cols-1 gap-2">
@@ -562,8 +575,9 @@ function GameweekDateEditor() {
                   <span className="text-gray-500 text-[10px] uppercase tracking-wider block mb-1">Lock time</span>
                   <input
                     type="datetime-local"
-                    defaultValue={toDtLocalVal(gw.lock_time)}
-                    onChange={ev => setField(gw.id, 'lock_time', ev.target.value)}
+                    defaultValue={toDtLocalVal(dbGw?.lock_time)}
+                    key={`lt-${weekNum}-${dbGw?.id}`}
+                    onChange={ev => setField(weekNum, 'lock_time', ev.target.value)}
                     className="w-full bg-white/5 border border-white/10 rounded-lg px-3 py-1.5 text-xs text-white focus:outline-none focus:border-indigo-500/50"
                   />
                 </label>
@@ -572,8 +586,9 @@ function GameweekDateEditor() {
                     <span className="text-gray-500 text-[10px] uppercase tracking-wider block mb-1">Start date</span>
                     <input
                       type="date"
-                      defaultValue={toDateVal(gw.start_date)}
-                      onChange={ev => setField(gw.id, 'start_date', ev.target.value)}
+                      defaultValue={toDateVal(dbGw?.start_date)}
+                      key={`sd-${weekNum}-${dbGw?.id}`}
+                      onChange={ev => setField(weekNum, 'start_date', ev.target.value)}
                       className="w-full bg-white/5 border border-white/10 rounded-lg px-3 py-1.5 text-xs text-white focus:outline-none focus:border-indigo-500/50"
                     />
                   </label>
@@ -581,8 +596,9 @@ function GameweekDateEditor() {
                     <span className="text-gray-500 text-[10px] uppercase tracking-wider block mb-1">End date</span>
                     <input
                       type="date"
-                      defaultValue={toDateVal(gw.end_date)}
-                      onChange={ev => setField(gw.id, 'end_date', ev.target.value)}
+                      defaultValue={toDateVal(dbGw?.end_date)}
+                      key={`ed-${weekNum}-${dbGw?.id}`}
+                      onChange={ev => setField(weekNum, 'end_date', ev.target.value)}
                       className="w-full bg-white/5 border border-white/10 rounded-lg px-3 py-1.5 text-xs text-white focus:outline-none focus:border-indigo-500/50"
                     />
                   </label>
@@ -591,11 +607,11 @@ function GameweekDateEditor() {
 
               <div className="flex items-center gap-2">
                 <button
-                  disabled={!dirty || saving[gw.id]}
-                  onClick={() => save(gw)}
+                  disabled={!dirty || saving[weekNum]}
+                  onClick={() => save(weekNum, dbGw)}
                   className="flex-1 py-2 rounded-xl bg-indigo-600 hover:bg-indigo-500 disabled:opacity-30 disabled:pointer-events-none text-white font-bold text-xs transition-colors"
                 >
-                  {saving[gw.id] ? 'Saving…' : 'Save changes'}
+                  {saving[weekNum] ? 'Saving…' : 'Save changes'}
                 </button>
                 {sv === 'ok' && <span className="text-green-400 text-xs">✓ Saved</span>}
                 {sv && sv !== 'ok' && <span className="text-red-400 text-xs truncate">{sv}</span>}
@@ -604,9 +620,7 @@ function GameweekDateEditor() {
           )
         })}
 
-        {sprintId && !loading && gameweeks.length === 0 && (
-          <p className="text-gray-600 text-xs text-center py-2">No gameweeks found for this sprint.</p>
-        )}
+        <p className="text-gray-600 text-[10px] text-center pt-1">Changing dates affects which fixtures appear in the gameweek builder. Lock times are set automatically from match kick-offs.</p>
       </div>
     </div>
   )
@@ -858,6 +872,8 @@ export default function AdminPage() {
         {/* ── TOOLS TAB ────────────────────────────────────────────────────── */}
         {activeTab === 'tools' && (
           <div className="space-y-4">
+            <GameweekDateEditor />
+
             <div className="bg-[#0d1117] border border-white/8 rounded-2xl overflow-hidden">
               <div className="px-4 py-3 border-b border-white/6">
                 <p className="text-white font-bold text-sm">Settlement repair</p>
