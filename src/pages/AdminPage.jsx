@@ -444,16 +444,16 @@ function WeekCard({ weekNum, weekStart, lockDt, settleDt, events, canEdit, onAdd
             <label className="flex flex-col gap-0.5">
               <span className="text-[10px] text-gray-500">Start date</span>
               <input type="date"
-                key={`sd-${weekNum}-${dbGw?.id ?? 'new'}`}
-                defaultValue={toDateVal(dbGw?.start_date)}
+                key={`sd-${weekNum}-${dbGw?.id ?? weekStart.toISOString().slice(0,10)}`}
+                defaultValue={toDateVal(dbGw?.start_date) || weekStart.toISOString().slice(0, 10)}
                 onChange={e => setF('start_date', e.target.value)}
                 className="bg-white/5 border border-white/10 rounded-lg px-2.5 py-1.5 text-xs text-white focus:outline-none focus:border-indigo-500/50" />
             </label>
             <label className="flex flex-col gap-0.5">
               <span className="text-[10px] text-gray-500">End date</span>
               <input type="date"
-                key={`ed-${weekNum}-${dbGw?.id ?? 'new'}`}
-                defaultValue={toDateVal(dbGw?.end_date)}
+                key={`ed-${weekNum}-${dbGw?.id ?? weekEnd.toISOString().slice(0,10)}`}
+                defaultValue={toDateVal(dbGw?.end_date) || weekEnd.toISOString().slice(0, 10)}
                 onChange={e => setF('end_date', e.target.value)}
                 className="bg-white/5 border border-white/10 rounded-lg px-2.5 py-1.5 text-xs text-white focus:outline-none focus:border-indigo-500/50" />
             </label>
@@ -497,25 +497,40 @@ function SprintStatusPill({ status }) {
 
 // ── Gameweek Date Editor ──────────────────────────────────────────────────────
 function GameweekDateEditor({ sprintId }) {
-  const [dbGws,  setDbGws]  = useState([])
-  const [loading,setLoading]= useState(false)
-  const [edits,  setEdits]  = useState({})
-  const [saving, setSaving] = useState({})
-  const [saved,  setSaved]  = useState({})
+  const [sprint,  setSprint]  = useState(null)   // full sprint row incl. start_date
+  const [dbGws,   setDbGws]   = useState([])
+  const [loading, setLoading] = useState(false)
+  const [edits,   setEdits]   = useState({})
+  const [saving,  setSaving]  = useState({})
+  const [saved,   setSaved]   = useState({})
 
-  const fetchGws = async (id) => {
-    if (!id) { setDbGws([]); return }
+  const fetchData = async (id) => {
+    if (!id) { setSprint(null); setDbGws([]); return }
     setLoading(true)
     try {
       const r = await client.get(`/admin/sprints/${id}`)
+      setSprint(r.data)
       setDbGws(r.data.gameweeks || [])
     } catch {}
     setLoading(false)
   }
 
-  useEffect(() => { fetchGws(sprintId) }, [sprintId])
+  useEffect(() => { setEdits({}); setSaved({}); fetchData(sprintId) }, [sprintId])
 
-  const toIso     = (dtLocal) => dtLocal ? new Date(dtLocal).toISOString() : undefined
+  // Compute Mon–Sun defaults for each week from sprint start_date
+  const weekDefault = (weekNum) => {
+    if (!sprint?.start_date) return { start: '', end: '' }
+    const mon = new Date(sprint.start_date)
+    mon.setUTCDate(mon.getUTCDate() + (weekNum - 1) * 7)
+    const sun = new Date(mon)
+    sun.setUTCDate(sun.getUTCDate() + 6)
+    return {
+      start: mon.toISOString().slice(0, 10),
+      end:   sun.toISOString().slice(0, 10),
+    }
+  }
+
+  const toIso     = (v) => v ? new Date(v).toISOString() : undefined
   const toDateVal = (iso) => iso ? iso.slice(0, 10) : ''
   const toDtLocal = (iso) => iso ? iso.slice(0, 16) : ''
 
@@ -523,28 +538,32 @@ function GameweekDateEditor({ sprintId }) {
     setEdits(p => ({ ...p, [weekNum]: { ...p[weekNum], [field]: val } }))
 
   const save = async (weekNum) => {
-    const patch = edits[weekNum] || {}
-    if (!Object.keys(patch).some(k => patch[k])) return
+    const patch   = edits[weekNum] || {}
+    const def     = weekDefault(weekNum)
+    const hasPatch = Object.keys(patch).some(k => patch[k])
+    if (!hasPatch) return
     setSaving(p => ({ ...p, [weekNum]: true }))
     setSaved(p => ({ ...p, [weekNum]: null }))
     try {
       const body = {}
+      if (patch.start_date) body.start_date = patch.start_date
+      if (patch.end_date)   body.end_date   = patch.end_date
       if (patch.lock_time)  { body.lock_time = toIso(patch.lock_time); body.reveal_time = body.lock_time }
-      if (patch.start_date)   body.start_date = patch.start_date
-      if (patch.end_date)     body.end_date   = patch.end_date
 
-      // Find existing DB row for this week number
       let gwId = dbGws.find(g => g.sprint_week === weekNum)?.id
       if (!gwId) {
-        // No DB row yet — create an empty placeholder so dates can be stored
-        const cr = await client.post(`/admin/sprints/${sprintId}/gameweeks`, { sprint_week: weekNum, events: [] })
+        const cr = await client.post(`/admin/sprints/${sprintId}/gameweeks`, {
+          sprint_week: weekNum,
+          events: [],
+          // seed defaults so DB row has sensible start/end even before PATCH
+        })
         gwId = cr.data.gameweek_id
       }
 
       await client.patch(`/admin/sprints/${sprintId}/gameweeks/${gwId}`, body)
       setEdits(p => ({ ...p, [weekNum]: {} }))
       setSaved(p => ({ ...p, [weekNum]: 'ok' }))
-      await fetchGws(sprintId)
+      await fetchData(sprintId)
     } catch (e) {
       setSaved(p => ({ ...p, [weekNum]: e.response?.data?.error || 'Error' }))
     }
@@ -562,56 +581,65 @@ function GameweekDateEditor({ sprintId }) {
     <div className="bg-[#0d1117] border border-white/8 rounded-2xl overflow-hidden">
       <div className="px-4 py-3 border-b border-white/6">
         <p className="text-white font-bold text-sm">Gameweek date windows</p>
-        <p className="text-gray-500 text-xs mt-0.5">Set start/end dates before syncing fixtures. All 4 weeks are always editable.</p>
+        <p className="text-gray-500 text-xs mt-0.5">Mon–Sun defaults pre-filled. Edit any week and save.</p>
       </div>
       <div className="px-4 py-4 space-y-3">
-        {loading && <p className="text-gray-500 text-xs text-center py-2">Loading…</p>}
-
-        {!loading && [1, 2, 3, 4].map(weekNum => {
+        {[1, 2, 3, 4].map(weekNum => {
           const dbGw  = dbGws.find(g => g.sprint_week === weekNum) || null
+          const def   = weekDefault(weekNum)
           const e     = edits[weekNum] || {}
           const dirty = Object.keys(e).some(k => e[k])
           const sv    = saved[weekNum]
+
+          // Resolved display values: DB > edits > Mon-Sun default
+          const startVal = toDateVal(dbGw?.start_date) || def.start
+          const endVal   = toDateVal(dbGw?.end_date)   || def.end
+          const lockVal  = toDtLocal(dbGw?.lock_time)
+
           return (
             <div key={weekNum} className="rounded-xl border border-white/6 bg-white/2 p-3 space-y-2.5">
               <div className="flex items-center justify-between">
-                <p className="text-white text-xs font-bold">Week {weekNum}</p>
+                <p className="text-white text-xs font-bold">
+                  Week {weekNum}
+                  {startVal && endVal && (
+                    <span className="ml-2 text-gray-500 font-normal">{startVal} → {endVal}</span>
+                  )}
+                </p>
                 <span className={`text-[10px] font-bold px-2 py-0.5 rounded-full ${
-                  !dbGw                      ? 'bg-white/5 text-gray-600'        :
+                  loading                    ? 'bg-white/5 text-gray-700'        :
+                  !dbGw                      ? 'bg-white/5 text-gray-500'        :
                   dbGw.status === 'FINISHED' ? 'bg-gray-800 text-gray-500'       :
                   dbGw.status === 'LOCKED'   ? 'bg-yellow-900/40 text-yellow-400':
                   dbGw.status === 'PUBLISHED'? 'bg-green-900/40 text-green-400'  :
                                                'bg-white/5 text-gray-500'
-                }`}>{dbGw ? dbGw.status : 'EMPTY'}</span>
+                }`}>{loading ? '…' : dbGw ? dbGw.status : 'EMPTY'}</span>
               </div>
 
-              <div className="grid grid-cols-1 gap-2">
+              <div className="grid grid-cols-2 gap-2">
                 <label className="block">
+                  <span className="text-gray-500 text-[10px] uppercase tracking-wider block mb-1">Start (Mon)</span>
+                  <input type="date"
+                    key={`sd-${weekNum}-${dbGw?.id ?? def.start}`}
+                    defaultValue={startVal}
+                    onChange={ev => setField(weekNum, 'start_date', ev.target.value)}
+                    className="w-full bg-white/5 border border-white/10 rounded-lg px-2.5 py-1.5 text-xs text-white focus:outline-none focus:border-indigo-500/50" />
+                </label>
+                <label className="block">
+                  <span className="text-gray-500 text-[10px] uppercase tracking-wider block mb-1">End (Sun)</span>
+                  <input type="date"
+                    key={`ed-${weekNum}-${dbGw?.id ?? def.end}`}
+                    defaultValue={endVal}
+                    onChange={ev => setField(weekNum, 'end_date', ev.target.value)}
+                    className="w-full bg-white/5 border border-white/10 rounded-lg px-2.5 py-1.5 text-xs text-white focus:outline-none focus:border-indigo-500/50" />
+                </label>
+                <label className="block col-span-2">
                   <span className="text-gray-500 text-[10px] uppercase tracking-wider block mb-1">Lock time</span>
                   <input type="datetime-local"
-                    key={`lt-${weekNum}-${dbGw?.id ?? 'new'}`}
-                    defaultValue={toDtLocal(dbGw?.lock_time)}
+                    key={`lt-${weekNum}-${dbGw?.id ?? def.start}`}
+                    defaultValue={lockVal}
                     onChange={ev => setField(weekNum, 'lock_time', ev.target.value)}
-                    className="w-full bg-white/5 border border-white/10 rounded-lg px-3 py-1.5 text-xs text-white focus:outline-none focus:border-indigo-500/50" />
+                    className="w-full bg-white/5 border border-white/10 rounded-lg px-2.5 py-1.5 text-xs text-white focus:outline-none focus:border-indigo-500/50" />
                 </label>
-                <div className="grid grid-cols-2 gap-2">
-                  <label className="block">
-                    <span className="text-gray-500 text-[10px] uppercase tracking-wider block mb-1">Start date</span>
-                    <input type="date"
-                      key={`sd-${weekNum}-${dbGw?.id ?? 'new'}`}
-                      defaultValue={toDateVal(dbGw?.start_date)}
-                      onChange={ev => setField(weekNum, 'start_date', ev.target.value)}
-                      className="w-full bg-white/5 border border-white/10 rounded-lg px-3 py-1.5 text-xs text-white focus:outline-none focus:border-indigo-500/50" />
-                  </label>
-                  <label className="block">
-                    <span className="text-gray-500 text-[10px] uppercase tracking-wider block mb-1">End date</span>
-                    <input type="date"
-                      key={`ed-${weekNum}-${dbGw?.id ?? 'new'}`}
-                      defaultValue={toDateVal(dbGw?.end_date)}
-                      onChange={ev => setField(weekNum, 'end_date', ev.target.value)}
-                      className="w-full bg-white/5 border border-white/10 rounded-lg px-3 py-1.5 text-xs text-white focus:outline-none focus:border-indigo-500/50" />
-                  </label>
-                </div>
               </div>
 
               <div className="flex items-center gap-2">
