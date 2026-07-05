@@ -315,6 +315,16 @@ function WeekCard({ weekNum, weekStart, lockDt, settleDt, events, canEdit, onAdd
 
   const isLocked = status === 'FINISHED' || status === 'LOCKED'
 
+  // Derive lock/close fixture anchors from DB events
+  const dbEvents = (dbGw?.events || []).filter(e => e.match_time)
+  const byTime   = [...dbEvents].sort((a, b) => new Date(a.match_time) - new Date(b.match_time))
+  const firstFix = byTime[0]        || null
+  const lastFix  = byTime[byTime.length - 1] || null
+  const lockTime  = dbGw?.lock_time  ? new Date(dbGw.lock_time)  : (events.length > 0 ? lockDt   : null)
+  const closeTime = dbGw?.end_date   ? new Date(dbGw.end_date)   : (events.length > 0 ? settleDt : null)
+  const lockIsFallback  = !dbGw?.lock_time
+  const closeIsFallback = !dbGw?.end_date
+
   return (
     <div className={`rounded-2xl border overflow-hidden ${statusCfg.bg}`}>
       {showAdd && <AddFixtureModal weekNum={weekNum} currentCount={events.length} onAdd={onAdd} onClose={() => setShowAdd(false)} />}
@@ -342,10 +352,23 @@ function WeekCard({ weekNum, weekStart, lockDt, settleDt, events, canEdit, onAdd
           <p className="text-white text-sm font-semibold">
             {fmtDay(weekStart)} → {fmtDay(weekEnd)}
           </p>
-          {events.length > 0 && (
-            <p className="text-gray-600 text-[10px] mt-0.5">
-              Lock {fmtShort(lockDt)} {fmtTime(lockDt)} · Settle {fmtShort(settleDt)} 00:00
-            </p>
+          {(lockTime || closeTime) && (
+            <div className="flex flex-col gap-0.5 mt-1">
+              {lockTime && (
+                <span className="inline-flex items-center gap-1 text-[10px] px-1.5 py-0.5 rounded border bg-yellow-900/20 border-yellow-700/20 text-yellow-400 w-fit max-w-full truncate">
+                  🔒 LOCKS {fmtDay(lockTime)} {fmtTime(lockTime)}
+                  {lockIsFallback && <span className="text-yellow-700">(fallback)</span>}
+                  {firstFix && <span className="text-yellow-600 ml-0.5">· {firstFix.fixture_name} KO {fmtTime(new Date(firstFix.match_time))}</span>}
+                </span>
+              )}
+              {closeTime && (
+                <span className="inline-flex items-center gap-1 text-[10px] px-1.5 py-0.5 rounded border bg-purple-900/20 border-purple-700/20 text-purple-400 w-fit max-w-full truncate">
+                  ⏱ CLOSES {fmtDay(closeTime)} {fmtTime(closeTime)}
+                  {closeIsFallback && <span className="text-purple-700">(fallback)</span>}
+                  {lastFix && <span className="text-purple-600 ml-0.5">· {lastFix.fixture_name} KO {fmtTime(new Date(lastFix.match_time))}</span>}
+                </span>
+              )}
+            </div>
           )}
         </div>
 
