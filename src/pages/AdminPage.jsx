@@ -314,6 +314,10 @@ function WeekCard({ weekNum, weekStart, lockDt, settleDt, events, canEdit, onAdd
 
   const isLocked = status === 'FINISHED' || status === 'LOCKED'
 
+  // Use DB dates when available, fall back to sprint-schedule computation
+  const displayStart = dbGw?.start_date ? new Date(dbGw.start_date) : weekStart
+  const displayEnd   = dbGw?.end_date   ? new Date(dbGw.end_date)   : weekEnd
+
   // Derive lock/close fixture anchors from DB events
   const dbEvents = (dbGw?.events || []).filter(e => e.match_time)
   const byTime   = [...dbEvents].sort((a, b) => new Date(a.match_time) - new Date(b.match_time))
@@ -349,7 +353,7 @@ function WeekCard({ weekNum, weekStart, lockDt, settleDt, events, canEdit, onAdd
             )}
           </div>
           <p className="text-white text-sm font-semibold">
-            {fmtDay(weekStart)} → {fmtDay(weekEnd)}
+            {fmtDay(displayStart)} → {fmtDay(displayEnd)}
           </p>
           {(lockTime || closeTime) && (
             <div className="flex flex-col gap-0.5 mt-1">
