@@ -500,6 +500,7 @@ function GameweekDateEditor({ sprintId }) {
   const [sprint,  setSprint]  = useState(null)   // full sprint row incl. start_date
   const [dbGws,   setDbGws]   = useState([])
   const [loading, setLoading] = useState(false)
+  const [open,    setOpen]    = useState({})      // weekNum → bool
   const [edits,   setEdits]   = useState({})
   const [saving,  setSaving]  = useState({})
   const [saved,   setSaved]   = useState({})
@@ -606,21 +607,28 @@ function GameweekDateEditor({ sprintId }) {
 
           return (
             <div key={weekNum} className="rounded-xl border border-white/6 bg-white/2 p-3 space-y-2.5">
-              <div className="flex items-center justify-between">
-                <p className="text-white text-xs font-bold">
-                  Week {weekNum}
+              <div className="flex items-center justify-between gap-2">
+                <div className="flex-1 min-w-0">
+                  <p className="text-white text-xs font-bold">
+                    Week {weekNum}
+                    <span className={`ml-2 text-[10px] font-bold px-1.5 py-0.5 rounded-full ${
+                      loading                    ? 'bg-white/5 text-gray-700'        :
+                      !dbGw                      ? 'bg-white/5 text-gray-500'        :
+                      dbGw.status === 'FINISHED' ? 'bg-gray-800 text-gray-500'       :
+                      dbGw.status === 'LOCKED'   ? 'bg-yellow-900/40 text-yellow-400':
+                      dbGw.status === 'PUBLISHED'? 'bg-green-900/40 text-green-400'  :
+                                                   'bg-white/5 text-gray-500'
+                    }`}>{loading ? '…' : dbGw ? dbGw.status : 'EMPTY'}</span>
+                  </p>
                   {startVal && endVal && (
-                    <span className="ml-2 text-gray-500 font-normal">{startVal} → {endVal}</span>
+                    <p className="text-gray-500 text-[11px] mt-0.5">{startVal} → {endVal}</p>
                   )}
-                </p>
-                <span className={`text-[10px] font-bold px-2 py-0.5 rounded-full ${
-                  loading                    ? 'bg-white/5 text-gray-700'        :
-                  !dbGw                      ? 'bg-white/5 text-gray-500'        :
-                  dbGw.status === 'FINISHED' ? 'bg-gray-800 text-gray-500'       :
-                  dbGw.status === 'LOCKED'   ? 'bg-yellow-900/40 text-yellow-400':
-                  dbGw.status === 'PUBLISHED'? 'bg-green-900/40 text-green-400'  :
-                                               'bg-white/5 text-gray-500'
-                }`}>{loading ? '…' : dbGw ? dbGw.status : 'EMPTY'}</span>
+                </div>
+                <button
+                  onClick={() => setOpen(p => ({ ...p, [weekNum]: !p[weekNum] }))}
+                  className="flex-shrink-0 text-[11px] font-semibold px-2.5 py-1 rounded-lg bg-white/5 hover:bg-white/10 border border-white/10 text-gray-300 hover:text-white transition-colors">
+                  {open[weekNum] ? 'Hide' : 'Edit dates'}
+                </button>
               </div>
 
               {(lockDt || closeDt) && (
@@ -648,41 +656,44 @@ function GameweekDateEditor({ sprintId }) {
                 </div>
               )}
 
-              <div className="grid grid-cols-2 gap-2">
-                <label className="block">
-                  <span className="text-gray-500 text-[10px] uppercase tracking-wider block mb-1">Start (Mon)</span>
-                  <input type="date"
-                    key={`sd-${weekNum}-${dbGw?.id ?? def.start}`}
-                    defaultValue={startVal}
-                    onChange={ev => setField(weekNum, 'start_date', ev.target.value)}
-                    className="w-full bg-white/5 border border-white/10 rounded-lg px-2.5 py-1.5 text-xs text-white focus:outline-none focus:border-indigo-500/50" />
-                </label>
-                <label className="block">
-                  <span className="text-gray-500 text-[10px] uppercase tracking-wider block mb-1">End (Sun)</span>
-                  <input type="date"
-                    key={`ed-${weekNum}-${dbGw?.id ?? def.end}`}
-                    defaultValue={endVal}
-                    onChange={ev => setField(weekNum, 'end_date', ev.target.value)}
-                    className="w-full bg-white/5 border border-white/10 rounded-lg px-2.5 py-1.5 text-xs text-white focus:outline-none focus:border-indigo-500/50" />
-                </label>
-                <label className="block col-span-2">
-                  <span className="text-gray-500 text-[10px] uppercase tracking-wider block mb-1">Lock time</span>
-                  <input type="datetime-local"
-                    key={`lt-${weekNum}-${dbGw?.id ?? def.start}`}
-                    defaultValue={lockVal}
-                    onChange={ev => setField(weekNum, 'lock_time', ev.target.value)}
-                    className="w-full bg-white/5 border border-white/10 rounded-lg px-2.5 py-1.5 text-xs text-white focus:outline-none focus:border-indigo-500/50" />
-                </label>
-              </div>
-
-              <div className="flex items-center gap-2">
-                <button disabled={!dirty || saving[weekNum]} onClick={() => save(weekNum)}
-                  className="flex-1 py-2 rounded-xl bg-indigo-600 hover:bg-indigo-500 disabled:opacity-30 disabled:pointer-events-none text-white font-bold text-xs transition-colors">
-                  {saving[weekNum] ? 'Saving…' : 'Save dates'}
-                </button>
-                {sv === 'ok' && <span className="text-green-400 text-xs">✓ Saved</span>}
-                {sv && sv !== 'ok' && <span className="text-red-400 text-xs truncate">{sv}</span>}
-              </div>
+              {open[weekNum] && (
+                <>
+                  <div className="grid grid-cols-2 gap-2 pt-1 border-t border-white/6">
+                    <label className="block">
+                      <span className="text-gray-500 text-[10px] uppercase tracking-wider block mb-1">Start (Mon)</span>
+                      <input type="date"
+                        key={`sd-${weekNum}-${dbGw?.id ?? def.start}`}
+                        defaultValue={startVal}
+                        onChange={ev => setField(weekNum, 'start_date', ev.target.value)}
+                        className="w-full bg-white/5 border border-white/10 rounded-lg px-2.5 py-1.5 text-xs text-white focus:outline-none focus:border-indigo-500/50" />
+                    </label>
+                    <label className="block">
+                      <span className="text-gray-500 text-[10px] uppercase tracking-wider block mb-1">End (Sun)</span>
+                      <input type="date"
+                        key={`ed-${weekNum}-${dbGw?.id ?? def.end}`}
+                        defaultValue={endVal}
+                        onChange={ev => setField(weekNum, 'end_date', ev.target.value)}
+                        className="w-full bg-white/5 border border-white/10 rounded-lg px-2.5 py-1.5 text-xs text-white focus:outline-none focus:border-indigo-500/50" />
+                    </label>
+                    <label className="block col-span-2">
+                      <span className="text-gray-500 text-[10px] uppercase tracking-wider block mb-1">Lock time</span>
+                      <input type="datetime-local"
+                        key={`lt-${weekNum}-${dbGw?.id ?? def.start}`}
+                        defaultValue={lockVal}
+                        onChange={ev => setField(weekNum, 'lock_time', ev.target.value)}
+                        className="w-full bg-white/5 border border-white/10 rounded-lg px-2.5 py-1.5 text-xs text-white focus:outline-none focus:border-indigo-500/50" />
+                    </label>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <button disabled={!dirty || saving[weekNum]} onClick={() => save(weekNum)}
+                      className="flex-1 py-2 rounded-xl bg-indigo-600 hover:bg-indigo-500 disabled:opacity-30 disabled:pointer-events-none text-white font-bold text-xs transition-colors">
+                      {saving[weekNum] ? 'Saving…' : 'Save dates'}
+                    </button>
+                    {sv === 'ok' && <span className="text-green-400 text-xs">✓ Saved</span>}
+                    {sv && sv !== 'ok' && <span className="text-red-400 text-xs truncate">{sv}</span>}
+                  </div>
+                </>
+              )}
             </div>
           )
         })}
