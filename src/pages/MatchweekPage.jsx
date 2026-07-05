@@ -4,7 +4,6 @@ import {
   getGloryStatus, getGloryGameweek, submitGloryPicks,
   getGloryLeaderboard, getCommunityPicks, getFixtureForm, getFixtureStats, getGameweekLive, getEnergyPacks,
 } from '../api/glory'
-import BottomNav from '../components/layout/BottomNav'
 
 function getPlayerTier(correct, incorrect) {
   const total = (correct || 0) + (incorrect || 0)
@@ -871,6 +870,16 @@ function EventCard({ event, selectedOptionId, onSelect, isLocked, dimmed, remain
         showInsights
           ? <InsightsDropdown fixtureId={event.fixture_id} liveEv={liveEv} />
           : <FormDropdown fixtureId={event.fixture_id} homeTeam={homeTeam} awayTeam={awayTeam} homeFlag={homeFlag} awayFlag={awayFlag} />
+      )}
+
+      {/* Knockout rule notice */}
+      {event.is_knockout && ['GOALS','BTTS','CLEAN_SHEET','PLAYER_SCORE'].includes(event.event_type) && (
+        <div className="mx-3 mb-2 px-3 py-2 rounded-xl bg-amber-950/40 border border-amber-500/25 flex items-start gap-2">
+          <span className="text-amber-400 text-sm flex-shrink-0 mt-px">ⓘ</span>
+          <p className="text-[11px] text-amber-300/80 leading-relaxed">
+            Knockout match — extra time goals count towards this market. Penalty shootout goals are not included.
+          </p>
+        </div>
       )}
 
       {/* Options */}
@@ -2119,7 +2128,7 @@ export default function MatchweekPage() {
         </div>
       </div>
 
-      <BottomNav />
+
 
       {/* ── Picks confirmation modal ── */}
       {showConfirm && !effectiveIsLocked && (

@@ -1,7 +1,6 @@
 import { useEffect, useState, useRef } from 'react'
 import { useParams, useNavigate } from 'react-router-dom'
 import { getPublicProfile, getPublicSprintPicks } from '../api/glory'
-import BottomNav from '../components/layout/BottomNav'
 
 // ── Tier helpers ──────────────────────────────────────────────────────────────
 const TIERS = [
@@ -778,7 +777,7 @@ export default function UserPublicProfilePage() {
 
         </div>
       </div>
-      <BottomNav />
+
     </div>
   )
 }

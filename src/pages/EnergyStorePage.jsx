@@ -1,6 +1,5 @@
 import { useState, useEffect, useCallback } from 'react'
 import { getEnergyPacks, purchaseEnergyPack } from '../api/glory'
-import BottomNav from '../components/layout/BottomNav'
 
 const ENERGY_BUDGET = 25
 
@@ -393,7 +392,7 @@ export default function EnergyStorePage() {
         )}
       </div>
 
-      <BottomNav />
+
     </div>
   )
 }

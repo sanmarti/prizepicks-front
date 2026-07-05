@@ -1,6 +1,5 @@
 import { useEffect, useState, useRef } from 'react'
 import { getGloryDivisions, getGloryLeaderboard, getGloryStatus } from '../api/glory'
-import BottomNav from '../components/layout/BottomNav'
 import GloryRankingList, { GloryRankingHeader } from '../components/GloryRankingList'
 
 const V = {
@@ -211,7 +210,7 @@ function DivisionsListScreen({ divisions, divStats, myDivId, activeDiv, onSelect
         </div>
       </div>
 
-      <BottomNav />
+
     </div>
   )
 }
@@ -277,7 +276,7 @@ function RankingsScreen({ div, sprintId, sprintName, myUserId, myDivId, onOpenPi
           <div className="max-w-md mx-auto px-4 py-3 flex items-center justify-between">
             <div>
               <p className="text-white text-xs font-semibold">Your position</p>
-              <p className="text-purple-400 text-[11px] mt-0.5">#{myIdx + 1} of {rows.length}</p>
+              <p className="text-purple-400 text-[11px] mt-0.5">#{rows[myIdx]?.rank ?? myIdx + 1} of {rows.length}</p>
             </div>
             <div className="flex items-center gap-3">
               {!div.is_highest && promLP !== null && (
@@ -299,7 +298,7 @@ function RankingsScreen({ div, sprintId, sprintName, myUserId, myDivId, onOpenPi
         </div>
       )}
 
-      <BottomNav />
+
     </div>
   )
 }

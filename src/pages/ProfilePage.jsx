@@ -2,7 +2,6 @@ import { useEffect, useRef, useState, useCallback } from 'react'
 import { getProfile, updateProfile, changePassword } from '../api/users'
 import { getGloryProfile, getGloryStatus, getPurchaseHistory } from '../api/glory'
 import { useAuthStore } from '../store/authStore'
-import BottomNav from '../components/layout/BottomNav'
 import Spinner from '../components/ui/Spinner'
 
 function compressImage(file) {
@@ -1231,7 +1230,7 @@ export default function ProfilePage() {
           </div>
         )}
       </div>
-      <BottomNav />
+
     </div>
   )
 }

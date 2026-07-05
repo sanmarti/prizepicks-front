@@ -1,7 +1,6 @@
 import { useState, useEffect, useCallback, useRef } from 'react'
 import { getScores } from '../api/competitions'
 import { getFixtureStats } from '../api/glory'
-import BottomNav from '../components/layout/BottomNav'
 import TopBar from '../components/layout/TopBar'
 
 const LIVE_STATUSES   = new Set(['1H', 'HT', '2H', 'ET', 'BT', 'P', 'SUSP', 'INT', 'LIVE'])
@@ -447,7 +446,7 @@ export default function ScoresPage() {
         </div>
       </div>
 
-      <BottomNav />
+
     </div>
   )
 }

@@ -1,8 +1,9 @@
 import { useState, useEffect } from 'react'
-import { Routes, Route, Navigate } from 'react-router-dom'
+import { Routes, Route, Navigate, useLocation } from 'react-router-dom'
 import { useAuthStore } from './store/authStore'
 import { getMyRelevantSprints } from './api/glory'
 import SprintClosingPopup from './components/SprintClosingPopup'
+import BottomNav from './components/layout/BottomNav'
 
 import LoginPage              from './pages/LoginPage'
 import RegisterPage           from './pages/RegisterPage'
@@ -67,8 +68,12 @@ function SprintPopupController() {
   )
 }
 
-export default function App() {
+const NO_NAV_PREFIXES = ['/login', '/register', '/onboarding', '/admin']
+
+function AppShell() {
   const token = useAuthStore((s) => s.token)
+  const { pathname } = useLocation()
+  const showNav = !!token && !NO_NAV_PREFIXES.some(p => pathname === p || pathname.startsWith(p + '/'))
 
   return (
     <>
@@ -92,6 +97,11 @@ export default function App() {
 
         <Route path="*" element={<Navigate to="/" replace />} />
       </Routes>
+      {showNav && <BottomNav />}
     </>
   )
+}
+
+export default function App() {
+  return <AppShell />
 }

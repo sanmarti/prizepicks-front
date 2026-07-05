@@ -1,7 +1,6 @@
 import { useEffect, useState, useRef } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { getMyRelevantSprints, getSprintDetail, getGloryGameweek } from '../api/glory'
-import BottomNav from '../components/layout/BottomNav'
 import SprintClosingPopup from '../components/SprintClosingPopup'
 import GloryRankingList, { GloryRankingHeader } from '../components/GloryRankingList'
 
@@ -1516,7 +1515,7 @@ export default function MySprintsPage() {
         )}
       </div>
 
-      <BottomNav />
+
     </div>
   )
 }
