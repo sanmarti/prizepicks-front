@@ -596,6 +596,14 @@ function GameweekDateEditor({ sprintId }) {
           const endVal   = toDateVal(dbGw?.end_date)   || def.end
           const lockVal  = toDtLocal(dbGw?.lock_time)
 
+          // Lock / close source fixtures
+          const gwEvents  = (dbGw?.events || []).filter(e => e.match_time)
+          const byTime    = [...gwEvents].sort((a, b) => new Date(a.match_time) - new Date(b.match_time))
+          const firstFix  = byTime[0] || null
+          const lastFix   = byTime[byTime.length - 1] || null
+          const lockDt    = dbGw?.lock_time ? new Date(dbGw.lock_time) : null
+          const closeDt   = dbGw?.end_date  ? new Date(dbGw.end_date)  : null
+
           return (
             <div key={weekNum} className="rounded-xl border border-white/6 bg-white/2 p-3 space-y-2.5">
               <div className="flex items-center justify-between">
@@ -614,6 +622,31 @@ function GameweekDateEditor({ sprintId }) {
                                                'bg-white/5 text-gray-500'
                 }`}>{loading ? '…' : dbGw ? dbGw.status : 'EMPTY'}</span>
               </div>
+
+              {(lockDt || closeDt) && (
+                <div className="flex flex-col gap-1">
+                  {lockDt && (
+                    <span className="inline-flex flex-wrap items-center gap-x-1.5 text-[10px] px-2 py-1 rounded-lg border bg-yellow-900/20 border-yellow-700/20 text-yellow-400 w-fit max-w-full">
+                      🔒 <span className="font-semibold">LOCKS</span> {fmtDay(lockDt)} {fmtTime(lockDt)}
+                      {firstFix && (
+                        <span className="text-yellow-600/80">
+                          · {firstFix.fixture_name} KO {fmtTime(new Date(firstFix.match_time))}
+                        </span>
+                      )}
+                    </span>
+                  )}
+                  {closeDt && (
+                    <span className="inline-flex flex-wrap items-center gap-x-1.5 text-[10px] px-2 py-1 rounded-lg border bg-purple-900/20 border-purple-700/20 text-purple-400 w-fit max-w-full">
+                      ⏱ <span className="font-semibold">CLOSES</span> {fmtDay(closeDt)} {fmtTime(closeDt)}
+                      {lastFix && (
+                        <span className="text-purple-600/80">
+                          · {lastFix.fixture_name} KO {fmtTime(new Date(lastFix.match_time))}
+                        </span>
+                      )}
+                    </span>
+                  )}
+                </div>
+              )}
 
               <div className="grid grid-cols-2 gap-2">
                 <label className="block">
