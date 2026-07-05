@@ -260,7 +260,8 @@ function SprintHistoryRow({ s, userId }) {
   const outcomeColor = { promoted: 'text-green-400', retained: 'text-gray-400', relegated: 'text-red-400', pending: 'text-indigo-400' }[s.sprint_outcome] ?? 'text-gray-500'
 
   function handleToggle() {
-    if (!open && !fetched.current && s.sprint_id) {
+    const shouldFetch = !open && s.sprint_id && (!fetched.current || weeks?.length === 0)
+    if (shouldFetch) {
       fetched.current = true
       setLoading(true)
       getPublicSprintPicks(userId, s.sprint_id)
