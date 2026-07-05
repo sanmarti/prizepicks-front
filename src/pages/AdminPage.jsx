@@ -9,13 +9,11 @@ const SPRINT_SCHEDULE = [
   { id: 2, name: 'April Clash',     start: '2026-04-06' },
   { id: 3, name: 'Champions Run',   start: '2026-05-04' },
   { id: 4, name: 'June Showdown',   start: '2026-06-01' },
-  { id: 5, name: 'July Knockouts',  start: '2026-06-29' },
+  { id: 5, name: 'July Knockouts',  start: '2026-07-04' },
 ]
 
 // ── Date helpers ──────────────────────────────────────────────────────────────
-// Demo reference date: June sprint is settled with invented results;
-// July sprint is the active one. Statuses compute from this fixed reference.
-const NOW = new Date('2026-07-01T10:00:00')
+const NOW = new Date()
 
 function localDate(dateStr) { return new Date(dateStr + 'T00:00:00') }
 
