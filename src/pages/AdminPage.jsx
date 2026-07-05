@@ -1,4 +1,4 @@
-import { useState, useMemo } from 'react'
+import { useState, useMemo, useEffect, useRef } from 'react'
 import { useNavigate } from 'react-router-dom'
 import client from '../api/client'
 
@@ -380,12 +380,165 @@ function SprintStatusPill({ status }) {
   )
 }
 
+// ── Gameweek Date Editor ──────────────────────────────────────────────────────
+function GameweekDateEditor() {
+  const [sprints,    setSprints]    = useState([])
+  const [sprintId,   setSprintId]   = useState('')
+  const [gameweeks,  setGameweeks]  = useState([])
+  const [loading,    setLoading]    = useState(false)
+  const [edits,      setEdits]      = useState({})   // { [gwId]: { lock_time, start_date, end_date } }
+  const [saving,     setSaving]     = useState({})   // { [gwId]: bool }
+  const [saved,      setSaved]      = useState({})   // { [gwId]: 'ok'|'err' }
+
+  useEffect(() => {
+    client.get('/admin/sprints').then(r => setSprints(r.data || [])).catch(() => {})
+  }, [])
+
+  const loadSprint = async (id) => {
+    setSprintId(id)
+    setGameweeks([])
+    setEdits({})
+    if (!id) return
+    setLoading(true)
+    try {
+      const r = await client.get(`/admin/sprints/${id}`)
+      setGameweeks(r.data.gameweeks || [])
+    } catch {}
+    setLoading(false)
+  }
+
+  const setField = (gwId, field, val) =>
+    setEdits(p => ({ ...p, [gwId]: { ...p[gwId], [field]: val } }))
+
+  const toIso = (dtLocal) => dtLocal ? new Date(dtLocal).toISOString() : undefined
+  const toDateVal = (iso) => iso ? iso.slice(0, 10) : ''
+  const toDtLocalVal = (iso) => iso ? iso.slice(0, 16) : ''
+
+  const save = async (gw) => {
+    const patch = edits[gw.id] || {}
+    if (!Object.keys(patch).length) return
+    setSaving(p => ({ ...p, [gw.id]: true }))
+    setSaved(p => ({ ...p, [gw.id]: null }))
+    try {
+      const body = {}
+      if (patch.lock_time  !== undefined) { body.lock_time   = toIso(patch.lock_time);  body.reveal_time = toIso(patch.lock_time) }
+      if (patch.start_date !== undefined)   body.start_date  = patch.start_date
+      if (patch.end_date   !== undefined)   body.end_date    = patch.end_date
+      await client.patch(`/admin/sprints/${sprintId}/gameweeks/${gw.id}`, body)
+      const r = await client.get(`/admin/sprints/${sprintId}`)
+      setGameweeks(r.data.gameweeks || [])
+      setEdits(p => ({ ...p, [gw.id]: {} }))
+      setSaved(p => ({ ...p, [gw.id]: 'ok' }))
+    } catch (e) {
+      setSaved(p => ({ ...p, [gw.id]: e.response?.data?.error || 'Error' }))
+    }
+    setSaving(p => ({ ...p, [gw.id]: false }))
+  }
+
+  return (
+    <div className="bg-[#0d1117] border border-white/8 rounded-2xl overflow-hidden">
+      <div className="px-4 py-3 border-b border-white/6">
+        <p className="text-white font-bold text-sm">Gameweek date windows</p>
+        <p className="text-gray-500 text-xs mt-0.5">Edit lock time, start and end dates for any gameweek</p>
+      </div>
+      <div className="px-4 py-4 space-y-3">
+        <select
+          value={sprintId}
+          onChange={e => loadSprint(e.target.value)}
+          className="w-full bg-white/5 border border-white/10 rounded-xl px-3 py-2 text-sm text-white focus:outline-none focus:border-indigo-500/50"
+        >
+          <option value="">— Select sprint —</option>
+          {sprints.map(s => (
+            <option key={s.id} value={s.id}>{s.name} ({s.status})</option>
+          ))}
+        </select>
+
+        {loading && <p className="text-gray-600 text-xs text-center py-2">Loading…</p>}
+
+        {gameweeks.map((gw) => {
+          const e = edits[gw.id] || {}
+          const dirty = Object.keys(e).some(k => e[k] !== undefined && e[k] !== '')
+          const sv = saved[gw.id]
+          return (
+            <div key={gw.id} className="rounded-xl border border-white/6 bg-white/2 p-3 space-y-2.5">
+              <div className="flex items-center justify-between">
+                <p className="text-white text-xs font-bold">
+                  Week {gw.sprint_week ?? '?'}
+                  <span className="ml-2 text-gray-600 font-normal text-[10px]">{gw.id.slice(0, 8)}…</span>
+                </p>
+                <span className={`text-[10px] font-bold px-2 py-0.5 rounded-full ${
+                  gw.status === 'FINISHED' ? 'bg-gray-800 text-gray-500' :
+                  gw.status === 'LOCKED'   ? 'bg-yellow-900/40 text-yellow-400' :
+                  gw.status === 'PUBLISHED'? 'bg-green-900/40 text-green-400' :
+                  'bg-white/5 text-gray-500'
+                }`}>{gw.status}</span>
+              </div>
+
+              <div className="grid grid-cols-1 gap-2">
+                <label className="block">
+                  <span className="text-gray-500 text-[10px] uppercase tracking-wider block mb-1">Lock time</span>
+                  <input
+                    type="datetime-local"
+                    defaultValue={toDtLocalVal(gw.lock_time)}
+                    onChange={ev => setField(gw.id, 'lock_time', ev.target.value)}
+                    className="w-full bg-white/5 border border-white/10 rounded-lg px-3 py-1.5 text-xs text-white focus:outline-none focus:border-indigo-500/50"
+                  />
+                </label>
+                <div className="grid grid-cols-2 gap-2">
+                  <label className="block">
+                    <span className="text-gray-500 text-[10px] uppercase tracking-wider block mb-1">Start date</span>
+                    <input
+                      type="date"
+                      defaultValue={toDateVal(gw.start_date)}
+                      onChange={ev => setField(gw.id, 'start_date', ev.target.value)}
+                      className="w-full bg-white/5 border border-white/10 rounded-lg px-3 py-1.5 text-xs text-white focus:outline-none focus:border-indigo-500/50"
+                    />
+                  </label>
+                  <label className="block">
+                    <span className="text-gray-500 text-[10px] uppercase tracking-wider block mb-1">End date</span>
+                    <input
+                      type="date"
+                      defaultValue={toDateVal(gw.end_date)}
+                      onChange={ev => setField(gw.id, 'end_date', ev.target.value)}
+                      className="w-full bg-white/5 border border-white/10 rounded-lg px-3 py-1.5 text-xs text-white focus:outline-none focus:border-indigo-500/50"
+                    />
+                  </label>
+                </div>
+              </div>
+
+              <div className="flex items-center gap-2">
+                <button
+                  disabled={!dirty || saving[gw.id]}
+                  onClick={() => save(gw)}
+                  className="flex-1 py-2 rounded-xl bg-indigo-600 hover:bg-indigo-500 disabled:opacity-30 disabled:pointer-events-none text-white font-bold text-xs transition-colors"
+                >
+                  {saving[gw.id] ? 'Saving…' : 'Save changes'}
+                </button>
+                {sv === 'ok' && <span className="text-green-400 text-xs">✓ Saved</span>}
+                {sv && sv !== 'ok' && <span className="text-red-400 text-xs truncate">{sv}</span>}
+              </div>
+            </div>
+          )
+        })}
+
+        {sprintId && !loading && gameweeks.length === 0 && (
+          <p className="text-gray-600 text-xs text-center py-2">No gameweeks found for this sprint.</p>
+        )}
+      </div>
+    </div>
+  )
+}
+
 // ── Main ──────────────────────────────────────────────────────────────────────
 export default function AdminPage() {
   const navigate = useNavigate()
   const [activeTab,      setActiveTab]      = useState('sprints')
   const [toolResult,     setToolResult]     = useState(null)
   const [toolLoading,    setToolLoading]    = useState(false)
+  const [knockoutGwId,   setKnockoutGwId]   = useState('')
+  const [knockoutEvents, setKnockoutEvents] = useState(null)
+  const [knockoutLoading, setKnockoutLoading] = useState(false)
+  const [knockoutError,  setKnockoutError]  = useState(null)
   const [selectedSprint, setSelectedSprint] = useState(() => {
     // Default to the live sprint, or next upcoming one
     const live = SPRINT_SCHEDULE.find(s => getSprintStatus(s.start) === 'LIVE')
@@ -599,6 +752,8 @@ export default function AdminPage() {
         {/* ── TOOLS TAB ────────────────────────────────────────────────────── */}
         {activeTab === 'tools' && (
           <div className="space-y-4">
+            <GameweekDateEditor />
+
             <div className="bg-[#0d1117] border border-white/8 rounded-2xl overflow-hidden">
               <div className="px-4 py-3 border-b border-white/6">
                 <p className="text-white font-bold text-sm">Settlement repair</p>
@@ -637,6 +792,85 @@ export default function AdminPage() {
                     toolResult.ok ? 'border-green-500/30 bg-green-950/20 text-green-300' : 'border-red-500/30 bg-red-950/20 text-red-300'
                   }`}>
                     {toolResult.ok ? JSON.stringify(toolResult.data, null, 2) : `Error: ${toolResult.error}`}
+                  </div>
+                )}
+              </div>
+            </div>
+
+            {/* Knockout flag manager */}
+            <div className="bg-[#0d1117] border border-white/8 rounded-2xl overflow-hidden">
+              <div className="px-4 py-3 border-b border-white/6">
+                <p className="text-white font-bold text-sm">Knockout event flags</p>
+                <p className="text-gray-500 text-xs mt-0.5">Mark events as knockout matches so extra-time goals count in goal markets</p>
+              </div>
+              <div className="px-4 py-4 space-y-3">
+                <div className="flex gap-2">
+                  <input
+                    value={knockoutGwId}
+                    onChange={e => setKnockoutGwId(e.target.value)}
+                    placeholder="Gameweek ID"
+                    className="flex-1 bg-white/5 border border-white/10 rounded-xl px-3 py-2 text-sm text-white placeholder-gray-700 font-mono focus:outline-none focus:border-indigo-500/50"
+                  />
+                  <button
+                    disabled={!knockoutGwId.trim() || knockoutLoading}
+                    onClick={async () => {
+                      setKnockoutLoading(true)
+                      setKnockoutError(null)
+                      try {
+                        const res = await client.get(`/admin/gameweek/${knockoutGwId.trim()}`)
+                        const goalTypes = ['GOALS','BTTS','CLEAN_SHEET','PLAYER_SCORE']
+                        setKnockoutEvents(
+                          (res.data.events || []).filter(e => goalTypes.includes(e.event_type))
+                        )
+                      } catch (e) {
+                        setKnockoutError(e.response?.data?.error || e.message)
+                        setKnockoutEvents(null)
+                      } finally {
+                        setKnockoutLoading(false)
+                      }
+                    }}
+                    className="px-4 py-2 rounded-xl bg-indigo-600 hover:bg-indigo-500 disabled:opacity-40 disabled:pointer-events-none text-white font-bold text-sm transition-colors"
+                  >
+                    {knockoutLoading ? '…' : 'Load'}
+                  </button>
+                </div>
+
+                {knockoutError && (
+                  <p className="text-red-400 text-xs">{knockoutError}</p>
+                )}
+
+                {knockoutEvents && knockoutEvents.length === 0 && (
+                  <p className="text-gray-600 text-xs">No goal-market events found in this gameweek.</p>
+                )}
+
+                {knockoutEvents && knockoutEvents.length > 0 && (
+                  <div className="space-y-2">
+                    {knockoutEvents.map(ev => (
+                      <div key={ev.id} className="flex items-center gap-3 px-3 py-2.5 rounded-xl bg-white/3 border border-white/6">
+                        <div className="flex-1 min-w-0">
+                          <p className="text-white text-xs font-semibold truncate">{ev.fixture_name}</p>
+                          <p className="text-gray-600 text-[10px]">{ev.event_type}</p>
+                        </div>
+                        <button
+                          onClick={async () => {
+                            const next = !ev.is_knockout
+                            try {
+                              await client.patch(`/admin/events/${ev.id}`, { is_knockout: next })
+                              setKnockoutEvents(prev => prev.map(e => e.id === ev.id ? { ...e, is_knockout: next } : e))
+                            } catch (e) {
+                              alert(e.response?.data?.error || e.message)
+                            }
+                          }}
+                          className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-bold border transition-colors ${
+                            ev.is_knockout
+                              ? 'bg-amber-900/40 border-amber-500/40 text-amber-300 hover:bg-amber-900/60'
+                              : 'bg-white/4 border-white/8 text-gray-500 hover:text-gray-300 hover:bg-white/8'
+                          }`}
+                        >
+                          {ev.is_knockout ? '⚡ Knockout' : 'Regular'}
+                        </button>
+                      </div>
+                    ))}
                   </div>
                 )}
               </div>
