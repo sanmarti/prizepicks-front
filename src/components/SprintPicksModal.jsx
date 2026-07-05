@@ -26,7 +26,7 @@ export default function SprintPicksModal({ sprintId, sprintName, userId, accentC
       : getSprintPicks(sprintId)
     req
       .then(res => setWeeks(res.data?.weeks ?? []))
-      .catch(() => setWeeks([]))
+      .catch(err => { console.error('[SprintPicksModal] fetch failed', err?.response?.status, err?.message); setWeeks([]) })
       .finally(() => setLoading(false))
   }, [sprintId, userId])
 
