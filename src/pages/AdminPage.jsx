@@ -466,37 +466,15 @@ function SprintStatusPill({ status }) {
 }
 
 // ── Gameweek Date Editor ──────────────────────────────────────────────────────
-function GameweekDateEditor() {
-  const [sprints,   setSprints]   = useState([])
-  const [sprintId,  setSprintId]  = useState('')
-  const [dbGws,     setDbGws]     = useState([])   // DB rows only
-  const [loading,   setLoading]   = useState(false)
-  const [edits,     setEdits]     = useState({})   // { [weekNum]: { lock_time, start_date, end_date } }
-  const [saving,    setSaving]    = useState({})   // { [weekNum]: bool }
-  const [saved,     setSaved]     = useState({})   // { [weekNum]: 'ok'|string }
-
-  useEffect(() => {
-    client.get('/admin/sprints').then(r => setSprints(r.data || [])).catch(() => {})
-  }, [])
-
-  const loadSprint = async (id) => {
-    setSprintId(id)
-    setDbGws([])
-    setEdits({})
-    setSaved({})
-    if (!id) return
-    setLoading(true)
-    try {
-      const r = await client.get(`/admin/sprints/${id}`)
-      setDbGws(r.data.gameweeks || [])
-    } catch {}
-    setLoading(false)
-  }
+function GameweekDateEditor({ sprintId, dbGws, onSaved }) {
+  const [edits,  setEdits]  = useState({})
+  const [saving, setSaving] = useState({})
+  const [saved,  setSaved]  = useState({})
 
   const setField = (weekNum, field, val) =>
     setEdits(p => ({ ...p, [weekNum]: { ...p[weekNum], [field]: val } }))
 
-  const toIso = (dtLocal) => dtLocal ? new Date(dtLocal).toISOString() : undefined
+  const toIso     = (dtLocal) => dtLocal ? new Date(dtLocal).toISOString() : undefined
   const toDateVal = (iso) => iso ? iso.slice(0, 10) : ''
   const toDtLocalVal = (iso) => iso ? iso.slice(0, 16) : ''
 
@@ -513,49 +491,40 @@ function GameweekDateEditor() {
 
       let gwId = dbGw?.id
       if (!gwId) {
-        // Create empty gameweek row so dates can be stored
         const cr = await client.post(`/admin/sprints/${sprintId}/gameweeks`, { sprint_week: weekNum, events: [] })
         gwId = cr.data.gameweek_id
       }
 
       await client.patch(`/admin/sprints/${sprintId}/gameweeks/${gwId}`, body)
-      const r = await client.get(`/admin/sprints/${sprintId}`)
-      setDbGws(r.data.gameweeks || [])
       setEdits(p => ({ ...p, [weekNum]: {} }))
       setSaved(p => ({ ...p, [weekNum]: 'ok' }))
+      onSaved?.()
     } catch (e) {
       setSaved(p => ({ ...p, [weekNum]: e.response?.data?.error || 'Error' }))
     }
     setSaving(p => ({ ...p, [weekNum]: false }))
   }
 
-  // Always show all 4 weeks; merge with DB rows by sprint_week
   const rows = [1, 2, 3, 4].map(weekNum => ({
     weekNum,
-    dbGw: dbGws.find(g => g.sprint_week === weekNum) || null,
+    dbGw: (dbGws || []).find(g => g.sprint_week === weekNum) || null,
   }))
+
+  if (!sprintId) return (
+    <div className="bg-[#0d1117] border border-white/8 rounded-2xl px-4 py-4">
+      <p className="text-white font-bold text-sm mb-1">Gameweek date windows</p>
+      <p className="text-gray-600 text-xs">Select a sprint in the Sprints tab first.</p>
+    </div>
+  )
 
   return (
     <div className="bg-[#0d1117] border border-white/8 rounded-2xl overflow-hidden">
       <div className="px-4 py-3 border-b border-white/6">
         <p className="text-white font-bold text-sm">Gameweek date windows</p>
-        <p className="text-gray-500 text-xs mt-0.5">Default: Monday 00:00 → Sunday 23:59 based on sprint start. Override per week if needed.</p>
+        <p className="text-gray-500 text-xs mt-0.5">Override lock time, start and end dates per week.</p>
       </div>
       <div className="px-4 py-4 space-y-3">
-        <select
-          value={sprintId}
-          onChange={e => loadSprint(e.target.value)}
-          className="w-full bg-white/5 border border-white/10 rounded-xl px-3 py-2 text-sm text-white focus:outline-none focus:border-indigo-500/50"
-        >
-          <option value="">— Select sprint —</option>
-          {sprints.map(s => (
-            <option key={s.id} value={s.id}>{s.name} ({s.status})</option>
-          ))}
-        </select>
-
-        {loading && <p className="text-gray-600 text-xs text-center py-2">Loading…</p>}
-
-        {sprintId && !loading && rows.map(({ weekNum, dbGw }) => {
+        {rows.map(({ weekNum, dbGw }) => {
           const e = edits[weekNum] || {}
           const dirty = Object.keys(e).some(k => e[k])
           const sv = saved[weekNum]
@@ -874,7 +843,7 @@ export default function AdminPage() {
         {/* ── TOOLS TAB ────────────────────────────────────────────────────── */}
         {activeTab === 'tools' && (
           <div className="space-y-4">
-            <GameweekDateEditor />
+            <GameweekDateEditor sprintId={dbSprintId} dbGws={dbGameweeks} onSaved={() => loadDbSprint(sprint?.start)} />
 
             <div className="bg-[#0d1117] border border-white/8 rounded-2xl overflow-hidden">
               <div className="px-4 py-3 border-b border-white/6">
