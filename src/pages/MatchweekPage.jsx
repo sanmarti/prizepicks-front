@@ -921,8 +921,8 @@ function EventCard({ event, selectedOptionId, onSelect, isLocked, dimmed, remain
                 }}
                 disabled={isLocked || dimmed || isUnavailable}
                 className={`w-full flex items-center gap-2 px-3 py-2.5 rounded-xl text-sm font-medium transition-all relative overflow-hidden ${
-                  won  ? 'bg-green-900/30 border border-green-500/40 text-green-300' :
-                  lost ? 'bg-red-900/10 border border-red-500/15 text-red-400/60' :
+                  won  ? `bg-green-900/30 border border-green-500/40 ${userPickedLost ? 'text-green-600' : 'text-green-300'}` :
+                  lost ? `bg-red-900/10 border border-red-500/15 ${isSelected ? 'text-red-400' : 'text-red-400/60'}` :
                   isSelected
                     ? 'bg-indigo-600 border border-indigo-500 text-white shadow-lg shadow-indigo-500/20'
                     : isUnavailable
