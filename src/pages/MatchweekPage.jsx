@@ -892,6 +892,7 @@ function EventCard({ event, selectedOptionId, onSelect, isLocked, dimmed, remain
             const isSelected = opt.id === selectedOptionId
             const won  = opt.result === 'WON'
             const lost = opt.result === 'LOST'
+            const userPickedLost = event.options.some(o => o.id === selectedOptionId && o.result === 'LOST')
             const pct  = !isLocked && event.total_picks > 0 ? Math.ceil((opt.pick_count || 0) / event.total_picks * 100) : null
             const notEnoughEnergy = !isSelected && !won && !lost && !dimmed
               && remainingEnergy !== undefined && opt.energy_cost != null
@@ -941,7 +942,7 @@ function EventCard({ event, selectedOptionId, onSelect, isLocked, dimmed, remain
 
                 {/* Flag / icon */}
                 <span className="relative z-10 text-xl flex-shrink-0 leading-none">
-                  {isDraw ? '🤝' : (isSelected && lost ? '❌' : won ? '✅' : optFlag || '')}
+                  {isDraw ? '🤝' : (isSelected && lost ? '❌' : won && !userPickedLost ? '✅' : optFlag || '')}
                 </span>
 
                 {/* Label */}
