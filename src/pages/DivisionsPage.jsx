@@ -21,9 +21,14 @@ function DivisionsListScreen({ divisions, divStats, myDivId, activeDiv, onSelect
   const scrollRef   = useRef(null)
 
   useEffect(() => {
-    if (myCardRef.current && scrollRef.current) {
-      setTimeout(() => myCardRef.current?.scrollIntoView({ block: 'center', behavior: 'smooth' }), 80)
-    }
+    setTimeout(() => {
+      const container = scrollRef.current
+      const card      = myCardRef.current
+      if (!container || !card) return
+      const cardOffsetTop = card.offsetTop
+      const center        = cardOffsetTop - container.clientHeight / 2 + card.offsetHeight / 2
+      container.scrollTo({ top: Math.max(0, center), behavior: 'smooth' })
+    }, 80)
   }, [])
 
   return (
