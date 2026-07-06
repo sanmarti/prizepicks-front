@@ -15,8 +15,16 @@ const getV = d => V[d.display_order] || V[1]
 
 // ── Full-screen "All Divisions" list ──────────────────────────────────────────
 function DivisionsListScreen({ divisions, divStats, myDivId, activeDiv, onSelect, onClose, totalPlayers }) {
-  const myDiv    = divisions.find(d => d.id === myDivId)
-  const myV      = myDiv ? getV(myDiv) : null
+  const myDiv       = divisions.find(d => d.id === myDivId)
+  const myV         = myDiv ? getV(myDiv) : null
+  const myCardRef   = useRef(null)
+  const scrollRef   = useRef(null)
+
+  useEffect(() => {
+    if (myCardRef.current && scrollRef.current) {
+      setTimeout(() => myCardRef.current?.scrollIntoView({ block: 'center', behavior: 'smooth' }), 80)
+    }
+  }, [])
 
   return (
     <div className="fixed inset-0 z-50 bg-[#0a0d12] flex flex-col">
@@ -57,7 +65,7 @@ function DivisionsListScreen({ divisions, divStats, myDivId, activeDiv, onSelect
       )}
 
       {/* Division cards */}
-      <div className="flex-1 overflow-y-auto py-4 pb-32">
+      <div ref={scrollRef} className="flex-1 overflow-y-auto py-4 pb-32">
         <div className="max-w-md mx-auto px-4 space-y-5">
           {[...divisions].reverse().map(div => {
             const v      = getV(div)
@@ -77,6 +85,7 @@ function DivisionsListScreen({ divisions, divStats, myDivId, activeDiv, onSelect
             return (
               <div
                 key={div.id}
+                ref={isMe ? myCardRef : null}
                 className="rounded-2xl overflow-hidden border transition-all"
                 style={{
                   borderColor: isMe ? v.accent : isActive ? v.border : 'rgba(255,255,255,0.10)',
