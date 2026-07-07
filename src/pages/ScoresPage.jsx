@@ -377,6 +377,12 @@ export default function ScoresPage() {
     }
     seen.get(key).push(f)
   }
+  groups.sort((a, b) => {
+    const aWC = /world cup/i.test(a.name)
+    const bWC = /world cup/i.test(b.name)
+    if (aWC === bWC) return 0
+    return aWC ? -1 : 1
+  })
 
   const totalLive = fixtures.filter(f => LIVE_STATUSES.has(f.status_short)).length
   const fmtDate   = d => new Date(d + 'T12:00:00Z').toLocaleDateString('en-GB', {
