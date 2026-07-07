@@ -363,10 +363,9 @@ function WeekCard({ weekNum, weekStart, lockDt, settleDt, events, canEdit, onAdd
                 </span>
               )}
               {closeTime && (
-                <span className="inline-flex items-center gap-1 text-[10px] px-1.5 py-0.5 rounded border bg-purple-900/20 border-purple-700/20 text-purple-400 w-fit max-w-full truncate">
-                  ⏱ CLOSES {fmtDay(closeTime)} {fmtTime(closeTime)}
-                  {closeIsFallback && <span className="text-purple-700">(fallback)</span>}
-                  {lastFix && <span className="text-purple-600 ml-0.5">· {lastFix.fixture_name} KO {fmtTime(new Date(lastFix.match_time))}</span>}
+                <span className="inline-flex items-center gap-1 text-[10px] px-1.5 py-0.5 rounded border bg-orange-900/20 border-orange-700/20 text-orange-400 w-fit max-w-full truncate">
+                  ⚠ FORCE-CLOSE DEADLINE {fmtDay(closeTime)} {fmtTime(closeTime)}
+                  {lastFix && <span className="text-orange-600 ml-0.5">· last fixture {lastFix.fixture_name} KO {fmtTime(new Date(lastFix.match_time))}</span>}
                 </span>
               )}
             </div>
@@ -448,12 +447,12 @@ function WeekCard({ weekNum, weekStart, lockDt, settleDt, events, canEdit, onAdd
                 className="bg-white/5 border border-white/10 rounded-lg px-2.5 py-1.5 text-xs text-white focus:outline-none focus:border-indigo-500/50" />
             </label>
             <label className="flex flex-col gap-0.5">
-              <span className="text-[10px] text-gray-500">End date</span>
+              <span className="text-[10px] text-orange-500/80">Force-close fallback ⚠</span>
               <input type="date"
                 key={`ed-${weekNum}-${dbGw?.id ?? weekEnd.toISOString().slice(0,10)}`}
                 defaultValue={toDateVal(dbGw?.end_date) || weekEnd.toISOString().slice(0, 10)}
                 onChange={e => setF('end_date', e.target.value)}
-                className="bg-white/5 border border-white/10 rounded-lg px-2.5 py-1.5 text-xs text-white focus:outline-none focus:border-indigo-500/50" />
+                className="bg-white/5 border border-orange-500/20 rounded-lg px-2.5 py-1.5 text-xs text-white focus:outline-none focus:border-orange-500/50" />
             </label>
             <label className="flex flex-col gap-0.5 col-span-2">
               <span className="text-[10px] text-gray-500">Lock time (picks freeze)</span>
@@ -642,11 +641,11 @@ function GameweekDateEditor({ sprintId }) {
                     </span>
                   )}
                   {closeDt && (
-                    <span className="inline-flex flex-wrap items-center gap-x-1.5 text-[10px] px-2 py-1 rounded-lg border bg-purple-900/20 border-purple-700/20 text-purple-400 w-fit max-w-full">
-                      ⏱ <span className="font-semibold">CLOSES</span> {fmtDay(closeDt)} {fmtTime(closeDt)}
+                    <span className="inline-flex flex-wrap items-center gap-x-1.5 text-[10px] px-2 py-1 rounded-lg border bg-orange-900/20 border-orange-700/20 text-orange-400 w-fit max-w-full">
+                      ⚠ <span className="font-semibold">FORCE-CLOSE DEADLINE</span> {fmtDay(closeDt)} {fmtTime(closeDt)}
                       {lastFix && (
-                        <span className="text-purple-600/80">
-                          · {lastFix.fixture_name} KO {fmtTime(new Date(lastFix.match_time))}
+                        <span className="text-orange-600/80">
+                          · last fixture {lastFix.fixture_name} KO {fmtTime(new Date(lastFix.match_time))}
                         </span>
                       )}
                     </span>
@@ -666,12 +665,12 @@ function GameweekDateEditor({ sprintId }) {
                         className="w-full bg-white/5 border border-white/10 rounded-lg px-2.5 py-1.5 text-xs text-white focus:outline-none focus:border-indigo-500/50" />
                     </label>
                     <label className="block">
-                      <span className="text-gray-500 text-[10px] uppercase tracking-wider block mb-1">End (Sun)</span>
+                      <span className="text-orange-500/80 text-[10px] uppercase tracking-wider block mb-1">⚠ Force-close fallback</span>
                       <input type="date"
                         key={`ed-${weekNum}-${dbGw?.id ?? def.end}`}
                         defaultValue={endVal}
                         onChange={ev => setField(weekNum, 'end_date', ev.target.value)}
-                        className="w-full bg-white/5 border border-white/10 rounded-lg px-2.5 py-1.5 text-xs text-white focus:outline-none focus:border-indigo-500/50" />
+                        className="w-full bg-white/5 border border-orange-500/20 rounded-lg px-2.5 py-1.5 text-xs text-white focus:outline-none focus:border-orange-500/50" />
                     </label>
                     <label className="block col-span-2">
                       <span className="text-gray-500 text-[10px] uppercase tracking-wider block mb-1">Lock time</span>
@@ -824,10 +823,10 @@ export default function AdminPage() {
               </div>
               <div className="px-4 py-4 space-y-3.5">
                 {[
-                  { dot: 'bg-green-500',  color: 'text-green-400',  trigger: 'Monday 00:00',    from: 'DRAFT',     to: 'PUBLISHED', desc: 'Week opens automatically — players can submit picks' },
-                  { dot: 'bg-yellow-400', color: 'text-yellow-400', trigger: 'Sunday 20:00',    from: 'PUBLISHED', to: 'LOCKED',    desc: 'Picks lock — no more submissions accepted' },
-                  { dot: 'bg-gray-500',   color: 'text-gray-400',   trigger: 'Monday 00:00',    from: 'LOCKED',    to: 'FINISHED',  desc: 'Results settle, LP awarded, next week activates' },
-                  { dot: 'bg-purple-500', color: 'text-purple-400', trigger: 'After Week 4',    from: null, to: null, desc: 'Sprint closes, final rankings locked, promotions/relegations applied' },
+                  { dot: 'bg-green-500',  color: 'text-green-400',  trigger: 'Admin publishes',        from: 'DRAFT',     to: 'PUBLISHED', desc: 'Picks open — players can submit until the lock time' },
+                  { dot: 'bg-yellow-400', color: 'text-yellow-400', trigger: 'Admin-set lock time',    from: 'PUBLISHED', to: 'LOCKED',    desc: 'Picks freeze — set this before the first match kick-off' },
+                  { dot: 'bg-gray-500',   color: 'text-gray-400',   trigger: 'All fixtures settled',   from: 'LOCKED',    to: 'FINISHED',  desc: 'Scores awarded automatically once every fixture of the week is done. Force-close fallback triggers if any fixture gets stuck (set it well after the last KO).' },
+                  { dot: 'bg-purple-500', color: 'text-purple-400', trigger: 'Last week FINISHED',     from: null, to: null, desc: 'Sprint settles — promotions/relegations applied. If the next week has no fixtures yet, the app holds on the completed week until admin defines them. Sprint only settles when the gameweek with the highest week number finishes.' },
                 ].map((s, i) => (
                   <div key={i} className="flex gap-3">
                     <div className="flex flex-col items-center gap-1 flex-shrink-0 pt-0.5">
@@ -846,12 +845,14 @@ export default function AdminPage() {
               </div>
             </div>
 
-            <div className="bg-indigo-950/25 border border-indigo-500/15 rounded-2xl px-4 py-4">
-              <p className="text-indigo-300 font-semibold text-sm mb-1">Admin's only job</p>
-              <p className="text-gray-400 text-xs leading-relaxed">
-                Assign fixtures to each matchweek <span className="text-white font-semibold">before it goes live on Monday</span>.
-                The system handles open, lock, settle, and sprint close automatically based on the fixed calendar.
-              </p>
+            <div className="bg-indigo-950/25 border border-indigo-500/15 rounded-2xl px-4 py-4 space-y-2">
+              <p className="text-indigo-300 font-semibold text-sm">Admin checklist per week</p>
+              <ol className="text-gray-400 text-xs leading-relaxed space-y-1.5 list-none">
+                <li><span className="text-white font-semibold">1.</span> Add fixtures and publish the week before the first match.</li>
+                <li><span className="text-white font-semibold">2.</span> Set the <span className="text-yellow-300 font-semibold">lock time</span> to just before the first match kick-off — picks freeze here.</li>
+                <li><span className="text-white font-semibold">3.</span> Set the <span className="text-orange-300 font-semibold">force-close fallback</span> to a few hours after the last match of the week — this is a safety net only; the system closes naturally as fixtures settle.</li>
+                <li><span className="text-white font-semibold">4.</span> The sprint settles automatically after the <span className="text-white font-semibold">last defined week</span> finishes. Add the next week's fixtures any time — the sprint won't settle until they're done too.</li>
+              </ol>
             </div>
           </>
         )}
@@ -908,7 +909,7 @@ export default function AdminPage() {
                     <p className="text-white font-bold text-base leading-tight">{sprint.name}</p>
                     <p className="text-gray-600 text-xs">
                       {sprintEnd ? `${fmtShort(sprintWeeks[0].weekStart)} → ${fmtShort(sprintEnd)}` : ''}
-                      {' · 4 matchweeks'}
+                      {' · up to 4 matchweeks · settles after last week'}
                     </p>
                   </div>
                   <SprintStatusPill status={sprintStatus} />
