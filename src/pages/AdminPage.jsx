@@ -85,7 +85,66 @@ const FIXTURE_POOL = {
   'Bundesliga':     ['Bayern Munich vs Dortmund', 'Leverkusen vs Leipzig'],
   'Serie A':        ['Inter vs Juventus', 'AC Milan vs Roma'],
 }
-const PICK_TYPES = ['Match Result', 'Goals Over/Under', 'BTTS', 'Clean Sheet']
+const PICK_TYPES = ['Match Result', 'Goals Over/Under', 'BTTS', 'Clean Sheet', 'Who Qualifies']
+
+const EVENT_TYPE_TO_BACKEND = {
+  'Match Result':     'MATCH_RESULT',
+  'Goals Over/Under': 'GOALS',
+  'BTTS':             'BTTS',
+  'Clean Sheet':      'CLEAN_SHEET',
+  'Who Qualifies':    'WHO_QUALIFIES',
+}
+const EVENT_TYPE_FROM_BACKEND = {
+  'MATCH_RESULT':  'Match Result',
+  'GOALS':         'Goals Over/Under',
+  'BTTS':          'BTTS',
+  'CLEAN_SHEET':   'Clean Sheet',
+  'WHO_QUALIFIES': 'Who Qualifies',
+}
+
+function getEventOptions(type, home, away, ec = 5) {
+  switch (type) {
+    case 'Match Result':
+      return [
+        { label: home,   result_key: 'HOME_WIN',  energy_cost: ec },
+        { label: away,   result_key: 'AWAY_WIN',  energy_cost: ec },
+        { label: 'Draw', result_key: 'DRAW',      energy_cost: ec },
+      ]
+    case 'Goals Over/Under':
+      return [
+        { label: 'Over 2.5 Goals',  result_key: 'OVER_2.5',  energy_cost: ec },
+        { label: 'Under 2.5 Goals', result_key: 'UNDER_2.5', energy_cost: ec },
+      ]
+    case 'BTTS':
+      return [
+        { label: 'Both Teams Score',     result_key: 'BTTS_YES', energy_cost: ec },
+        { label: 'Not Both Teams Score', result_key: 'BTTS_NO',  energy_cost: ec },
+      ]
+    case 'Clean Sheet':
+      return [
+        { label: `${home} Clean Sheet`, result_key: 'HOME_CLEAN_SHEET', energy_cost: ec },
+        { label: `${away} Clean Sheet`, result_key: 'AWAY_CLEAN_SHEET', energy_cost: ec },
+      ]
+    case 'Who Qualifies':
+      return [
+        { label: home, result_key: 'HOME_QUALIFIES', energy_cost: ec },
+        { label: away, result_key: 'AWAY_QUALIFIES', energy_cost: ec },
+      ]
+    default: return []
+  }
+}
+
+function buildEventDef(item) {
+  const base = item.fixture.replace(/^who qualifies\?\s*/i, '').trim()
+  const [home, away] = parseTeams(base)
+  const eventType = EVENT_TYPE_TO_BACKEND[item.type]
+  if (!eventType) return null
+  return {
+    event_type:   eventType,
+    fixture_name: item.type === 'Who Qualifies' ? `Who qualifies? ${base}` : base,
+    options:      getEventOptions(item.type, home, away, item.energyCost ?? 5),
+  }
+}
 
 // ── Team logos ────────────────────────────────────────────────────────────────
 const TEAM_LOGOS = {
@@ -164,82 +223,156 @@ function TeamLogo({ name, size = 20 }) {
 function AddFixtureModal({ weekNum, currentCount, onAdd, onClose }) {
   const [search,    setSearch]    = useState('')
   const [fixture,   setFixture]   = useState('')
-  const [pickType,  setPickType]  = useState('Match Result')
+  const [selTypes,  setSelTypes]  = useState({})   // type → energyCost
   const [flash,     setFlash]     = useState('')
   const [addedThis, setAddedThis] = useState(0)
-  const allFixtures = Object.values(FIXTURE_POOL).flat()
-  const shown = search
-    ? allFixtures.filter(f => f.toLowerCase().includes(search.toLowerCase())).slice(0, 10)
-    : allFixtures.slice(0, 8)
+
+  const searchLow = search.toLowerCase()
+  const filteredPool = search
+    ? Object.fromEntries(
+        Object.entries(FIXTURE_POOL)
+          .map(([comp, fs]) => [comp, fs.filter(f => f.toLowerCase().includes(searchLow))])
+          .filter(([, fs]) => fs.length > 0)
+      )
+    : FIXTURE_POOL
+
+  const [home, away] = fixture ? parseTeams(fixture) : ['', '']
+  const total        = currentCount + addedThis
+  const selCount     = Object.keys(selTypes).length
+
+  const toggleType = (type) => setSelTypes(p => {
+    if (type in p) { const n = { ...p }; delete n[type]; return n }
+    return { ...p, [type]: 5 }
+  })
+  const setEnergy = (type, v) =>
+    setSelTypes(p => ({ ...p, [type]: Math.max(1, Math.min(10, Number(v) || 5)) }))
 
   const handleAdd = () => {
-    const fix = fixture || search
-    if (!fix) return
-    onAdd(fix, pickType)
-    setAddedThis(n => n + 1)
-    setFlash(`${fix} · ${pickType}`)
-    setPickType('Match Result')
-    setTimeout(() => setFlash(''), 2000)
+    if (!fixture || !selCount || total + selCount > 15) return
+    Object.entries(selTypes).forEach(([type, ec]) => onAdd(fixture, type, ec))
+    setAddedThis(n => n + selCount)
+    setFlash(`${selCount} event${selCount > 1 ? 's' : ''} added · ${fixture}`)
+    setSelTypes({})
+    setTimeout(() => setFlash(''), 2500)
   }
-
-  const total = currentCount + addedThis
 
   return (
     <div className="fixed inset-0 z-50 flex items-end justify-center" onClick={onClose}>
-      <div className="absolute inset-0 bg-black/60" />
-      <div className="relative bg-[#0d1117] border border-white/12 rounded-t-2xl w-full max-w-md p-4 pb-10" onClick={e => e.stopPropagation()}>
-        <div className="flex items-center justify-between mb-3">
+      <div className="absolute inset-0 bg-black/70" />
+      <div className="relative bg-[#0d1117] border border-white/12 rounded-t-2xl w-full max-w-md flex flex-col max-h-[82vh]"
+           onClick={e => e.stopPropagation()}>
+
+        {/* Header */}
+        <div className="flex items-center justify-between px-4 pt-4 pb-2 flex-shrink-0">
           <div>
-            <p className="text-white font-bold text-sm">Add picks · Week {weekNum}</p>
-            <p className="text-gray-600 text-[10px] mt-0.5">{total} / 15 picks this week</p>
+            <p className="text-white font-bold text-sm">Add events · Week {weekNum}</p>
+            <p className="text-gray-600 text-[10px] mt-0.5">{total} / 15 events this week</p>
           </div>
           <button onClick={onClose} className="text-gray-500 hover:text-white w-7 h-7 flex items-center justify-center rounded-full hover:bg-white/8">×</button>
         </div>
 
         {flash && (
-          <div className="mb-2 px-3 py-1.5 rounded-lg bg-green-900/30 border border-green-500/25 flex items-center gap-2">
+          <div className="mx-4 mb-2 px-3 py-1.5 rounded-lg bg-green-900/30 border border-green-500/25 flex items-center gap-2 flex-shrink-0">
             <span className="text-green-400 text-xs">✓</span>
             <span className="text-green-300 text-xs truncate">{flash}</span>
           </div>
         )}
 
-        <input
-          value={search}
-          onChange={e => { setSearch(e.target.value); setFixture('') }}
-          placeholder="Search or type custom fixture…"
-          autoFocus
-          className="w-full bg-white/5 border border-white/10 rounded-xl px-3 py-2.5 text-sm text-white placeholder-gray-600 focus:outline-none focus:border-indigo-500/60 mb-2"
-        />
-        <div className="max-h-40 overflow-y-auto rounded-xl border border-white/6 mb-3">
-          {shown.map(f => (
-            <button key={f} onClick={() => { setFixture(f); setSearch(f) }}
-              className={`w-full text-left px-3 py-2 text-sm border-b border-white/5 last:border-0 transition-colors ${
-                fixture === f ? 'bg-indigo-600/40 text-white' : 'text-gray-300 hover:bg-white/5'
-              }`}>
-              {f}
-            </button>
-          ))}
-          {shown.length === 0 && <p className="text-gray-600 text-xs text-center py-3">No matches</p>}
+        {/* Search */}
+        <div className="px-4 pb-2 flex-shrink-0">
+          <input
+            value={search}
+            onChange={e => { setSearch(e.target.value); setFixture(''); setSelTypes({}) }}
+            placeholder="Search fixture…"
+            autoFocus
+            className="w-full bg-white/5 border border-white/10 rounded-xl px-3 py-2 text-sm text-white placeholder-gray-600 focus:outline-none focus:border-indigo-500/60"
+          />
         </div>
-        <div className="flex flex-wrap gap-1.5 mb-3">
-          {PICK_TYPES.map(t => (
-            <button key={t} onClick={() => setPickType(t)}
-              className={`px-3 py-1.5 rounded-lg text-xs font-semibold border transition-colors ${
-                pickType === t ? 'bg-indigo-600 border-indigo-500 text-white' : 'bg-white/4 border-white/8 text-gray-500 hover:text-gray-300'
-              }`}>
-              {t}
-            </button>
-          ))}
+
+        {/* Fixture browser grouped by competition */}
+        <div className="flex-1 overflow-y-auto px-4 pb-1 min-h-0">
+          {Object.keys(filteredPool).length === 0 ? (
+            <p className="text-gray-600 text-xs text-center py-4">No matches found</p>
+          ) : (
+            Object.entries(filteredPool).map(([comp, fixtures]) => (
+              <div key={comp} className="mb-2">
+                <p className="text-[10px] font-semibold text-gray-600 uppercase tracking-wider px-1 pt-1 pb-1.5">{comp}</p>
+                <div className="space-y-1">
+                  {fixtures.map(f => {
+                    const [h, a] = parseTeams(f)
+                    const isSel  = fixture === f
+                    return (
+                      <button key={f}
+                        onClick={() => { setFixture(f); setSelTypes({}) }}
+                        className={`w-full flex items-center gap-2.5 px-3 py-2 rounded-xl transition-colors border ${
+                          isSel
+                            ? 'bg-indigo-600/25 border-indigo-500/40'
+                            : 'bg-white/3 border-white/5 hover:bg-white/6 hover:border-white/10'
+                        }`}>
+                        <div className="flex items-center gap-0.5 flex-shrink-0">
+                          <TeamLogo name={h} size={20} />
+                          <TeamLogo name={a} size={20} />
+                        </div>
+                        <span className={`flex-1 text-left text-sm font-medium ${isSel ? 'text-white' : 'text-gray-300'}`}>{f}</span>
+                        {isSel && <span className="text-[10px] text-indigo-400 font-semibold">selected ✓</span>}
+                      </button>
+                    )
+                  })}
+                </div>
+              </div>
+            ))
+          )}
         </div>
-        <div className="flex gap-2">
+
+        {/* Event types + energy cost */}
+        {fixture && (
+          <div className="flex-shrink-0 border-t border-white/8 px-4 pt-3 pb-2">
+            <div className="flex items-center gap-1.5 mb-2">
+              <TeamLogo name={home} size={14} />
+              <TeamLogo name={away} size={14} />
+              <p className="text-[10px] font-semibold text-gray-400 truncate">{fixture}</p>
+            </div>
+            <div className="space-y-1.5">
+              {PICK_TYPES.map(type => {
+                const checked = type in selTypes
+                return (
+                  <div key={type} className="flex items-center gap-2">
+                    <button
+                      onClick={() => toggleType(type)}
+                      className={`flex-1 text-left px-2.5 py-1.5 rounded-lg text-xs font-semibold border transition-colors ${
+                        checked
+                          ? 'bg-indigo-600/30 border-indigo-500/40 text-white'
+                          : 'bg-white/3 border-white/6 text-gray-500 hover:text-gray-300 hover:bg-white/5'
+                      }`}>
+                      {type}
+                    </button>
+                    {checked && (
+                      <div className="flex items-center gap-1 flex-shrink-0">
+                        <span className="text-yellow-400/70 text-[11px]">⚡</span>
+                        <input
+                          type="number" min="1" max="10"
+                          value={selTypes[type]}
+                          onChange={e => setEnergy(type, e.target.value)}
+                          className="w-10 bg-white/5 border border-yellow-500/20 rounded-lg px-1.5 py-1 text-xs text-white text-center focus:outline-none focus:border-yellow-500/50"
+                        />
+                      </div>
+                    )}
+                  </div>
+                )
+              })}
+            </div>
+          </div>
+        )}
+
+        {/* Actions */}
+        <div className="flex gap-2 px-4 pt-2 pb-8 flex-shrink-0">
           <button
             onClick={handleAdd}
-            disabled={!search || total >= 15}
+            disabled={!fixture || !selCount || total >= 15}
             className="flex-1 py-3 rounded-xl bg-indigo-600 hover:bg-indigo-500 text-white font-bold text-sm disabled:opacity-40 disabled:pointer-events-none transition-all">
-            {total >= 15 ? 'Week full (15/15)' : '+ Add pick'}
+            {total >= 15 ? 'Week full (15/15)' : selCount > 0 ? `+ Add ${selCount} event${selCount > 1 ? 's' : ''}` : '+ Add'}
           </button>
-          <button
-            onClick={onClose}
+          <button onClick={onClose}
             className="px-5 py-3 rounded-xl bg-white/6 hover:bg-white/10 text-gray-300 font-semibold text-sm transition-all">
             Done
           </button>
@@ -251,10 +384,12 @@ function AddFixtureModal({ weekNum, currentCount, onAdd, onClose }) {
 
 // ── Week card ─────────────────────────────────────────────────────────────────
 function WeekCard({ weekNum, weekStart, lockDt, settleDt, events, canEdit, onAdd, onRemove, dbGw, sprintDbId, onGwSaved }) {
-  const [showAdd,    setShowAdd]    = useState(false)
-  const [cfg,        setCfg]        = useState({})   // { base_energy, start_date, end_date, lock_time }
-  const [cfgSaving,  setCfgSaving]  = useState(false)
-  const [cfgSaved,   setCfgSaved]   = useState(null)
+  const [showAdd,      setShowAdd]      = useState(false)
+  const [cfg,          setCfg]          = useState({})   // { base_energy, start_date, end_date, lock_time }
+  const [cfgSaving,    setCfgSaving]    = useState(false)
+  const [cfgSaved,     setCfgSaved]     = useState(null)
+  const [evtSaving,    setEvtSaving]    = useState(false)
+  const [evtSaved,     setEvtSaved]     = useState(null)
 
   const toDtLocal = (iso) => iso ? iso.slice(0, 16) : ''
   const toDateVal = (iso) => iso ? iso.slice(0, 10) : ''
@@ -276,7 +411,7 @@ function WeekCard({ weekNum, weekStart, lockDt, settleDt, events, canEdit, onAdd
       if (!gwId) {
         const created = await client.post(`/admin/sprints/${sprintDbId}/gameweeks`, { sprint_week: weekNum, events: [], base_energy: body.base_energy || 30 })
         gwId = created.data.gameweek_id
-        delete body.base_energy  // already set by POST
+        delete body.base_energy
       }
 
       await client.patch(`/admin/sprints/${sprintDbId}/gameweeks/${gwId}`, body)
@@ -289,11 +424,28 @@ function WeekCard({ weekNum, weekStart, lockDt, settleDt, events, canEdit, onAdd
     }
     setCfgSaving(false)
   }
+
+  const saveEvents = async () => {
+    if (!sprintDbId || !events.length) return
+    setEvtSaving(true)
+    setEvtSaved(null)
+    try {
+      const eventDefs = events.map(buildEventDef).filter(Boolean)
+      await client.post(`/admin/sprints/${sprintDbId}/gameweeks`, { sprint_week: weekNum, events: eventDefs })
+      setEvtSaved('ok')
+      onGwSaved?.()
+      setTimeout(() => setEvtSaved(null), 2000)
+    } catch (e) {
+      setEvtSaved(e.response?.data?.error || 'Save failed')
+    }
+    setEvtSaving(false)
+  }
+
   // Group events by fixture for display
   const grouped = events.reduce((acc, ev, i) => {
     const key = ev.fixture
     if (!acc[key]) acc[key] = []
-    acc[key].push({ type: ev.type, idx: i })
+    acc[key].push({ type: ev.type, energyCost: ev.energyCost ?? 5, idx: i })
     return acc
   }, {})
   const status = getWeekStatus(weekStart, lockDt, settleDt)
@@ -402,12 +554,13 @@ function WeekCard({ weekNum, weekStart, lockDt, settleDt, events, canEdit, onAdd
                   <span className="text-[10px] text-gray-600">{picks.length} pick{picks.length > 1 ? 's' : ''}</span>
                 </div>
                 <div className="divide-y divide-white/4">
-                  {picks.map(({ type, idx }) => (
+                  {picks.map(({ type, energyCost, idx }) => (
                     <div key={idx} className="flex items-center gap-2 px-3 py-1.5 group">
                       <span className="w-1.5 h-1.5 rounded-full bg-indigo-500/50 flex-shrink-0" />
                       <span className="flex-1 text-[11px] text-gray-400">{type}</span>
+                      <span className="text-[10px] text-yellow-500/60 font-semibold tabular-nums">⚡{energyCost}</span>
                       {canEdit && !isLocked && (
-                        <button onClick={() => onRemove(idx)} className="text-gray-700 hover:text-red-400 opacity-0 group-hover:opacity-100 transition-opacity text-sm leading-none">×</button>
+                        <button onClick={() => onRemove(idx)} className="text-gray-700 hover:text-red-400 opacity-0 group-hover:opacity-100 transition-opacity text-sm leading-none ml-1">×</button>
                       )}
                     </div>
                   ))}
@@ -419,8 +572,20 @@ function WeekCard({ weekNum, weekStart, lockDt, settleDt, events, canEdit, onAdd
         ) : (
           <div className={`border border-dashed rounded-xl px-3 py-3 text-center ${isLocked ? 'border-white/5' : 'border-indigo-500/15'}`}>
             <p className="text-gray-600 text-xs">
-              {isLocked ? 'No fixtures were assigned' : 'No fixtures yet — add before the week goes live on Monday'}
+              {isLocked ? 'No fixtures were assigned' : 'No events yet — click + Add to define fixtures and pick types'}
             </p>
+          </div>
+        )}
+
+        {/* Save events to DB */}
+        {canEdit && !isLocked && events.length > 0 && (
+          <div className="flex items-center gap-2 mt-2">
+            <button onClick={saveEvents} disabled={evtSaving}
+              className="text-xs font-semibold px-3 py-1.5 rounded-lg bg-green-700/70 hover:bg-green-700 disabled:opacity-40 text-white transition-colors">
+              {evtSaving ? 'Saving…' : `Save ${events.length} events to DB`}
+            </button>
+            {evtSaved === 'ok' && <span className="text-[11px] text-green-400">✓ Saved</span>}
+            {evtSaved && evtSaved !== 'ok' && <span className="text-[11px] text-red-400">{evtSaved}</span>}
           </div>
         )}
       </div>
@@ -722,27 +887,15 @@ export default function AdminPage() {
       init[s.id] = {
         1: [], 2: [], 3: [], 4: [],
         // Pre-load some fixtures for the current upcoming sprint
-        ...(s.id === 5 ? {
-          1: [
-            { fixture: 'USA vs Panama',         type: 'Match Result' },
-            { fixture: 'Germany vs Denmark',     type: 'Match Result' },
-            { fixture: 'France vs Portugal',     type: 'Match Result' },
-            { fixture: 'Spain vs Georgia',       type: 'Match Result' },
-            { fixture: 'Argentina vs Australia', type: 'Goals Over/Under' },
-            { fixture: 'Brazil vs Mexico',       type: 'BTTS' },
-          ],
-          2: [
-            { fixture: 'England vs Netherlands', type: 'Match Result' },
-            { fixture: 'Italy vs Morocco',       type: 'Match Result' },
-          ],
-        } : {}),
       }
     })
     return init
   })
 
-  const addEvent    = (sprintId, w, fix, type) => setAllWeekEvents(p => ({ ...p, [sprintId]: { ...p[sprintId], [w]: [...(p[sprintId][w] || []), { fixture: fix, type }] } }))
-  const removeEvent = (sprintId, w, i)         => setAllWeekEvents(p => ({ ...p, [sprintId]: { ...p[sprintId], [w]: p[sprintId][w].filter((_, j) => j !== i) } }))
+  const addEvent    = (sprintId, w, fix, type, energyCost = 5) =>
+    setAllWeekEvents(p => ({ ...p, [sprintId]: { ...p[sprintId], [w]: [...(p[sprintId][w] || []), { fixture: fix, type, energyCost }] } }))
+  const removeEvent = (sprintId, w, i) =>
+    setAllWeekEvents(p => ({ ...p, [sprintId]: { ...p[sprintId], [w]: p[sprintId][w].filter((_, j) => j !== i) } }))
 
   const [dbSprintId,   setDbSprintId]   = useState(null)
   const [dbGameweeks,  setDbGameweeks]  = useState([])
@@ -763,6 +916,23 @@ export default function AdminPage() {
     const s = SPRINT_SCHEDULE.find(sp => sp.id === selectedSprint)
     if (s) loadDbSprint(s.start)
   }, [selectedSprint])
+
+  // Sync DB events into local state so WeekCard shows existing events with logos/energyCost
+  useEffect(() => {
+    if (!dbGameweeks.length || !selectedSprint) return
+    const updates = {}
+    dbGameweeks.forEach(gw => {
+      if (!gw.sprint_week) return
+      updates[gw.sprint_week] = (gw.events || []).map(ev => ({
+        fixture:    ev.fixture_name.replace(/^who qualifies\?\s*/i, '').trim(),
+        type:       EVENT_TYPE_FROM_BACKEND[ev.event_type] || ev.event_type,
+        energyCost: ev.options?.[0]?.energy_cost ?? 5,
+      }))
+    })
+    if (Object.keys(updates).length) {
+      setAllWeekEvents(p => ({ ...p, [selectedSprint]: { ...(p[selectedSprint] || {}), ...updates } }))
+    }
+  }, [dbGameweeks])
 
   const sprint = SPRINT_SCHEDULE.find(s => s.id === selectedSprint)
   const sprintStatus = sprint ? getSprintStatus(sprint.start) : null
@@ -931,7 +1101,7 @@ export default function AdminPage() {
                       settleDt={w.settleDt}
                       events={allWeekEvents[sprint.id]?.[i + 1] || []}
                       canEdit={canEdit}
-                      onAdd={(fix, type) => addEvent(sprint.id, i + 1, fix, type)}
+                      onAdd={(fix, type, energyCost) => addEvent(sprint.id, i + 1, fix, type, energyCost)}
                       onRemove={idx => removeEvent(sprint.id, i + 1, idx)}
                       dbGw={dbGameweeks[i] || null}
                       sprintDbId={dbSprintId}
