@@ -70,15 +70,11 @@ function getSprintStatus(startStr) {
 // ── Fixture pool ──────────────────────────────────────────────────────────────
 const FIXTURE_POOL = {
   'World Cup 2026 · R16': [
-    'USA vs Panama', 'Germany vs Denmark', 'Spain vs Georgia', 'France vs Portugal',
-    'Argentina vs Australia', 'Brazil vs Mexico', 'England vs Netherlands', 'Italy vs Morocco',
+    'Canada vs Morocco', 'Paraguay vs France', 'Brazil vs Norway', 'Mexico vs England',
+    'Portugal vs Spain', 'USA vs Belgium', 'Argentina vs Egypt', 'Switzerland vs Colombia',
   ],
   'World Cup 2026 · QF': [
-    'Argentina vs France', 'Brazil vs Germany', 'England vs Spain', 'USA vs Portugal',
-  ],
-  'World Cup 2026 · SF + Final': [
-    'Brazil vs Argentina (WC SF)', 'England vs France (WC SF)',
-    'England vs Brazil (WC Final)', 'Argentina vs France (WC Final)',
+    'France vs Morocco', 'Spain vs Belgium', 'Norway vs England',
   ],
   'Premier League': ['Arsenal vs Liverpool', 'Man City vs Chelsea', 'Tottenham vs Man United'],
   'La Liga':        ['Real Madrid vs Barcelona', 'Atletico vs Sevilla'],
@@ -174,24 +170,31 @@ const TEAM_LOGOS = {
   'PSG':           'https://media.api-sports.io/football/teams/85.png',
   'Marseille':     'https://media.api-sports.io/football/teams/81.png',
   'Monaco':        'https://media.api-sports.io/football/teams/91.png',
-  // National teams
+  // National teams (IDs from WC 2026 fixtures via API-Sports)
   'France':        'https://media.api-sports.io/football/teams/2.png',
   'Argentina':     'https://media.api-sports.io/football/teams/26.png',
-  'Brazil':        'https://media.api-sports.io/football/teams/24.png',
+  'Brazil':        'https://media.api-sports.io/football/teams/6.png',
   'Germany':       'https://media.api-sports.io/football/teams/25.png',
   'Spain':         'https://media.api-sports.io/football/teams/9.png',
   'England':       'https://media.api-sports.io/football/teams/10.png',
   'Portugal':      'https://media.api-sports.io/football/teams/27.png',
   'Netherlands':   'https://media.api-sports.io/football/teams/1118.png',
   'Italy':         'https://media.api-sports.io/football/teams/768.png',
-  'Morocco':       'https://media.api-sports.io/football/teams/1020.png',
-  'USA':           'https://media.api-sports.io/football/teams/2856.png',
-  'Mexico':        'https://media.api-sports.io/football/teams/769.png',
+  'Morocco':       'https://media.api-sports.io/football/teams/31.png',
+  'USA':           'https://media.api-sports.io/football/teams/2384.png',
+  'Mexico':        'https://media.api-sports.io/football/teams/16.png',
   'Australia':     'https://media.api-sports.io/football/teams/2763.png',
   'Panama':        'https://media.api-sports.io/football/teams/2816.png',
   'Denmark':       'https://media.api-sports.io/football/teams/21.png',
   'Georgia':       'https://media.api-sports.io/football/teams/1530.png',
   'Croatia':       'https://media.api-sports.io/football/teams/3.png',
+  'Belgium':       'https://media.api-sports.io/football/teams/1.png',
+  'Norway':        'https://media.api-sports.io/football/teams/1090.png',
+  'Canada':        'https://media.api-sports.io/football/teams/5529.png',
+  'Paraguay':      'https://media.api-sports.io/football/teams/2380.png',
+  'Egypt':         'https://media.api-sports.io/football/teams/32.png',
+  'Switzerland':   'https://media.api-sports.io/football/teams/15.png',
+  'Colombia':      'https://media.api-sports.io/football/teams/8.png',
 }
 
 function parseTeams(fixture) {
