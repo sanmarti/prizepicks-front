@@ -548,20 +548,31 @@ function WeekCard({ weekNum, weekStart, lockDt, settleDt, events, canEdit, onAdd
               const [home, away] = parseTeams(fix)
               return (
               <div key={fix} className="rounded-xl bg-white/3 border border-white/6 overflow-hidden">
-                <div className="px-3 py-1.5 border-b border-white/5 flex items-center gap-1.5">
-                  <div className="flex items-center gap-0.5 flex-shrink-0">
-                    <TeamLogo name={home} size={18} />
-                    <TeamLogo name={away} size={18} />
+                {/* Fixture header */}
+                <div className="px-3 py-2 border-b border-white/5 flex items-center gap-2">
+                  <div className="flex items-center gap-1 flex-shrink-0">
+                    <TeamLogo name={home} size={24} />
+                    <span className="text-[10px] text-gray-500 font-semibold">vs</span>
+                    <TeamLogo name={away} size={24} />
                   </div>
-                  <span className="text-xs text-gray-200 font-semibold flex-1 truncate">{fix}</span>
-                  <span className="text-[10px] text-gray-600">{picks.length} pick{picks.length > 1 ? 's' : ''}</span>
+                  <div className="flex-1 min-w-0">
+                    <span className="text-xs text-gray-200 font-semibold truncate block">{fix}</span>
+                  </div>
+                  <span className="text-[10px] text-gray-600 flex-shrink-0">{picks.length} pick{picks.length > 1 ? 's' : ''}</span>
                 </div>
+                {/* Pick type rows */}
                 <div className="divide-y divide-white/4">
                   {picks.map(({ type, energyCost, idx }) => (
-                    <div key={idx} className="flex items-center gap-2 px-3 py-1.5 group">
-                      <span className="w-1.5 h-1.5 rounded-full bg-indigo-500/50 flex-shrink-0" />
-                      <span className="flex-1 text-[11px] text-gray-400">{type}</span>
-                      <span className="text-[10px] text-yellow-500/60 font-semibold tabular-nums">⚡{energyCost}</span>
+                    <div key={idx} className="flex items-center gap-2 px-3 py-2 group">
+                      <div className="flex items-center gap-0.5 flex-shrink-0">
+                        <TeamLogo name={home} size={16} />
+                        <TeamLogo name={away} size={16} />
+                      </div>
+                      <span className="flex-1 text-[11px] text-gray-300 font-medium">{type}</span>
+                      <div className="flex items-center gap-1 flex-shrink-0">
+                        <span className="text-[10px] text-yellow-400/70">⚡</span>
+                        <span className="text-[11px] text-yellow-300 font-bold tabular-nums">{energyCost}</span>
+                      </div>
                       {canEdit && !isLocked && (
                         <button onClick={() => onRemove(idx)} className="text-gray-700 hover:text-red-400 opacity-0 group-hover:opacity-100 transition-opacity text-sm leading-none ml-1">×</button>
                       )}
