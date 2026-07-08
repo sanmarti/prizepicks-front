@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 
 export const SLIDES = [
   {
@@ -60,19 +60,70 @@ const KEYFRAMES = `
 }
 `
 
+function getIsDark() {
+  const saved = localStorage.getItem('or-theme')
+  if (saved) return saved === 'dark'
+  return window.matchMedia('(prefers-color-scheme: dark)').matches
+}
+
 export default function OnboardingModal({
   onClose,
   onFinish,
   userName = null,
   finalLabel = 'MAKE YOUR PICKS →',
   finalGreen = true,
+  dark: darkProp = null,
 }) {
   const [slide, setSlide] = useState(0)
+  const [isDark, setIsDark] = useState(() => darkProp !== null ? darkProp : getIsDark())
+
+  useEffect(() => {
+    if (darkProp !== null) { setIsDark(darkProp); return }
+    const mq = window.matchMedia('(prefers-color-scheme: dark)')
+    const handler = e => setIsDark(e.matches)
+    mq.addEventListener('change', handler)
+    return () => mq.removeEventListener('change', handler)
+  }, [darkProp])
 
   const current = SLIDES[slide]
   const isLast  = slide === SLIDES.length - 1
   const isFirst = slide === 0
   const pct     = ((slide + 1) / SLIDES.length) * 100
+
+  const th = isDark ? {
+    cardBg:        'rgba(10,13,22,0.97)',
+    shadow:        '0 40px 100px rgba(0,0,0,0.7), 0 0 0 1px rgba(255,255,255,0.03)',
+    closeBg:       'rgba(255,255,255,0.05)',
+    closeBorder:   'rgba(255,255,255,0.08)',
+    closeColor:    'rgba(255,255,255,0.35)',
+    closeHoverBg:  'rgba(255,255,255,0.1)',
+    trackBg:       'rgba(255,255,255,0.06)',
+    title:         '#fff',
+    body:          'rgba(255,255,255,0.52)',
+    prevBg:        'rgba(255,255,255,0.04)',
+    prevBorder:    'rgba(255,255,255,0.1)',
+    prevColor:     'rgba(255,255,255,0.55)',
+    prevHoverBg:   'rgba(255,255,255,0.08)',
+    prevHoverClr:  '#fff',
+    dotInactive:   'rgba(255,255,255,0.12)',
+  } : {
+    cardBg:        'rgba(255,255,255,0.98)',
+    shadow:        '0 40px 100px rgba(0,0,0,0.12), 0 0 0 1px rgba(0,0,0,0.04)',
+    closeBg:       'rgba(0,0,0,0.05)',
+    closeBorder:   'rgba(0,0,0,0.1)',
+    closeColor:    'rgba(0,0,0,0.35)',
+    closeHoverBg:  'rgba(0,0,0,0.1)',
+    closeHoverClr: 'rgba(0,0,0,0.8)',
+    trackBg:       'rgba(0,0,0,0.08)',
+    title:         '#0f172a',
+    body:          'rgba(0,0,0,0.55)',
+    prevBg:        'rgba(0,0,0,0.04)',
+    prevBorder:    'rgba(0,0,0,0.12)',
+    prevColor:     'rgba(0,0,0,0.5)',
+    prevHoverBg:   'rgba(0,0,0,0.08)',
+    prevHoverClr:  '#0f172a',
+    dotInactive:   'rgba(0,0,0,0.12)',
+  }
 
   return (
     <>
@@ -91,12 +142,12 @@ export default function OnboardingModal({
           key={slide}
           style={{
             width: '100%', maxWidth: 480,
-            background: 'rgba(10,13,22,0.97)',
+            background: th.cardBg,
             backdropFilter: 'blur(24px)',
             border: `1px solid ${current.accent}28`,
             borderRadius: 24,
             padding: '36px 32px 28px',
-            boxShadow: `0 40px 100px rgba(0,0,0,0.7), 0 0 0 1px rgba(255,255,255,0.03), 0 0 60px ${current.accent}10`,
+            boxShadow: `${th.shadow}, 0 0 60px ${current.accent}10`,
             animation: 'ob-fade-up 0.28s cubic-bezier(0.34,1.3,0.64,1) both',
             position: 'relative',
           }}
@@ -106,14 +157,14 @@ export default function OnboardingModal({
             onClick={onClose}
             style={{
               position: 'absolute', top: 16, right: 16,
-              background: 'rgba(255,255,255,0.05)', border: '1px solid rgba(255,255,255,0.08)',
+              background: th.closeBg, border: `1px solid ${th.closeBorder}`,
               borderRadius: 99, width: 30, height: 30, cursor: 'pointer',
-              color: 'rgba(255,255,255,0.35)', fontSize: 13,
+              color: th.closeColor, fontSize: 13,
               display: 'flex', alignItems: 'center', justifyContent: 'center',
               transition: 'background 0.15s, color 0.15s',
             }}
-            onMouseEnter={e => { e.currentTarget.style.background = 'rgba(255,255,255,0.1)'; e.currentTarget.style.color = '#fff' }}
-            onMouseLeave={e => { e.currentTarget.style.background = 'rgba(255,255,255,0.05)'; e.currentTarget.style.color = 'rgba(255,255,255,0.35)' }}
+            onMouseEnter={e => { e.currentTarget.style.background = th.closeHoverBg; e.currentTarget.style.color = th.closeHoverClr ?? (isDark ? '#fff' : '#0f172a') }}
+            onMouseLeave={e => { e.currentTarget.style.background = th.closeBg; e.currentTarget.style.color = th.closeColor }}
           >✕</button>
 
           {/* Progress */}
@@ -124,7 +175,7 @@ export default function OnboardingModal({
             }}>
               {slide + 1} / {SLIDES.length}
             </span>
-            <div style={{ flex: 1, height: 3, borderRadius: 99, background: 'rgba(255,255,255,0.06)', overflow: 'hidden' }}>
+            <div style={{ flex: 1, height: 3, borderRadius: 99, background: th.trackBg, overflow: 'hidden' }}>
               <div style={{
                 height: '100%', borderRadius: 99,
                 width: `${pct}%`,
@@ -151,7 +202,7 @@ export default function OnboardingModal({
           {/* Title */}
           <h2 style={{
             fontFamily: "'Syne', sans-serif", fontWeight: 700, fontSize: 24,
-            color: '#fff', margin: '0 0 14px', lineHeight: 1.15, letterSpacing: '-0.02em',
+            color: th.title, margin: '0 0 14px', lineHeight: 1.15, letterSpacing: '-0.02em',
           }}>
             {slide === 0 && userName
               ? `Welcome, ${userName.split(' ')[0]}.`
@@ -160,7 +211,7 @@ export default function OnboardingModal({
 
           {/* Body */}
           <p style={{
-            fontSize: 14, color: 'rgba(255,255,255,0.52)',
+            fontSize: 14, color: th.body,
             fontFamily: "'IBM Plex Mono', monospace", lineHeight: 1.7,
             margin: '0 0 14px',
           }}>
@@ -186,15 +237,15 @@ export default function OnboardingModal({
               disabled={isFirst}
               style={{
                 flex: '0 0 auto', padding: '13px 18px', borderRadius: 12,
-                border: '1px solid rgba(255,255,255,0.1)',
-                background: 'rgba(255,255,255,0.04)',
+                border: `1px solid ${th.prevBorder}`,
+                background: th.prevBg,
                 cursor: isFirst ? 'not-allowed' : 'pointer',
-                color: isFirst ? 'rgba(255,255,255,0.18)' : 'rgba(255,255,255,0.55)',
+                color: isFirst ? `${th.prevColor}60` : th.prevColor,
                 fontFamily: "'IBM Plex Mono', monospace", fontWeight: 600, fontSize: 13,
                 transition: 'background 0.15s, color 0.15s',
               }}
-              onMouseEnter={e => { if (!isFirst) { e.currentTarget.style.background = 'rgba(255,255,255,0.08)'; e.currentTarget.style.color = '#fff' }}}
-              onMouseLeave={e => { e.currentTarget.style.background = 'rgba(255,255,255,0.04)'; e.currentTarget.style.color = isFirst ? 'rgba(255,255,255,0.18)' : 'rgba(255,255,255,0.55)' }}
+              onMouseEnter={e => { if (!isFirst) { e.currentTarget.style.background = th.prevHoverBg; e.currentTarget.style.color = th.prevHoverClr }}}
+              onMouseLeave={e => { e.currentTarget.style.background = th.prevBg; e.currentTarget.style.color = isFirst ? `${th.prevColor}60` : th.prevColor }}
             >← PREV</button>
 
             {/* Next / Finish */}
@@ -239,7 +290,7 @@ export default function OnboardingModal({
                 onClick={() => setSlide(i)}
                 style={{
                   width: i === slide ? 18 : 6, height: 6, borderRadius: 99,
-                  background: i === slide ? current.accent : 'rgba(255,255,255,0.12)',
+                  background: i === slide ? current.accent : th.dotInactive,
                   transition: 'width 0.3s, background 0.3s',
                   boxShadow: i === slide ? `0 0 6px ${current.accent}80` : 'none',
                   cursor: 'pointer',

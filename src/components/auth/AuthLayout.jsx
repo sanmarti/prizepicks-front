@@ -40,7 +40,7 @@ const DARK = {
   glowGreenSm: 'radial-gradient(circle, rgba(34,197,94,0.06) 0%, transparent 70%)',
   glowVioletSm: 'radial-gradient(circle, rgba(124,110,245,0.08) 0%, transparent 70%)',
   pitchStroke: 'white',
-  pitchOpacity: 0.08,
+  pitchOpacity: 0.14,
   modalBg: 'linear-gradient(160deg, #0a0e1a 0%, #070b14 100%)',
   modalBorder: 'rgba(124,110,245,0.18)',
   modalHeaderBg: 'rgba(255,255,255,0.02)',
@@ -110,7 +110,7 @@ const LIGHT = {
   glowGreenSm: 'radial-gradient(circle, rgba(34,197,94,0.07) 0%, transparent 70%)',
   glowVioletSm: 'radial-gradient(circle, rgba(79,70,229,0.07) 0%, transparent 70%)',
   pitchStroke: '#334155',
-  pitchOpacity: 0.07,
+  pitchOpacity: 0.12,
   modalBg: 'linear-gradient(160deg, #f4f7fb 0%, #eef2f9 100%)',
   modalBorder: 'rgba(79,70,229,0.16)',
   modalHeaderBg: 'rgba(15,23,42,0.02)',
@@ -227,10 +227,9 @@ export function Ball({ uid, size = 80 }) {
 
 function Pitch({ T }) {
   return (
-    <svg viewBox="0 0 300 440" style={{
-      position: 'absolute', bottom: '-20px', left: '50%',
-      transform: 'translateX(-50%)',
-      width: '82%', height: 'auto', opacity: T.pitchOpacity,
+    <svg viewBox="0 0 300 440" preserveAspectRatio="xMidYMid slice" style={{
+      position: 'absolute', inset: 0,
+      width: '100%', height: '100%', opacity: T.pitchOpacity,
       pointerEvents: 'none',
     }}>
       <rect x="8" y="8" width="284" height="424" rx="3" fill="none" stroke={T.pitchStroke} strokeWidth="2.5"/>
@@ -727,15 +726,8 @@ function HeroPanel({ onTryIt, gwData, onHowItWorks, T }) {
       background: T.heroBg,
     }}>
 
-      {/* Grid texture */}
-      <div style={{
-        position: 'absolute', inset: 0, pointerEvents: 'none',
-        backgroundImage: `
-          linear-gradient(${T.gridColor} 1px, transparent 1px),
-          linear-gradient(90deg, ${T.gridColor} 1px, transparent 1px)
-        `,
-        backgroundSize: '40px 40px',
-      }}/>
+      {/* Pitch lines */}
+      <Pitch T={T} />
 
       {/* Scan line */}
       <div style={{
@@ -1213,6 +1205,7 @@ export default function AuthLayout({ heading, subheading, children }) {
           onFinish={() => { setShowGuide(false); navigate('/register') }}
           finalLabel="GET STARTED →"
           finalGreen
+          dark={dark}
         />
       )}
 
