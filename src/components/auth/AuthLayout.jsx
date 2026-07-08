@@ -699,7 +699,7 @@ const STEPS = [
     desc: '1 League Point per correct pick. Nail all 6 and earn a Perfect Week (+4 bonus).',
   },
   {
-    num: '03', accent: '#facc15', icon: '⚡',
+    num: '03', accent: '#facc15', icon: '⚡️',
     title: 'Spend your energy wisely.',
     desc: 'Each week you get 30⚡ to spread across your 6 picks. Safer outcomes cost more — manage your energy to maximise your score.',
   },
@@ -1106,7 +1106,7 @@ export default function AuthLayout({ heading, subheading, children }) {
                     }}>{icon}</div>
                     <div style={{ minWidth: 0, flex: 1 }}>
                       <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 3 }}>
-                        <span style={{ fontSize: 11, color: accent, fontFamily: "'IBM Plex Mono', monospace", fontWeight: 700, letterSpacing: '0.12em', opacity: 0.85 }}>{num}</span>
+                        <span style={{ fontSize: 26, color: accent, fontFamily: "'IBM Plex Mono', monospace", fontWeight: 900, letterSpacing: '0.04em', lineHeight: 1 }}>{num}</span>
                         <span style={{ fontSize: 22, fontFamily: "'Syne', sans-serif", fontWeight: 700, color: T.text, lineHeight: 1.15 }}>{title}</span>
                       </div>
                       <p style={{ fontSize: 12, color: T.textDim, fontFamily: "'IBM Plex Mono', monospace", lineHeight: 1.5, margin: 0 }}>{desc}</p>
