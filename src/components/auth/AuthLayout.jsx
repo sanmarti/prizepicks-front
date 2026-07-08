@@ -1,8 +1,153 @@
-import { useState, useEffect, useRef } from 'react'
+import { useState, useEffect, useRef, createContext, useContext } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { getPublicGameweek } from '../../api/competitions'
 import OnboardingModal from '../onboarding/OnboardingModal'
 import LegalModal from '../legal/LegalModal'
+
+// ── Theme context ─────────────────────────────────────────────────────────────
+
+export const ThemeContext = createContext({ dark: true, toggle: () => {} })
+export const useTheme = () => useContext(ThemeContext)
+
+const DARK = {
+  bg: '#060a10',
+  heroBg: 'linear-gradient(160deg, #05080f 0%, #070c14 60%, #040810 100%)',
+  rightBg: 'transparent',
+  cardBg: 'rgba(13,17,27,0.92)',
+  cardBorder: 'rgba(124,110,245,0.14)',
+  cardShadow: '0 32px 80px rgba(0,0,0,0.45), inset 0 1px 0 rgba(255,255,255,0.04)',
+  text: '#ffffff',
+  textDim: 'rgba(255,255,255,0.45)',
+  textFaint: 'rgba(255,255,255,0.28)',
+  textGhost: 'rgba(255,255,255,0.22)',
+  textMuted: 'rgba(255,255,255,0.18)',
+  textTiny: 'rgba(255,255,255,0.12)',
+  border: 'rgba(255,255,255,0.06)',
+  border2: 'rgba(255,255,255,0.08)',
+  border3: 'rgba(255,255,255,0.1)',
+  stepBg: 'rgba(255,255,255,0.025)',
+  inputBg: 'rgba(255,255,255,0.035)',
+  inputBorder: 'rgba(124,110,245,0.18)',
+  inputColor: 'rgba(255,255,255,0.9)',
+  gridColor: 'rgba(124,110,245,0.03)',
+  footerBg: 'rgba(0,0,0,0.3)',
+  footerBorder: 'rgba(255,255,255,0.05)',
+  footerText: 'rgba(255,255,255,0.18)',
+  footerLink: 'rgba(255,255,255,0.3)',
+  footerLinkHover: 'rgba(255,255,255,0.65)',
+  glowGreen: 'radial-gradient(circle, rgba(34,197,94,0.12) 0%, transparent 65%)',
+  glowViolet: 'radial-gradient(circle, rgba(124,110,245,0.14) 0%, transparent 65%)',
+  glowGreenSm: 'radial-gradient(circle, rgba(34,197,94,0.06) 0%, transparent 70%)',
+  glowVioletSm: 'radial-gradient(circle, rgba(124,110,245,0.08) 0%, transparent 70%)',
+  pitchStroke: 'white',
+  pitchOpacity: 0.08,
+  modalBg: 'linear-gradient(160deg, #0a0e1a 0%, #070b14 100%)',
+  modalBorder: 'rgba(124,110,245,0.18)',
+  modalHeaderBg: 'rgba(255,255,255,0.02)',
+  modalHeaderBorder: 'rgba(255,255,255,0.06)',
+  modalOverlayBg: 'rgba(0,0,0,0.85)',
+  modalEventBg: 'rgba(255,255,255,0.02)',
+  modalEventBorder: 'rgba(255,255,255,0.05)',
+  modalEventSelBg: 'rgba(124,110,245,0.07)',
+  modalEventSelBorder: 'rgba(124,110,245,0.25)',
+  modalFooterBg: 'rgba(0,0,0,0.3)',
+  modalFooterBorder: 'rgba(255,255,255,0.06)',
+  modalCloseBg: 'rgba(255,255,255,0.05)',
+  modalCloseBorder: '1px solid rgba(255,255,255,0.08)',
+  modalCloseColor: 'rgba(255,255,255,0.4)',
+  modalPickDotEmpty: 'rgba(255,255,255,0.06)',
+  modalPickDotBorderEmpty: 'rgba(255,255,255,0.08)',
+  modalEnergyBarBg: 'rgba(255,255,255,0.06)',
+  modalOptBg: 'rgba(255,255,255,0.05)',
+  modalOptBorder: 'rgba(255,255,255,0.1)',
+  modalAuthBg: 'linear-gradient(160deg, rgba(7,5,20,0.97) 0%, rgba(10,8,25,0.97) 100%)',
+  modalSummaryBg: 'rgba(255,255,255,0.03)',
+  modalSummaryBorder: 'rgba(255,255,255,0.06)',
+  ctaBg: 'linear-gradient(135deg, rgba(124,110,245,0.08) 0%, rgba(34,197,94,0.06) 100%)',
+  ctaBorder: 'rgba(124,110,245,0.2)',
+  ctaText: 'rgba(255,255,255,0.3)',
+  toggleBg: 'rgba(255,255,255,0.08)',
+  toggleBorder: 'rgba(255,255,255,0.12)',
+  toggleColor: 'rgba(255,255,255,0.5)',
+  mobileHowBg: 'rgba(255,255,255,0.04)',
+  mobileHowBorder: 'rgba(255,255,255,0.1)',
+  mobileHowColor: 'rgba(255,255,255,0.5)',
+  rightEdgeFade: 'linear-gradient(to right, transparent, rgba(5,8,15,0.9))',
+  scanColor: 'linear-gradient(90deg, transparent, rgba(34,197,94,0.4), transparent)',
+  dayLabelColor: 'rgba(255,255,255,0.2)',
+  compLabelColor: 'rgba(255,255,255,0.22)',
+  pickCountColor: 'rgba(255,255,255,0.25)',
+}
+
+const LIGHT = {
+  bg: '#f0f4fb',
+  heroBg: 'linear-gradient(160deg, #eef2f9 0%, #e8eef8 60%, #e4ecf7 100%)',
+  rightBg: '#f8fafc',
+  cardBg: 'rgba(255,255,255,0.97)',
+  cardBorder: 'rgba(79,70,229,0.16)',
+  cardShadow: '0 32px 80px rgba(15,23,42,0.08), inset 0 1px 0 rgba(255,255,255,0.8)',
+  text: '#0f172a',
+  textDim: 'rgba(15,23,42,0.55)',
+  textFaint: 'rgba(15,23,42,0.4)',
+  textGhost: 'rgba(15,23,42,0.35)',
+  textMuted: 'rgba(15,23,42,0.25)',
+  textTiny: 'rgba(15,23,42,0.15)',
+  border: 'rgba(15,23,42,0.07)',
+  border2: 'rgba(15,23,42,0.09)',
+  border3: 'rgba(15,23,42,0.12)',
+  stepBg: 'rgba(15,23,42,0.03)',
+  inputBg: 'rgba(15,23,42,0.04)',
+  inputBorder: 'rgba(79,70,229,0.2)',
+  inputColor: '#0f172a',
+  gridColor: 'rgba(79,70,229,0.04)',
+  footerBg: 'rgba(220,228,248,0.7)',
+  footerBorder: 'rgba(15,23,42,0.09)',
+  footerText: 'rgba(15,23,42,0.3)',
+  footerLink: 'rgba(15,23,42,0.4)',
+  footerLinkHover: 'rgba(15,23,42,0.8)',
+  glowGreen: 'radial-gradient(circle, rgba(34,197,94,0.1) 0%, transparent 65%)',
+  glowViolet: 'radial-gradient(circle, rgba(79,70,229,0.1) 0%, transparent 65%)',
+  glowGreenSm: 'radial-gradient(circle, rgba(34,197,94,0.07) 0%, transparent 70%)',
+  glowVioletSm: 'radial-gradient(circle, rgba(79,70,229,0.07) 0%, transparent 70%)',
+  pitchStroke: '#334155',
+  pitchOpacity: 0.07,
+  modalBg: 'linear-gradient(160deg, #f4f7fb 0%, #eef2f9 100%)',
+  modalBorder: 'rgba(79,70,229,0.16)',
+  modalHeaderBg: 'rgba(15,23,42,0.02)',
+  modalHeaderBorder: 'rgba(15,23,42,0.07)',
+  modalOverlayBg: 'rgba(15,23,42,0.5)',
+  modalEventBg: 'rgba(15,23,42,0.02)',
+  modalEventBorder: 'rgba(15,23,42,0.06)',
+  modalEventSelBg: 'rgba(79,70,229,0.06)',
+  modalEventSelBorder: 'rgba(79,70,229,0.25)',
+  modalFooterBg: 'rgba(240,244,251,0.8)',
+  modalFooterBorder: 'rgba(15,23,42,0.07)',
+  modalCloseBg: 'rgba(15,23,42,0.06)',
+  modalCloseBorder: '1px solid rgba(15,23,42,0.1)',
+  modalCloseColor: 'rgba(15,23,42,0.4)',
+  modalPickDotEmpty: 'rgba(15,23,42,0.06)',
+  modalPickDotBorderEmpty: 'rgba(15,23,42,0.09)',
+  modalEnergyBarBg: 'rgba(15,23,42,0.07)',
+  modalOptBg: 'rgba(15,23,42,0.04)',
+  modalOptBorder: 'rgba(15,23,42,0.1)',
+  modalAuthBg: 'linear-gradient(160deg, rgba(244,247,251,0.97) 0%, rgba(238,242,249,0.97) 100%)',
+  modalSummaryBg: 'rgba(15,23,42,0.03)',
+  modalSummaryBorder: 'rgba(15,23,42,0.07)',
+  ctaBg: 'linear-gradient(135deg, rgba(79,70,229,0.07) 0%, rgba(34,197,94,0.05) 100%)',
+  ctaBorder: 'rgba(79,70,229,0.18)',
+  ctaText: 'rgba(15,23,42,0.4)',
+  toggleBg: 'rgba(15,23,42,0.07)',
+  toggleBorder: 'rgba(15,23,42,0.12)',
+  toggleColor: 'rgba(15,23,42,0.5)',
+  mobileHowBg: 'rgba(15,23,42,0.04)',
+  mobileHowBorder: 'rgba(15,23,42,0.1)',
+  mobileHowColor: 'rgba(15,23,42,0.5)',
+  rightEdgeFade: 'linear-gradient(to right, transparent, rgba(240,244,251,0.9))',
+  scanColor: 'linear-gradient(90deg, transparent, rgba(79,70,229,0.25), transparent)',
+  dayLabelColor: 'rgba(15,23,42,0.3)',
+  compLabelColor: 'rgba(15,23,42,0.35)',
+  pickCountColor: 'rgba(15,23,42,0.3)',
+}
 
 // ── SVG Icons ─────────────────────────────────────────────────────────────────
 
@@ -45,13 +190,11 @@ export function Ball({ uid, size = 80 }) {
   return (
     <svg viewBox="0 0 100 100" width={size} height={size} style={{ display: 'block' }}>
       <defs>
-        {/* 3D sphere gradient — light from top-left */}
         <radialGradient id={`rg-${uid}`} cx="36%" cy="28%" r="65%">
           <stop offset="0%"   stopColor="#ffffff"/>
           <stop offset="45%"  stopColor="#ebebeb"/>
           <stop offset="100%" stopColor="#7a7a7a"/>
         </radialGradient>
-        {/* Subtle bottom shadow */}
         <radialGradient id={`sh-${uid}`} cx="50%" cy="85%" r="45%">
           <stop offset="0%"   stopColor="rgba(0,0,0,0.18)"/>
           <stop offset="100%" stopColor="rgba(0,0,0,0)"/>
@@ -60,39 +203,20 @@ export function Ball({ uid, size = 80 }) {
           <circle cx="50" cy="50" r="47"/>
         </clipPath>
       </defs>
-
-      {/* Base sphere */}
       <circle cx="50" cy="50" r="47" fill={`url(#rg-${uid})`}/>
-
-      {/* Black pentagon patches — classic Telstar pattern */}
       <g clipPath={`url(#cp-${uid})`} fill="#111" stroke="#222" strokeWidth="0.4" strokeLinejoin="round">
-        {/* Top pentagon */}
         <polygon points="50,8 63,17 58,32 42,32 37,17"/>
-        {/* Upper-left pentagon */}
         <polygon points="37,17 21,14 12,29 22,43 37,38"/>
-        {/* Upper-right pentagon */}
         <polygon points="63,17 79,14 88,29 78,43 63,38"/>
-        {/* Left pentagon */}
         <polygon points="22,43  7,55 13,72 29,76 38,62"/>
-        {/* Right pentagon */}
         <polygon points="78,43 93,55 87,72 71,76 62,62"/>
-        {/* Lower-left pentagon */}
         <polygon points="29,76 20,90 38,96 50,87 41,72"/>
-        {/* Lower-right pentagon */}
         <polygon points="71,76 80,90 62,96 50,87 59,72"/>
-        {/* Bottom center pentagon */}
         <polygon points="50,87 41,72 50,64 59,72"/>
-        {/* Center hexagon (dark inner edges only — ring of seams) */}
         <polygon points="42,32 37,38 40,53 50,59 60,53 63,38 58,32" fill="none" stroke="#333" strokeWidth="0.8"/>
       </g>
-
-      {/* Bottom shadow overlay */}
       <circle cx="50" cy="50" r="47" fill={`url(#sh-${uid})`}/>
-
-      {/* Sphere outline */}
       <circle cx="50" cy="50" r="47" fill="none" stroke="rgba(0,0,0,0.18)" strokeWidth="1.2"/>
-
-      {/* Specular highlight */}
       <ellipse cx="34" cy="26" rx="11" ry="6.5" fill="white" opacity="0.55" transform="rotate(-22 34 26)"/>
       <ellipse cx="38" cy="29" rx="5" ry="3" fill="white" opacity="0.3" transform="rotate(-22 38 29)"/>
     </svg>
@@ -101,30 +225,30 @@ export function Ball({ uid, size = 80 }) {
 
 // ── Pitch ──────────────────────────────────────────────────────────────────────
 
-function Pitch() {
+function Pitch({ T }) {
   return (
     <svg viewBox="0 0 300 440" style={{
       position: 'absolute', bottom: '-20px', left: '50%',
       transform: 'translateX(-50%)',
-      width: '82%', height: 'auto', opacity: 0.08,
+      width: '82%', height: 'auto', opacity: T.pitchOpacity,
       pointerEvents: 'none',
     }}>
-      <rect x="8" y="8" width="284" height="424" rx="3" fill="none" stroke="white" strokeWidth="2.5"/>
-      <line x1="8" y1="220" x2="292" y2="220" stroke="white" strokeWidth="2"/>
-      <circle cx="150" cy="220" r="52" fill="none" stroke="white" strokeWidth="2"/>
-      <circle cx="150" cy="220" r="3.5" fill="white"/>
-      <rect x="73" y="8" width="154" height="72" rx="2" fill="none" stroke="white" strokeWidth="2"/>
-      <rect x="108" y="8" width="84" height="28" rx="1" fill="none" stroke="white" strokeWidth="2"/>
-      <circle cx="150" cy="62" r="3" fill="white"/>
-      <path d="M98,80 A55,55 0 0,0 202,80" fill="none" stroke="white" strokeWidth="2"/>
-      <rect x="73" y="360" width="154" height="72" rx="2" fill="none" stroke="white" strokeWidth="2"/>
-      <rect x="108" y="404" width="84" height="28" rx="1" fill="none" stroke="white" strokeWidth="2"/>
-      <circle cx="150" cy="378" r="3" fill="white"/>
-      <path d="M98,360 A55,55 0 0,1 202,360" fill="none" stroke="white" strokeWidth="2"/>
-      <path d="M8,24 A14,14 0 0,1 22,8"   fill="none" stroke="white" strokeWidth="1.8"/>
-      <path d="M278,8 A14,14 0 0,1 292,24" fill="none" stroke="white" strokeWidth="1.8"/>
-      <path d="M8,416 A14,14 0 0,0 22,432" fill="none" stroke="white" strokeWidth="1.8"/>
-      <path d="M278,432 A14,14 0 0,0 292,416" fill="none" stroke="white" strokeWidth="1.8"/>
+      <rect x="8" y="8" width="284" height="424" rx="3" fill="none" stroke={T.pitchStroke} strokeWidth="2.5"/>
+      <line x1="8" y1="220" x2="292" y2="220" stroke={T.pitchStroke} strokeWidth="2"/>
+      <circle cx="150" cy="220" r="52" fill="none" stroke={T.pitchStroke} strokeWidth="2"/>
+      <circle cx="150" cy="220" r="3.5" fill={T.pitchStroke}/>
+      <rect x="73" y="8" width="154" height="72" rx="2" fill="none" stroke={T.pitchStroke} strokeWidth="2"/>
+      <rect x="108" y="8" width="84" height="28" rx="1" fill="none" stroke={T.pitchStroke} strokeWidth="2"/>
+      <circle cx="150" cy="62" r="3" fill={T.pitchStroke}/>
+      <path d="M98,80 A55,55 0 0,0 202,80" fill="none" stroke={T.pitchStroke} strokeWidth="2"/>
+      <rect x="73" y="360" width="154" height="72" rx="2" fill="none" stroke={T.pitchStroke} strokeWidth="2"/>
+      <rect x="108" y="404" width="84" height="28" rx="1" fill="none" stroke={T.pitchStroke} strokeWidth="2"/>
+      <circle cx="150" cy="378" r="3" fill={T.pitchStroke}/>
+      <path d="M98,360 A55,55 0 0,1 202,360" fill="none" stroke={T.pitchStroke} strokeWidth="2"/>
+      <path d="M8,24 A14,14 0 0,1 22,8"   fill="none" stroke={T.pitchStroke} strokeWidth="1.8"/>
+      <path d="M278,8 A14,14 0 0,1 292,24" fill="none" stroke={T.pitchStroke} strokeWidth="1.8"/>
+      <path d="M8,416 A14,14 0 0,0 22,432" fill="none" stroke={T.pitchStroke} strokeWidth="1.8"/>
+      <path d="M278,432 A14,14 0 0,0 292,416" fill="none" stroke={T.pitchStroke} strokeWidth="1.8"/>
     </svg>
   )
 }
@@ -226,10 +350,9 @@ const KEYFRAMES = `
 }
 `
 
-const MAX_PICKS    = 6
+const MAX_PICKS = 6
 
 // ── Game Preview Modal ─────────────────────────────────────────────────────────
-// picks: { eventId: { optionId, label, energyCost } }
 
 const EVENT_TYPE_LABELS = {
   MATCH_RESULT:  { label: 'Match Result',     icon: '⚽' },
@@ -241,7 +364,7 @@ const EVENT_TYPE_LABELS = {
   CORNER_OVER:   { label: 'Corner Kicks',     icon: '🚩' },
 }
 
-function GamePreviewModal({ onClose, onSignUp, onLogin, gwData }) {
+function GamePreviewModal({ onClose, onSignUp, onLogin, gwData, T }) {
   const [picks, setPicks]         = useState({})
   const [submitted, setSubmitted] = useState(false)
 
@@ -289,7 +412,6 @@ function GamePreviewModal({ onClose, onSignUp, onLogin, gwData }) {
     return [...opts].sort((a, b) => rank(a) - rank(b))
   }
 
-  // Group events by day
   const days = []
   const dayMap = {}
   for (const ev of events) {
@@ -300,23 +422,23 @@ function GamePreviewModal({ onClose, onSignUp, onLogin, gwData }) {
     dayMap[d].push(ev)
   }
 
-  const atMax        = pickCount >= MAX_PICKS
-  const energyPct    = (energyUsed / TOTAL_ENERGY) * 100
-  const energyColor  = energyLeft < 3 ? '#f87171' : energyLeft < 8 ? '#f59e0b' : '#a78bfa'
+  const atMax       = pickCount >= MAX_PICKS
+  const energyPct   = (energyUsed / TOTAL_ENERGY) * 100
+  const energyColor = energyLeft < 3 ? '#f87171' : energyLeft < 8 ? '#f59e0b' : '#a78bfa'
 
   return (
     <div style={{
       position: 'fixed', inset: 0, zIndex: 100,
-      background: 'rgba(0,0,0,0.85)', backdropFilter: 'blur(8px)',
+      background: T.modalOverlayBg, backdropFilter: 'blur(8px)',
       display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '16px',
     }} onClick={e => { if (e.target === e.currentTarget) onClose() }}>
 
       <div style={{
         width: '100%', maxWidth: 560, maxHeight: '92dvh',
-        background: 'linear-gradient(160deg, #0a0e1a 0%, #070b14 100%)',
-        border: '1px solid rgba(124,110,245,0.18)', borderRadius: 24,
+        background: T.modalBg,
+        border: `1px solid ${T.modalBorder}`, borderRadius: 24,
         display: 'flex', flexDirection: 'column', overflow: 'hidden',
-        boxShadow: '0 40px 100px rgba(0,0,0,0.7), 0 0 0 1px rgba(255,255,255,0.04)',
+        boxShadow: '0 40px 100px rgba(0,0,0,0.3), 0 0 0 1px rgba(255,255,255,0.04)',
         animation: 'modal-in 0.28s cubic-bezier(0.34,1.56,0.64,1) both',
         position: 'relative',
       }}>
@@ -324,8 +446,8 @@ function GamePreviewModal({ onClose, onSignUp, onLogin, gwData }) {
         {/* Header */}
         <div style={{
           padding: '18px 20px 14px', flexShrink: 0,
-          borderBottom: '1px solid rgba(255,255,255,0.06)',
-          background: 'rgba(255,255,255,0.02)',
+          borderBottom: `1px solid ${T.modalHeaderBorder}`,
+          background: T.modalHeaderBg,
         }}>
           <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', marginBottom: 12 }}>
             <div>
@@ -333,45 +455,44 @@ function GamePreviewModal({ onClose, onSignUp, onLogin, gwData }) {
                 <span style={{ fontSize: 9, letterSpacing: '0.18em', color: '#a78bfa', fontFamily: "'IBM Plex Mono', monospace", fontWeight: 700 }}>
                   {gwData?.sprint?.name ?? 'Sprint'}
                 </span>
-                <span style={{ color: 'rgba(255,255,255,0.12)' }}>·</span>
-                <span style={{ fontSize: 9, letterSpacing: '0.14em', color: 'rgba(255,255,255,0.3)', fontFamily: "'IBM Plex Mono', monospace" }}>
+                <span style={{ color: T.border3 }}>·</span>
+                <span style={{ fontSize: 9, letterSpacing: '0.14em', color: T.dayLabelColor, fontFamily: "'IBM Plex Mono', monospace" }}>
                   Week {gwData?.gameweek?.sprint_week ?? '—'}
                 </span>
                 {gwData?.gameweek?.status === 'LOCKED' && (
                   <span style={{ fontSize: 8, color: '#f59e0b', letterSpacing: '0.1em', fontFamily: "'IBM Plex Mono', monospace", background: 'rgba(245,158,11,0.1)', border: '1px solid rgba(245,158,11,0.25)', borderRadius: 99, padding: '1px 7px' }}>LOCKED</span>
                 )}
               </div>
-              <h2 style={{ fontFamily: "'Syne', sans-serif", fontWeight: 700, fontSize: 17, color: '#fff', margin: 0 }}>
+              <h2 style={{ fontFamily: "'Syne', sans-serif", fontWeight: 700, fontSize: 17, color: T.text, margin: 0 }}>
                 Pick 6 outcomes — spend your energy wisely
               </h2>
             </div>
             <button onClick={onClose} style={{
-              background: 'rgba(255,255,255,0.05)', border: '1px solid rgba(255,255,255,0.08)',
+              background: T.modalCloseBg, border: T.modalCloseBorder,
               borderRadius: 99, width: 28, height: 28, cursor: 'pointer',
-              color: 'rgba(255,255,255,0.4)', fontSize: 13, flexShrink: 0,
+              color: T.modalCloseColor, fontSize: 13, flexShrink: 0,
               display: 'flex', alignItems: 'center', justifyContent: 'center',
             }}>✕</button>
           </div>
 
-          {/* Pick dots + energy bar */}
           <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
             <div style={{ display: 'flex', gap: 4 }}>
               {Array.from({ length: MAX_PICKS }).map((_, i) => (
                 <div key={i} style={{
                   width: 18, height: 18, borderRadius: 5,
-                  background: i < pickCount ? 'rgba(124,110,245,0.85)' : 'rgba(255,255,255,0.06)',
-                  border: `1px solid ${i < pickCount ? 'rgba(124,110,245,0.6)' : 'rgba(255,255,255,0.08)'}`,
+                  background: i < pickCount ? 'rgba(124,110,245,0.85)' : T.modalPickDotEmpty,
+                  border: `1px solid ${i < pickCount ? 'rgba(124,110,245,0.6)' : T.modalPickDotBorderEmpty}`,
                   display: 'flex', alignItems: 'center', justifyContent: 'center',
                   fontSize: 8, color: '#fff', transition: 'all 0.15s',
                   boxShadow: i < pickCount ? '0 0 6px rgba(124,110,245,0.4)' : 'none',
                 }}>{i < pickCount ? '✓' : ''}</div>
               ))}
             </div>
-            <span style={{ fontSize: 10, color: 'rgba(255,255,255,0.25)', fontFamily: "'IBM Plex Mono', monospace", flexShrink: 0 }}>
+            <span style={{ fontSize: 10, color: T.pickCountColor, fontFamily: "'IBM Plex Mono', monospace", flexShrink: 0 }}>
               {pickCount}/{MAX_PICKS}
             </span>
             <div style={{ flex: 1 }}>
-              <div style={{ height: 5, borderRadius: 99, background: 'rgba(255,255,255,0.06)', overflow: 'hidden' }}>
+              <div style={{ height: 5, borderRadius: 99, background: T.modalEnergyBarBg, overflow: 'hidden' }}>
                 <div style={{
                   height: '100%', borderRadius: 99, background: energyColor,
                   width: `${Math.min(energyPct, 100)}%`, transition: 'width 0.2s, background 0.2s',
@@ -388,13 +509,13 @@ function GamePreviewModal({ onClose, onSignUp, onLogin, gwData }) {
         {/* Event list */}
         <div style={{ flex: 1, overflowY: 'auto', padding: '6px 14px 14px' }}>
           {events.length === 0 && (
-            <p style={{ textAlign: 'center', padding: '40px 0', color: 'rgba(255,255,255,0.2)', fontSize: 12, fontFamily: "'IBM Plex Mono', monospace" }}>
+            <p style={{ textAlign: 'center', padding: '40px 0', color: T.textGhost, fontSize: 12, fontFamily: "'IBM Plex Mono', monospace" }}>
               Loading fixtures…
             </p>
           )}
           {days.map(day => (
             <div key={day}>
-              <div style={{ fontSize: 9, letterSpacing: '0.16em', color: 'rgba(255,255,255,0.2)', fontFamily: "'IBM Plex Mono', monospace", padding: '10px 6px 5px', fontWeight: 700 }}>
+              <div style={{ fontSize: 9, letterSpacing: '0.16em', color: T.dayLabelColor, fontFamily: "'IBM Plex Mono', monospace", padding: '10px 6px 5px', fontWeight: 700 }}>
                 {day}
               </div>
               {dayMap[day].map(ev => {
@@ -406,14 +527,13 @@ function GamePreviewModal({ onClose, onSignUp, onLogin, gwData }) {
                 return (
                   <div key={ev.id} style={{
                     marginBottom: 6,
-                    background: isSel ? 'rgba(124,110,245,0.07)' : 'rgba(255,255,255,0.02)',
-                    border: `1px solid ${isSel ? 'rgba(124,110,245,0.25)' : 'rgba(255,255,255,0.05)'}`,
+                    background: isSel ? T.modalEventSelBg : T.modalEventBg,
+                    border: `1px solid ${isSel ? T.modalEventSelBorder : T.modalEventBorder}`,
                     borderRadius: 14, padding: '12px 14px', transition: 'all 0.15s',
                     opacity: locked ? 0.35 : 1,
                   }}>
-                    {/* Competition + pick type */}
                     <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 7 }}>
-                      <span style={{ fontSize: 9, color: 'rgba(255,255,255,0.22)', fontFamily: "'IBM Plex Mono', monospace" }}>
+                      <span style={{ fontSize: 9, color: T.compLabelColor, fontFamily: "'IBM Plex Mono', monospace" }}>
                         {ev.competition || ''}
                       </span>
                       {(() => {
@@ -427,14 +547,13 @@ function GamePreviewModal({ onClose, onSignUp, onLogin, gwData }) {
                         )
                       })()}
                     </div>
-                    {/* Teams with vs */}
                     <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 8 }}>
                       {(ev.home_logo || ev.fixture_home_logo) && (
                         <img src={ev.home_logo || ev.fixture_home_logo} alt="" style={{ width: 18, height: 18, objectFit: 'contain', flexShrink: 0 }} onError={e => { e.target.style.display='none' }}/>
                       )}
-                      <span style={{ flex: 1, fontSize: 12, fontFamily: "'Syne', sans-serif", fontWeight: 700, color: 'rgba(255,255,255,0.8)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{home}</span>
-                      <span style={{ fontSize: 9, color: 'rgba(255,255,255,0.25)', fontFamily: "'IBM Plex Mono', monospace", flexShrink: 0 }}>vs</span>
-                      <span style={{ flex: 1, textAlign: 'right', fontSize: 12, fontFamily: "'Syne', sans-serif", fontWeight: 700, color: 'rgba(255,255,255,0.8)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{away}</span>
+                      <span style={{ flex: 1, fontSize: 12, fontFamily: "'Syne', sans-serif", fontWeight: 700, color: T.text, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{home}</span>
+                      <span style={{ fontSize: 9, color: T.textGhost, fontFamily: "'IBM Plex Mono', monospace", flexShrink: 0 }}>vs</span>
+                      <span style={{ flex: 1, textAlign: 'right', fontSize: 12, fontFamily: "'Syne', sans-serif", fontWeight: 700, color: T.text, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{away}</span>
                       {(ev.away_logo || ev.fixture_away_logo) && (
                         <img src={ev.away_logo || ev.fixture_away_logo} alt="" style={{ width: 18, height: 18, objectFit: 'contain', flexShrink: 0 }} onError={e => { e.target.style.display='none' }}/>
                       )}
@@ -452,18 +571,18 @@ function GamePreviewModal({ onClose, onSignUp, onLogin, gwData }) {
                               flex: 1, padding: '11px 6px 10px', borderRadius: 10,
                               cursor: btnDisabled ? 'not-allowed' : 'pointer',
                               transition: 'all 0.12s', opacity: btnDisabled ? 0.28 : 1,
-                              border: isOptSel ? '1.5px solid rgba(124,110,245,0.8)' : '1px solid rgba(255,255,255,0.1)',
-                              background: isOptSel ? 'linear-gradient(135deg, #7c6ef5, #a78bfa)' : 'rgba(255,255,255,0.05)',
+                              border: isOptSel ? '1.5px solid rgba(124,110,245,0.8)' : `1px solid ${T.modalOptBorder}`,
+                              background: isOptSel ? 'linear-gradient(135deg, #7c6ef5, #a78bfa)' : T.modalOptBg,
                               boxShadow: isOptSel ? '0 0 14px rgba(124,110,245,0.45)' : 'none',
                               display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 5,
                             }}>
-                            <span style={{ fontSize: 13, fontFamily: "'Syne', sans-serif", fontWeight: 700, color: isOptSel ? '#fff' : 'rgba(255,255,255,0.7)', lineHeight: 1.2, textAlign: 'center' }}>
+                            <span style={{ fontSize: 13, fontFamily: "'Syne', sans-serif", fontWeight: 700, color: isOptSel ? '#fff' : T.text, lineHeight: 1.2, textAlign: 'center' }}>
                               {opt.label}
                             </span>
                             <span style={{
                               fontSize: 11, fontFamily: "'IBM Plex Mono', monospace", fontWeight: 600,
-                              color: isOptSel ? 'rgba(255,255,255,0.9)' : 'rgba(255,255,255,0.35)',
-                              background: isOptSel ? 'rgba(255,255,255,0.15)' : 'rgba(255,255,255,0.06)',
+                              color: isOptSel ? 'rgba(255,255,255,0.9)' : T.textDim,
+                              background: isOptSel ? 'rgba(255,255,255,0.15)' : T.modalPickDotEmpty,
                               borderRadius: 99, padding: '2px 7px',
                             }}>
                               ⚡{opt.energy_cost}
@@ -480,9 +599,9 @@ function GamePreviewModal({ onClose, onSignUp, onLogin, gwData }) {
         </div>
 
         {/* Footer */}
-        <div style={{ padding: '12px 18px 18px', borderTop: '1px solid rgba(255,255,255,0.06)', background: 'rgba(0,0,0,0.3)', flexShrink: 0 }}>
+        <div style={{ padding: '12px 18px 18px', borderTop: `1px solid ${T.modalFooterBorder}`, background: T.modalFooterBg, flexShrink: 0 }}>
           {pickCount < MAX_PICKS && (
-            <p style={{ textAlign: 'center', fontSize: 10, color: 'rgba(255,255,255,0.2)', fontFamily: "'IBM Plex Mono', monospace", marginBottom: 8 }}>
+            <p style={{ textAlign: 'center', fontSize: 10, color: T.textGhost, fontFamily: "'IBM Plex Mono', monospace", marginBottom: 8 }}>
               Select {MAX_PICKS - pickCount} more pick{MAX_PICKS - pickCount !== 1 ? 's' : ''} to continue
             </p>
           )}
@@ -490,7 +609,7 @@ function GamePreviewModal({ onClose, onSignUp, onLogin, gwData }) {
             width: '100%', padding: '13px 0', borderRadius: 14, border: 'none',
             cursor: canSubmit ? 'pointer' : 'not-allowed',
             fontFamily: "'Syne', sans-serif", fontWeight: 700, fontSize: 14, letterSpacing: '0.08em', color: '#fff',
-            background: canSubmit ? 'linear-gradient(90deg, #7c6ef5 0%, #a78bfa 50%, #7c6ef5 100%)' : 'rgba(255,255,255,0.06)',
+            background: canSubmit ? 'linear-gradient(90deg, #7c6ef5 0%, #a78bfa 50%, #7c6ef5 100%)' : T.modalPickDotEmpty,
             backgroundSize: '200% auto', animation: canSubmit ? 'auth-shimmer 3s linear infinite' : 'none',
             opacity: canSubmit ? 1 : 0.5, boxShadow: canSubmit ? '0 4px 24px rgba(124,110,245,0.35)' : 'none',
             transition: 'opacity 0.2s, box-shadow 0.2s',
@@ -503,7 +622,7 @@ function GamePreviewModal({ onClose, onSignUp, onLogin, gwData }) {
         {submitted && (
           <div style={{
             position: 'absolute', inset: 0, borderRadius: 24,
-            background: 'linear-gradient(160deg, rgba(7,5,20,0.97) 0%, rgba(10,8,25,0.97) 100%)',
+            background: T.modalAuthBg,
             backdropFilter: 'blur(4px)',
             display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center',
             padding: '32px 28px', animation: 'auth-slide-up 0.35s cubic-bezier(0.34,1.3,0.64,1) both',
@@ -516,22 +635,22 @@ function GamePreviewModal({ onClose, onSignUp, onLogin, gwData }) {
               fontSize: 30, marginBottom: 18, boxShadow: '0 0 40px rgba(124,110,245,0.2)',
             }}>🏆</div>
 
-            <h2 style={{ fontFamily: "'Syne', sans-serif", fontWeight: 700, fontSize: 20, color: '#fff', textAlign: 'center', margin: '0 0 8px', letterSpacing: '-0.02em' }}>
+            <h2 style={{ fontFamily: "'Syne', sans-serif", fontWeight: 700, fontSize: 20, color: T.text, textAlign: 'center', margin: '0 0 8px', letterSpacing: '-0.02em' }}>
               Your picks are ready!
             </h2>
-            <p style={{ fontSize: 11, color: 'rgba(255,255,255,0.3)', fontFamily: "'IBM Plex Mono', monospace", textAlign: 'center', lineHeight: 1.7, margin: '0 0 16px' }}>
+            <p style={{ fontSize: 11, color: T.textDim, fontFamily: "'IBM Plex Mono', monospace", textAlign: 'center', lineHeight: 1.7, margin: '0 0 16px' }}>
               {pickCount} picks · ⚡{energyUsed} energy spent<br/>
               Sign up to compete for real and track your results.
             </p>
 
-            <div style={{ width: '100%', maxWidth: 360, marginBottom: 20, background: 'rgba(255,255,255,0.03)', border: '1px solid rgba(255,255,255,0.06)', borderRadius: 12, padding: '10px 14px', display: 'flex', flexDirection: 'column', gap: 5, maxHeight: 160, overflowY: 'auto' }}>
+            <div style={{ width: '100%', maxWidth: 360, marginBottom: 20, background: T.modalSummaryBg, border: `1px solid ${T.modalSummaryBorder}`, borderRadius: 12, padding: '10px 14px', display: 'flex', flexDirection: 'column', gap: 5, maxHeight: 160, overflowY: 'auto' }}>
               {Object.entries(picks).map(([evId, pick]) => {
                 const ev = events.find(e => e.id === evId)
                 if (!ev) return null
                 const { home, away } = getTeams(ev)
                 return (
                   <div key={evId} style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 8 }}>
-                    <span style={{ fontSize: 10, color: 'rgba(255,255,255,0.35)', fontFamily: "'IBM Plex Mono', monospace", flex: 1, minWidth: 0, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                    <span style={{ fontSize: 10, color: T.textDim, fontFamily: "'IBM Plex Mono', monospace", flex: 1, minWidth: 0, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
                       {home} vs {away}
                     </span>
                     <span style={{ display: 'flex', alignItems: 'center', gap: 5, flexShrink: 0 }}>
@@ -552,11 +671,11 @@ function GamePreviewModal({ onClose, onSignUp, onLogin, gwData }) {
               }}>Create free account →</button>
               <button onClick={onLogin} style={{
                 padding: '11px 0', borderRadius: 13, cursor: 'pointer',
-                fontFamily: "'IBM Plex Mono', monospace", fontWeight: 600, fontSize: 12, letterSpacing: '0.06em', color: 'rgba(255,255,255,0.45)',
-                background: 'rgba(255,255,255,0.04)', border: '1px solid rgba(255,255,255,0.08)',
+                fontFamily: "'IBM Plex Mono', monospace", fontWeight: 600, fontSize: 12, letterSpacing: '0.06em', color: T.textDim,
+                background: T.modalPickDotEmpty, border: `1px solid ${T.border2}`,
               }}>Already have an account? Sign in</button>
             </div>
-            <p style={{ fontSize: 9, color: 'rgba(255,255,255,0.12)', fontFamily: "'IBM Plex Mono', monospace", marginTop: 14, textAlign: 'center' }}>
+            <p style={{ fontSize: 9, color: T.textTiny, fontFamily: "'IBM Plex Mono', monospace", marginTop: 14, textAlign: 'center' }}>
               No credit card · Free forever
             </p>
           </div>
@@ -598,22 +717,22 @@ const STEPS = [
 
 // ── Left Hero Panel ────────────────────────────────────────────────────────────
 
-function HeroPanel({ onTryIt, gwData, onHowItWorks }) {
+function HeroPanel({ onTryIt, gwData, onHowItWorks, T }) {
   return (
     <div className="auth-hero" style={{
       flex: '0 0 52%',
       position: 'relative',
       overflow: 'hidden',
       flexDirection: 'column',
-      background: 'linear-gradient(160deg, #05080f 0%, #070c14 60%, #040810 100%)',
+      background: T.heroBg,
     }}>
 
       {/* Grid texture */}
       <div style={{
         position: 'absolute', inset: 0, pointerEvents: 'none',
         backgroundImage: `
-          linear-gradient(rgba(124,110,245,0.03) 1px, transparent 1px),
-          linear-gradient(90deg, rgba(124,110,245,0.03) 1px, transparent 1px)
+          linear-gradient(${T.gridColor} 1px, transparent 1px),
+          linear-gradient(90deg, ${T.gridColor} 1px, transparent 1px)
         `,
         backgroundSize: '40px 40px',
       }}/>
@@ -621,7 +740,7 @@ function HeroPanel({ onTryIt, gwData, onHowItWorks }) {
       {/* Scan line */}
       <div style={{
         position: 'absolute', left: 0, right: 0, height: 2, zIndex: 1,
-        background: 'linear-gradient(90deg, transparent, rgba(34,197,94,0.4), transparent)',
+        background: T.scanColor,
         animation: 'auth-scan 6s linear infinite',
         pointerEvents: 'none',
       }}/>
@@ -630,14 +749,14 @@ function HeroPanel({ onTryIt, gwData, onHowItWorks }) {
       <div style={{
         position: 'absolute', top: '5%', left: '20%',
         width: 320, height: 320, borderRadius: '50%',
-        background: 'radial-gradient(circle, rgba(34,197,94,0.12) 0%, transparent 65%)',
+        background: T.glowGreen,
         animation: 'auth-glow 5s ease-in-out infinite',
         pointerEvents: 'none',
       }}/>
       <div style={{
         position: 'absolute', bottom: '8%', right: '5%',
         width: 260, height: 260, borderRadius: '50%',
-        background: 'radial-gradient(circle, rgba(124,110,245,0.14) 0%, transparent 65%)',
+        background: T.glowViolet,
         animation: 'auth-glow 4s ease-in-out infinite 1.8s',
         pointerEvents: 'none',
       }}/>
@@ -650,7 +769,7 @@ function HeroPanel({ onTryIt, gwData, onHowItWorks }) {
         overflowY: 'auto',
         animation: 'auth-fade-up 0.8s ease both 0.15s',
       }}>
-        {/* Brand — logo top-left */}
+        {/* Brand */}
         <div style={{ display: 'flex', alignItems: 'center', gap: 12, marginBottom: 20 }}>
           <img
             src="/images/logo.png"
@@ -665,13 +784,12 @@ function HeroPanel({ onTryIt, gwData, onHowItWorks }) {
             <span style={{
               fontFamily: "'Syne', sans-serif", fontWeight: 700, fontSize: 20,
               letterSpacing: '0.04em', lineHeight: 1,
-              background: 'linear-gradient(90deg, #fff 0%, rgba(255,255,255,0.75) 100%)',
-              WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent',
+              color: T.text,
             }}>ODDS RIVALS</span>
             <div style={{ display: 'flex', alignItems: 'center', gap: 5, background: 'rgba(34,197,94,0.08)', border: '1px solid rgba(34,197,94,0.25)', borderRadius: 99, padding: '2px 8px', alignSelf: 'flex-start' }}>
-            <span style={{ width: 5, height: 5, borderRadius: '50%', background: '#22c55e', display: 'block', animation: 'auth-pulse-ring 1.4s ease-out infinite', boxShadow: '0 0 6px #22c55e' }}/>
-            <span style={{ color: '#22c55e', fontSize: 9, letterSpacing: '0.14em', fontFamily: "'IBM Plex Mono', monospace", fontWeight: 600 }}>{gwData?.sprint?.name ?? 'SEASON LIVE'}</span>
-          </div>
+              <span style={{ width: 5, height: 5, borderRadius: '50%', background: '#22c55e', display: 'block', animation: 'auth-pulse-ring 1.4s ease-out infinite', boxShadow: '0 0 6px #22c55e' }}/>
+              <span style={{ color: '#22c55e', fontSize: 9, letterSpacing: '0.14em', fontFamily: "'IBM Plex Mono', monospace", fontWeight: 600 }}>{gwData?.sprint?.name ?? 'SEASON LIVE'}</span>
+            </div>
           </div>
         </div>
 
@@ -680,14 +798,14 @@ function HeroPanel({ onTryIt, gwData, onHowItWorks }) {
           <h1 style={{
             fontFamily: "'Syne', sans-serif", fontWeight: 700,
             fontSize: 'clamp(36px, 4vw, 56px)', lineHeight: 1.05,
-            letterSpacing: '-0.03em', margin: '0 0 14px', color: '#fff',
+            letterSpacing: '-0.03em', margin: '0 0 14px', color: T.text,
           }}>
             Pick smarter.{' '}
             <span style={{ background: 'linear-gradient(90deg, #22c55e 0%, #a78bfa 60%, #f59e0b 100%)', WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent' }}>
               Rise through the ranks.
             </span>
           </h1>
-          <p style={{ fontSize: 16, color: 'rgba(255,255,255,0.45)', fontFamily: "'IBM Plex Mono', monospace", margin: 0, lineHeight: 1.6 }}>
+          <p style={{ fontSize: 16, color: T.textDim, fontFamily: "'IBM Plex Mono', monospace", margin: 0, lineHeight: 1.6 }}>
             A football prediction game where every pick counts. Choose 6 events each week, beat your mates and climb from Academy to Legend.
           </p>
         </div>
@@ -697,8 +815,8 @@ function HeroPanel({ onTryIt, gwData, onHowItWorks }) {
             <div key={num} style={{
               display: 'flex', gap: 14, alignItems: 'flex-start',
               padding: '14px 16px',
-              background: 'rgba(255,255,255,0.025)',
-              border: '1px solid rgba(255,255,255,0.06)',
+              background: T.stepBg,
+              border: `1px solid ${T.border}`,
               borderLeft: `3px solid ${accent}`,
               borderRadius: 12,
             }}>
@@ -711,9 +829,9 @@ function HeroPanel({ onTryIt, gwData, onHowItWorks }) {
               <div style={{ minWidth: 0, flex: 1 }}>
                 <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 3 }}>
                   <span style={{ fontSize: 11, color: accent, fontFamily: "'IBM Plex Mono', monospace", fontWeight: 700, letterSpacing: '0.12em', opacity: 0.85 }}>{num}</span>
-                  <span style={{ fontSize: 22, fontFamily: "'Syne', sans-serif", fontWeight: 700, color: '#fff', lineHeight: 1.15 }}>{title}</span>
+                  <span style={{ fontSize: 22, fontFamily: "'Syne', sans-serif", fontWeight: 700, color: T.text, lineHeight: 1.15 }}>{title}</span>
                 </div>
-                <p style={{ fontSize: 12, color: 'rgba(255,255,255,0.45)', fontFamily: "'IBM Plex Mono', monospace", lineHeight: 1.5, margin: 0 }}>{desc}</p>
+                <p style={{ fontSize: 12, color: T.textDim, fontFamily: "'IBM Plex Mono', monospace", lineHeight: 1.5, margin: 0 }}>{desc}</p>
               </div>
             </div>
           ))}
@@ -722,37 +840,61 @@ function HeroPanel({ onTryIt, gwData, onHowItWorks }) {
         {/* How it works button */}
         <button onClick={onHowItWorks} style={{
           alignSelf: 'flex-start',
-          background: 'rgba(255,255,255,0.04)', border: '1px solid rgba(255,255,255,0.1)',
+          background: T.stepBg, border: `1px solid ${T.border3}`,
           borderRadius: 99, padding: '8px 18px', cursor: 'pointer',
-          fontSize: 11, letterSpacing: '0.1em', color: 'rgba(255,255,255,0.45)',
+          fontSize: 11, letterSpacing: '0.1em', color: T.textDim,
           fontFamily: "'IBM Plex Mono', monospace", fontWeight: 600,
           display: 'flex', alignItems: 'center', gap: 7,
           transition: 'background 0.2s, color 0.2s, border-color 0.2s',
         }}
-          onMouseEnter={e => { e.currentTarget.style.background = 'rgba(255,255,255,0.08)'; e.currentTarget.style.color = '#fff'; e.currentTarget.style.borderColor = 'rgba(255,255,255,0.2)' }}
-          onMouseLeave={e => { e.currentTarget.style.background = 'rgba(255,255,255,0.04)'; e.currentTarget.style.color = 'rgba(255,255,255,0.45)'; e.currentTarget.style.borderColor = 'rgba(255,255,255,0.1)' }}
+          onMouseEnter={e => { e.currentTarget.style.background = T.border; e.currentTarget.style.color = T.text }}
+          onMouseLeave={e => { e.currentTarget.style.background = T.stepBg; e.currentTarget.style.color = T.textDim }}
         >
           <span style={{ fontSize: 13 }}>📖</span> HOW IT WORKS
         </button>
 
-        {/* Footballer image — desktop hero */}
-        <div style={{ marginTop: 24, borderRadius: 16, overflow: 'hidden', border: '1px solid rgba(255,255,255,0.06)' }}>
+        {/* Footballer image */}
+        <div style={{ marginTop: 24, borderRadius: 16, overflow: 'hidden', border: `1px solid ${T.border}` }}>
           <img
             src="/images/footballer.png"
             alt=""
             style={{ width: '100%', display: 'block', objectFit: 'cover' }}
           />
         </div>
-
       </div>
 
       {/* Right edge fade */}
       <div style={{
         position: 'absolute', top: 0, right: 0, bottom: 0, width: 70,
-        background: 'linear-gradient(to right, transparent, rgba(5,8,15,0.9))',
+        background: T.rightEdgeFade,
         pointerEvents: 'none', zIndex: 3,
       }}/>
     </div>
+  )
+}
+
+// ── Theme toggle button ────────────────────────────────────────────────────────
+
+function ThemeToggle({ dark, toggle, T }) {
+  return (
+    <button
+      onClick={toggle}
+      title={dark ? 'Switch to light mode' : 'Switch to dark mode'}
+      style={{
+        position: 'absolute', top: 14, right: 14, zIndex: 10,
+        background: T.toggleBg, border: `1px solid ${T.toggleBorder}`,
+        borderRadius: 99, padding: '6px 12px', cursor: 'pointer',
+        display: 'flex', alignItems: 'center', gap: 5,
+        fontSize: 12, color: T.toggleColor,
+        fontFamily: "'IBM Plex Mono', monospace", letterSpacing: '0.04em',
+        transition: 'background 0.2s, color 0.2s',
+      }}
+      onMouseEnter={e => { e.currentTarget.style.background = T.border2; e.currentTarget.style.color = T.text }}
+      onMouseLeave={e => { e.currentTarget.style.background = T.toggleBg; e.currentTarget.style.color = T.toggleColor }}
+    >
+      <span style={{ fontSize: 14, lineHeight: 1 }}>{dark ? '☀️' : '🌙'}</span>
+      <span>{dark ? 'Light' : 'Dark'}</span>
+    </button>
   )
 }
 
@@ -761,12 +903,29 @@ function HeroPanel({ onTryIt, gwData, onHowItWorks }) {
 export default function AuthLayout({ heading, subheading, children }) {
   const [showPreview, setShowPreview] = useState(false)
   const [showGuide, setShowGuide]     = useState(false)
-  const [legalModal, setLegalModal]   = useState(null) // 'privacy' | 'terms' | 'cookies'
+  const [legalModal, setLegalModal]   = useState(null)
   const [gwData, setGwData]           = useState(null)
   const navigate = useNavigate()
   const privacyRef  = useRef(null)
   const termsRef    = useRef(null)
   const cookiesRef  = useRef(null)
+
+  // ── Theme state ──────────────────────────────────────────────────────────────
+  const [dark, setDark] = useState(() => {
+    const saved = localStorage.getItem('or-theme')
+    if (saved) return saved === 'dark'
+    return window.matchMedia('(prefers-color-scheme: dark)').matches
+  })
+
+  function toggle() {
+    setDark(d => {
+      const next = !d
+      localStorage.setItem('or-theme', next ? 'dark' : 'light')
+      return next
+    })
+  }
+
+  const T = dark ? DARK : LIGHT
 
   useEffect(() => {
     function fetchGw() {
@@ -775,9 +934,7 @@ export default function AuthLayout({ heading, subheading, children }) {
         .catch(() => {})
     }
     fetchGw()
-    // Refresh every 30 minutes in case the gameweek rolls over
     const interval = setInterval(fetchGw, 30 * 60 * 1000)
-    // Also refresh when the user comes back to the tab
     const onVisible = () => { if (document.visibilityState === 'visible') fetchGw() }
     document.addEventListener('visibilitychange', onVisible)
     return () => {
@@ -787,35 +944,35 @@ export default function AuthLayout({ heading, subheading, children }) {
   }, [])
 
   return (
-    <>
+    <ThemeContext.Provider value={{ dark, toggle, T }}>
       <style>{KEYFRAMES}</style>
 
-      <div className="auth-outer" style={{ height: '100dvh', display: 'flex', flexDirection: 'column', background: '#060a10', overflow: 'hidden' }}>
+      <div className="auth-outer" style={{ height: '100dvh', display: 'flex', flexDirection: 'column', background: T.bg, overflow: 'hidden', transition: 'background 0.25s' }}>
       <div className="auth-inner" style={{ flex: 1, display: 'flex', overflow: 'hidden' }}>
-        <HeroPanel onTryIt={() => setShowPreview(true)} gwData={gwData} onHowItWorks={() => setShowGuide(true)}/>
+        <HeroPanel onTryIt={() => setShowPreview(true)} gwData={gwData} onHowItWorks={() => setShowGuide(true)} T={T}/>
 
         {/* Right panel */}
         <div className="auth-right-panel" style={{
           flex: 1, display: 'flex', flexDirection: 'column',
           alignItems: 'center', justifyContent: 'flex-start',
           padding: '60px 24px 40px', position: 'relative', overflowY: 'auto', overflowX: 'hidden',
+          background: T.rightBg, transition: 'background 0.25s',
         }}>
+          <ThemeToggle dark={dark} toggle={toggle} T={T}/>
+
           <div style={{
             position: 'absolute', top: 0, right: 0, width: 260, height: 260,
-            borderRadius: '50%',
-            background: 'radial-gradient(circle, rgba(34,197,94,0.06) 0%, transparent 70%)',
+            borderRadius: '50%', background: T.glowGreenSm,
             pointerEvents: 'none', transform: 'translate(50%, -50%)',
           }}/>
           <div style={{
             position: 'absolute', bottom: 0, left: 0, width: 220, height: 220,
-            borderRadius: '50%',
-            background: 'radial-gradient(circle, rgba(124,110,245,0.08) 0%, transparent 70%)',
+            borderRadius: '50%', background: T.glowVioletSm,
             pointerEvents: 'none', transform: 'translate(-50%, 50%)',
           }}/>
 
           <div style={{ width: '100%', maxWidth: 390, animation: 'auth-fade-in 0.5s ease both' }}>
-            {/* Mobile-only logo */}
-            {/* Mobile logo + name */}
+            {/* Mobile logo */}
             <div className="auth-mobile-logo" style={{
               flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 12,
               marginBottom: 20,
@@ -831,9 +988,7 @@ export default function AuthLayout({ heading, subheading, children }) {
               />
               <span style={{
                 fontFamily: "'Syne', sans-serif", fontWeight: 700, fontSize: 20,
-                letterSpacing: '0.04em', lineHeight: 1,
-                background: 'linear-gradient(90deg, #fff 0%, rgba(255,255,255,0.75) 100%)',
-                WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent',
+                letterSpacing: '0.04em', lineHeight: 1, color: T.text,
               }}>ODDS RIVALS</span>
             </div>
 
@@ -845,44 +1000,45 @@ export default function AuthLayout({ heading, subheading, children }) {
               <h1 style={{
                 fontFamily: "'Syne', sans-serif", fontWeight: 700,
                 fontSize: 28, lineHeight: 1.1,
-                letterSpacing: '-0.02em', margin: 0, color: '#fff',
+                letterSpacing: '-0.02em', margin: 0, color: T.text,
               }}>
                 Pick smarter.{' '}
                 <span style={{ background: 'linear-gradient(90deg, #22c55e 0%, #a78bfa 60%, #f59e0b 100%)', WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent' }}>
                   Rise through the ranks.
                 </span>
               </h1>
-              <p style={{ fontSize: 13, color: 'rgba(255,255,255,0.45)', fontFamily: "'IBM Plex Mono', monospace", margin: 0, lineHeight: 1.6 }}>
+              <p style={{ fontSize: 13, color: T.textDim, fontFamily: "'IBM Plex Mono', monospace", margin: 0, lineHeight: 1.6 }}>
                 A football prediction game where every pick counts. Choose 6 events each week, beat your mates and climb from Academy to Legend.
               </p>
             </div>
 
             {/* Glass card */}
             <div style={{
-              background: 'rgba(13,17,27,0.92)',
+              background: T.cardBg,
               backdropFilter: 'blur(24px)',
-              border: '1px solid rgba(124,110,245,0.14)',
+              border: `1px solid ${T.cardBorder}`,
               borderRadius: 22,
               padding: '32px 28px 26px',
-              boxShadow: '0 32px 80px rgba(0,0,0,0.45), inset 0 1px 0 rgba(255,255,255,0.04)',
+              boxShadow: T.cardShadow,
+              transition: 'background 0.25s, border-color 0.25s',
             }}>
               <h2 style={{
                 fontFamily: "'Syne', sans-serif", fontWeight: 700, fontSize: 22,
-                color: 'rgba(255,255,255,0.92)', marginBottom: 5, letterSpacing: '-0.01em',
+                color: T.text, marginBottom: 5, letterSpacing: '-0.01em',
               }}>{heading}</h2>
               <p style={{
-                fontSize: 12, color: 'rgba(255,255,255,0.28)',
+                fontSize: 12, color: T.textFaint,
                 marginBottom: 26, letterSpacing: '0.04em',
                 fontFamily: "'IBM Plex Mono', monospace",
               }}>{subheading}</p>
               {children}
             </div>
 
-            {/* ── Make your picks CTA — desktop only below the auth card ── */}
+            {/* Desktop CTA */}
             <div className="auth-desktop-cta" style={{ marginTop: 16 }}>
               <div style={{
-                background: 'linear-gradient(135deg, rgba(124,110,245,0.08) 0%, rgba(34,197,94,0.06) 100%)',
-                border: '1px solid rgba(124,110,245,0.2)',
+                background: T.ctaBg,
+                border: `1px solid ${T.ctaBorder}`,
                 borderRadius: 16, padding: '14px 16px',
               }}>
                 <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 10, minHeight: 20, opacity: gwData ? 1 : 0, transition: 'opacity 0.3s' }}>
@@ -894,7 +1050,7 @@ export default function AuthLayout({ heading, subheading, children }) {
                       LIVE
                     </span>
                   </div>
-                  <span style={{ fontSize: 10, color: 'rgba(255,255,255,0.3)', fontFamily: "'IBM Plex Mono', monospace" }}>
+                  <span style={{ fontSize: 10, color: T.ctaText, fontFamily: "'IBM Plex Mono', monospace" }}>
                     GW{gwData?.gameweek?.sprint_week} · 15 events
                   </span>
                 </div>
@@ -914,34 +1070,31 @@ export default function AuthLayout({ heading, subheading, children }) {
               </div>
               <p style={{
                 textAlign: 'center', marginTop: 10, fontSize: 10,
-                color: 'rgba(255,255,255,0.45)', letterSpacing: '0.08em',
+                color: T.textDim, letterSpacing: '0.08em',
                 fontFamily: "'IBM Plex Mono', monospace",
               }}>FREE TO PLAY · NO CARD REQUIRED TO START</p>
             </div>
 
-            {/* ── Mobile-only: How to play ── */}
+            {/* Mobile: how to play */}
             <div className="auth-mobile-steps" style={{ marginTop: 40 }}>
-
-              {/* How it works button — mobile */}
               <button onClick={() => setShowGuide(true)} style={{
                 width: '100%', marginBottom: 20,
-                background: 'rgba(255,255,255,0.04)', border: '1px solid rgba(255,255,255,0.1)',
+                background: T.mobileHowBg, border: `1px solid ${T.mobileHowBorder}`,
                 borderRadius: 12, padding: '12px 0', cursor: 'pointer',
-                fontSize: 12, letterSpacing: '0.1em', color: 'rgba(255,255,255,0.5)',
+                fontSize: 12, letterSpacing: '0.1em', color: T.mobileHowColor,
                 fontFamily: "'IBM Plex Mono', monospace", fontWeight: 600,
                 display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8,
               }}>
                 <span style={{ fontSize: 14 }}>📖</span> HOW IT WORKS
               </button>
 
-              {/* Steps */}
               <div style={{ display: 'flex', flexDirection: 'column', gap: 10, marginBottom: 40 }}>
                 {STEPS.map(({ num, accent, icon, title, desc }) => (
                   <div key={num} style={{
                     display: 'flex', gap: 14, alignItems: 'flex-start',
                     padding: '14px 16px',
-                    background: 'rgba(255,255,255,0.025)',
-                    border: '1px solid rgba(255,255,255,0.06)',
+                    background: T.stepBg,
+                    border: `1px solid ${T.border}`,
                     borderLeft: `3px solid ${accent}`,
                     borderRadius: 12,
                   }}>
@@ -954,19 +1107,19 @@ export default function AuthLayout({ heading, subheading, children }) {
                     <div style={{ minWidth: 0, flex: 1 }}>
                       <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 3 }}>
                         <span style={{ fontSize: 11, color: accent, fontFamily: "'IBM Plex Mono', monospace", fontWeight: 700, letterSpacing: '0.12em', opacity: 0.85 }}>{num}</span>
-                        <span style={{ fontSize: 22, fontFamily: "'Syne', sans-serif", fontWeight: 700, color: '#fff', lineHeight: 1.15 }}>{title}</span>
+                        <span style={{ fontSize: 22, fontFamily: "'Syne', sans-serif", fontWeight: 700, color: T.text, lineHeight: 1.15 }}>{title}</span>
                       </div>
-                      <p style={{ fontSize: 12, color: 'rgba(255,255,255,0.45)', fontFamily: "'IBM Plex Mono', monospace", lineHeight: 1.5, margin: 0 }}>{desc}</p>
+                      <p style={{ fontSize: 12, color: T.textDim, fontFamily: "'IBM Plex Mono', monospace", lineHeight: 1.5, margin: 0 }}>{desc}</p>
                     </div>
                   </div>
                 ))}
               </div>
 
-              {/* Make your picks CTA — mobile only, after the step cards */}
+              {/* Mobile CTA */}
               <div className="auth-mobile-cta" style={{ marginBottom: 40 }}>
                 <div style={{
-                  background: 'linear-gradient(135deg, rgba(124,110,245,0.08) 0%, rgba(34,197,94,0.06) 100%)',
-                  border: '1px solid rgba(124,110,245,0.2)',
+                  background: T.ctaBg,
+                  border: `1px solid ${T.ctaBorder}`,
                   borderRadius: 16, padding: '14px 16px',
                 }}>
                   <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 10, minHeight: 20, opacity: gwData ? 1 : 0, transition: 'opacity 0.3s' }}>
@@ -978,7 +1131,7 @@ export default function AuthLayout({ heading, subheading, children }) {
                         LIVE
                       </span>
                     </div>
-                    <span style={{ fontSize: 10, color: 'rgba(255,255,255,0.3)', fontFamily: "'IBM Plex Mono', monospace" }}>
+                    <span style={{ fontSize: 10, color: T.ctaText, fontFamily: "'IBM Plex Mono', monospace" }}>
                       GW{gwData?.gameweek?.sprint_week} · 15 events
                     </span>
                   </div>
@@ -998,42 +1151,35 @@ export default function AuthLayout({ heading, subheading, children }) {
                 </div>
                 <p style={{
                   textAlign: 'center', marginTop: 10, fontSize: 10,
-                  color: 'rgba(255,255,255,0.45)', letterSpacing: '0.08em',
+                  color: T.textDim, letterSpacing: '0.08em',
                   fontFamily: "'IBM Plex Mono', monospace",
                 }}>FREE TO PLAY · NO CARD REQUIRED TO START</p>
               </div>
 
-              {/* Footballer image — mobile, after CTA */}
-              <div style={{ marginBottom: 20, borderRadius: 16, overflow: 'hidden', border: '1px solid rgba(255,255,255,0.06)' }}>
-                <img
-                  src="/images/footballer.png"
-                  alt=""
-                  style={{ width: '100%', display: 'block', objectFit: 'cover' }}
-                />
+              <div style={{ marginBottom: 20, borderRadius: 16, overflow: 'hidden', border: `1px solid ${T.border}` }}>
+                <img src="/images/footballer.png" alt="" style={{ width: '100%', display: 'block', objectFit: 'cover' }}/>
               </div>
-
             </div>
-            {/* end mobile steps */}
-
           </div>
         </div>
       </div>
 
-      {/* ── Footer ── */}
+      {/* Footer */}
       <div style={{
-        borderTop: '1px solid rgba(255,255,255,0.05)',
-        background: 'rgba(0,0,0,0.3)',
+        borderTop: `1px solid ${T.footerBorder}`,
+        background: T.footerBg,
         padding: '14px 24px',
         display: 'flex', alignItems: 'center', justifyContent: 'center',
         gap: 24, flexWrap: 'wrap',
+        transition: 'background 0.25s',
       }}>
-        <span style={{ fontSize: 9, color: 'rgba(255,255,255,0.18)', fontFamily: "'IBM Plex Mono', monospace", letterSpacing: '0.1em' }}>
+        <span style={{ fontSize: 9, color: T.footerText, fontFamily: "'IBM Plex Mono', monospace", letterSpacing: '0.1em' }}>
           © {new Date().getFullYear()} ODDS RIVALS
         </span>
         {[
-          { label: 'PRIVACY POLICY',     type: 'privacy',  ref: privacyRef },
-          { label: 'TERMS OF USE',       type: 'terms',    ref: termsRef },
-          { label: 'COOKIE SETTINGS',    type: 'cookies',  ref: cookiesRef },
+          { label: 'PRIVACY POLICY',  type: 'privacy', ref: privacyRef },
+          { label: 'TERMS OF USE',    type: 'terms',   ref: termsRef },
+          { label: 'COOKIE SETTINGS', type: 'cookies', ref: cookiesRef },
         ].map(({ label, type, ref }) => (
           <button
             key={type}
@@ -1041,12 +1187,12 @@ export default function AuthLayout({ heading, subheading, children }) {
             onClick={() => setLegalModal(type)}
             style={{
               background: 'none', border: 'none', padding: 0, cursor: 'pointer',
-              fontSize: 9, color: 'rgba(255,255,255,0.3)',
+              fontSize: 9, color: T.footerLink,
               fontFamily: "'IBM Plex Mono', monospace", letterSpacing: '0.08em',
               transition: 'color 0.15s',
             }}
-            onMouseEnter={e => e.currentTarget.style.color = 'rgba(255,255,255,0.65)'}
-            onMouseLeave={e => e.currentTarget.style.color = 'rgba(255,255,255,0.3)'}
+            onMouseEnter={e => e.currentTarget.style.color = T.footerLinkHover}
+            onMouseLeave={e => e.currentTarget.style.color = T.footerLink}
           >{label}</button>
         ))}
       </div>
@@ -1054,7 +1200,7 @@ export default function AuthLayout({ heading, subheading, children }) {
 
       {showPreview && (
         <GamePreviewModal
-          gwData={gwData}
+          gwData={gwData} T={T}
           onClose={() => setShowPreview(false)}
           onSignUp={() => { setShowPreview(false); navigate('/register') }}
           onLogin={() => { setShowPreview(false); navigate('/login') }}
@@ -1080,6 +1226,6 @@ export default function AuthLayout({ heading, subheading, children }) {
           }
         />
       )}
-    </>
+    </ThemeContext.Provider>
   )
 }
