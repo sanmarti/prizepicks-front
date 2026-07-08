@@ -14,8 +14,6 @@ import ProfilePage            from './pages/ProfilePage'
 import UserPublicProfilePage  from './pages/UserPublicProfilePage'
 import EnergyStorePage        from './pages/EnergyStorePage'
 import ScoresPage             from './pages/ScoresPage'
-import AdminPage              from './pages/AdminPage'
-import AdminEnergyPacksPage  from './pages/AdminEnergyPacksPage'
 import OnboardingPage        from './pages/OnboardingPage'
 
 function RequireAuth({ children }) {
@@ -68,7 +66,7 @@ function SprintPopupController() {
   )
 }
 
-const NO_NAV_PREFIXES = ['/login', '/register', '/onboarding', '/admin']
+const NO_NAV_PREFIXES = ['/login', '/register', '/onboarding']
 
 function AppShell() {
   const token = useAuthStore((s) => s.token)
@@ -91,9 +89,6 @@ function AppShell() {
         <Route path="/users/:id" element={<RequireAuth><UserPublicProfilePage /></RequireAuth>} />
 
         <Route path="/onboarding" element={<RequireAuth><OnboardingPage /></RequireAuth>} />
-
-        <Route path="/admin"               element={<AdminPage />} />
-        <Route path="/admin/energy-packs" element={<AdminEnergyPacksPage />} />
 
         <Route path="*" element={<Navigate to="/" replace />} />
       </Routes>
