@@ -16,7 +16,7 @@ export const SLIDES = [
     sub: 'Your job: pick the 6 you trust most before the weekly deadline.',
   },
   {
-    icon: '⚡',
+    icon: '⚡️',
     accent: '#f59e0b',
     title: 'Energy is your pick budget',
     body: 'Each prediction option has an energy cost. Easier, safer calls cost more energy — trickier ones cost less. You start each Gameweek with 25 energy — spend it wisely across your 6 picks.',
@@ -55,8 +55,8 @@ const KEYFRAMES = `
   100% { background-position: -200% center; }
 }
 @keyframes ob-pulse {
-  0%,100% { opacity: 0.65; transform: scale(1); }
-  50%      { opacity: 1;   transform: scale(1.16); }
+  0%,100% { transform: scale(1); }
+  50%      { transform: scale(1.12); }
 }
 `
 
@@ -188,12 +188,13 @@ export default function OnboardingModal({
 
           {/* Icon */}
           <div style={{
-            width: 68, height: 68, borderRadius: 18, marginBottom: 22,
-            background: `${current.accent}15`,
-            border: `1px solid ${current.accent}30`,
+            width: 72, height: 72, borderRadius: 18, marginBottom: 22,
+            background: `${current.accent}0d`,
+            border: `1px solid ${current.accent}25`,
             display: 'flex', alignItems: 'center', justifyContent: 'center',
-            fontSize: 32,
-            boxShadow: `0 0 24px ${current.accent}25`,
+            fontSize: 42,
+            lineHeight: 1,
+            boxShadow: `0 0 28px ${current.accent}30`,
             animation: 'ob-pulse 2.8s ease-in-out infinite',
           }}>
             {current.icon}
