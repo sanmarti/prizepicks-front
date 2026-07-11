@@ -2036,8 +2036,8 @@ export default function MatchweekPage() {
                                         <span className="text-green-500/70 font-bold text-[11px]">{liveEvData.fixture_elapsed}'</span>
                                       )}
                                       {displayPicks[ev.id] && (() => {
-                                        const PICK_STATUS_LABEL = { live_winning: 'Favorable', live_neutral: 'Neutral', unlikely: 'At Risk', likely: 'Very likely' }
-                                        const PICK_STATUS_COLOR = { live_winning: 'text-blue-400', live_neutral: 'text-blue-300/60', unlikely: 'text-orange-400', likely: 'text-purple-400' }
+                                        const PICK_STATUS_LABEL = { live_winning: 'Favorable', live_neutral: 'Neutral', unlikely: 'At Risk', likely: 'Very likely', won: 'Won', lost: 'Lost' }
+                                        const PICK_STATUS_COLOR = { live_winning: 'text-blue-400', live_neutral: 'text-blue-300/60', unlikely: 'text-orange-400', likely: 'text-purple-400', won: 'text-green-400', lost: 'text-red-400' }
                                         const label = PICK_STATUS_LABEL[liveStatus]
                                         if (!label) return null
                                         return (
