@@ -131,6 +131,10 @@ function computePickLiveStatus(event, pickedOptionId, liveEvent) {
 
   if (!LIVE_STATUSES.includes(st)) return 'upcoming'
 
+  // Early-settled mid-game: outcome already determined, skip score inference
+  if (pickedOpt.result === 'WON') return 'won'
+  if (pickedOpt.result === 'LOST') return 'lost'
+
   // LIVE — compute based on event type + result_key + current score
   const hGoals = hg ?? 0
   const aGoals = ag ?? 0
