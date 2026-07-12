@@ -4,7 +4,7 @@ import { getSprintPicks, getPublicSprintPicks } from '../api/glory'
 const EVENT_TYPE_LABEL = {
   MATCH_RESULT:  'Result',
   BTTS:          'BTTS',
-  GOALS:         'Goals O/U (incl. ET)',
+  GOALS:         'Goals O/U',
   CLEAN_SHEET:   'Clean Sheet',
   WHO_QUALIFIES: 'Qualifies',
 }
