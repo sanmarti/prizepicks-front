@@ -508,9 +508,17 @@ function GamePreviewModal({ onClose, onSignUp, onLogin, gwData, T }) {
         {/* Event list */}
         <div style={{ flex: 1, overflowY: 'auto', padding: '6px 14px 14px' }}>
           {events.length === 0 && (
-            <p style={{ textAlign: 'center', padding: '40px 0', color: T.textGhost, fontSize: 12, fontFamily: "'IBM Plex Mono', monospace" }}>
-              Loading fixtures…
-            </p>
+            <div style={{ textAlign: 'center', padding: '40px 0' }}>
+              {!gwData ? (
+                <p style={{ color: T.textGhost, fontSize: 11, fontFamily: "'IBM Plex Mono', monospace" }}>Loading…</p>
+              ) : (
+                <>
+                  <p style={{ fontSize: 22, marginBottom: 8 }}>⏳</p>
+                  <p style={{ color: T.textPrimary, fontSize: 13, fontWeight: 700, fontFamily: "'Syne', sans-serif", marginBottom: 4 }}>Picks coming soon</p>
+                  <p style={{ color: T.textGhost, fontSize: 11, fontFamily: "'IBM Plex Mono', monospace" }}>The next matchweek hasn't opened yet.</p>
+                </>
+              )}
+            </div>
           )}
           {days.map(day => (
             <div key={day}>
