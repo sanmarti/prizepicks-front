@@ -750,8 +750,8 @@ function EventCard({ event, selectedOptionId, onSelect, isLocked, dimmed, remain
           <div className="flex items-center gap-1.5">
             <span className="text-sm">{typeInfo.icon}</span>
             <span className="text-[10px] text-gray-500 font-semibold tracking-wide uppercase">{typeInfo.label}</span>
-            {event.event_type === 'GOALS' && (
-              <span className="text-[8px] bg-amber-900/20 text-amber-500/70 border border-amber-500/15 px-1 py-px rounded-full font-medium leading-none">incl. ET</span>
+            {event.event_type === 'GOALS' && !pickWon && !pickLost && (
+              <span className="text-[8px] bg-amber-900/20 text-amber-500/70 border border-amber-500/15 px-1 py-px rounded-full font-medium leading-none">incl. OT</span>
             )}
           </div>
           <div className="flex items-center gap-1">
