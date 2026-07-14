@@ -416,6 +416,8 @@ export default function ProfilePage() {
   const [showPw,       setShowPw]       = useState(false)
   const [savingPw,     setSavingPw]     = useState(false)
   const [pwMsg,        setPwMsg]        = useState(null)
+  const [notifEnabled, setNotifEnabled] = useState(true)
+  const [savingNotif,  setSavingNotif]  = useState(false)
   const [activeTab,    setActiveTab]    = useState('stats') // stats | badges | history | wallet | account
 
   const [walletBalance,    setWalletBalance]    = useState(0)
@@ -445,6 +447,7 @@ export default function ProfilePage() {
       setProfile(data.user)
       setDisplayName(data.user.display_name || (data.user.email ?? '').split('@')[0])
       setAvatarSrc(data.user.avatar_url || null)
+      setNotifEnabled(data.user.notifications_enabled !== false)
     }).catch(() => {})
 
     getGloryProfile().then(r => setGlory(r.data)).catch(() => {})
@@ -491,6 +494,16 @@ export default function ProfilePage() {
       setCurPw(''); setNewPw(''); setNewPw2('')
     } catch (err) { setPwMsg({ type: 'error', msg: err.response?.data?.error ?? 'Check current password' }) }
     finally { setSavingPw(false) }
+  }
+
+  async function handleToggleNotif(val) {
+    setNotifEnabled(val)
+    setSavingNotif(true)
+    try {
+      await updateProfile({ notifications_enabled: val })
+    } catch {
+      setNotifEnabled(!val)
+    } finally { setSavingNotif(false) }
   }
 
   const shownName = profile?.display_name || (profile?.email ?? '').split('@')[0] || 'Player'
@@ -1219,6 +1232,21 @@ export default function ProfilePage() {
                 </button>
                 <InlineMsg status={pwMsg} />
               </form>
+            </Section>
+
+            <Section title="Email notifications">
+              <div className="flex items-center justify-between py-1">
+                <div>
+                  <p className="text-white text-sm font-medium">Weekly pick reminders</p>
+                  <p className="text-gray-500 text-xs mt-0.5">Get notified when picks open and before the deadline</p>
+                </div>
+                <button
+                  onClick={() => !savingNotif && handleToggleNotif(!notifEnabled)}
+                  className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors ${notifEnabled ? 'bg-green-500' : 'bg-white/10'} ${savingNotif ? 'opacity-50' : ''}`}
+                >
+                  <span className={`inline-block h-4 w-4 rounded-full bg-white shadow transition-transform ${notifEnabled ? 'translate-x-6' : 'translate-x-1'}`} />
+                </button>
+              </div>
             </Section>
 
             <Section>
