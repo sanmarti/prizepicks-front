@@ -914,8 +914,12 @@ function EventCard({ event, selectedOptionId, onSelect, isLocked, dimmed, remain
               : (() => { const t = Object.keys(COUNTRY_FLAGS).find(k => opt.label.startsWith(k + ' ')); return t ? COUNTRY_FLAGS[t] : '' })()
             const optLabelClean = opt.label
             const isDraw = opt.result_key === 'DRAW' || opt.label === 'Draw'
-            const optTeam = opt.result_key === 'HOME_WIN' ? homeTeam
-              : opt.result_key === 'AWAY_WIN' ? awayTeam
+            const optTeam = (opt.result_key === 'HOME_WIN' || opt.result_key === 'HOME_QUALIFIES') ? homeTeam
+              : (opt.result_key === 'AWAY_WIN' || opt.result_key === 'AWAY_QUALIFIES') ? awayTeam
+              : null
+            const optSubLabel = opt.result_key === 'HOME_WIN' ? 'Home win'
+              : opt.result_key === 'AWAY_WIN' ? 'Away win'
+              : (opt.result_key === 'HOME_QUALIFIES' || opt.result_key === 'AWAY_QUALIFIES') ? 'Qualifies'
               : null
             const es = energyStyle(isSelected ? null : opt.energy_cost)
 
@@ -949,13 +953,13 @@ function EventCard({ event, selectedOptionId, onSelect, isLocked, dimmed, remain
 
                 {/* Flag / icon */}
                 <span className="relative z-10 text-xl flex-shrink-0 leading-none">
-                  {isDraw ? '🤝' : (isSelected && lost ? '❌' : won && !userPickedLost ? '✅' : optFlag || '')}
+                  {isDraw ? '' : (isSelected && lost ? '❌' : won && !userPickedLost ? '✅' : optFlag || '')}
                 </span>
 
                 {/* Label */}
                 <span className="relative z-10 flex-1 text-left font-semibold">
                   {optTeam ? optTeam : opt.label}
-                  {optTeam && optLabelClean && <span className="text-xs font-normal ml-1 opacity-70">{optLabelClean}</span>}
+                  {optTeam && optSubLabel && <span className="text-xs font-normal ml-1 opacity-70">{optSubLabel}</span>}
                 </span>
 
                 {/* Right side: energy + community % + result */}
