@@ -264,12 +264,13 @@ function LivePickBadge({ status, elapsed, matchTime }) {
 function fmt(d, opts) { return new Date(d).toLocaleString('en-GB', opts) }
 function fmtFull(d)   { return fmt(d, { weekday: 'short', day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit' }) }
 function fmtShort(d)  { return new Date(d).toLocaleDateString('en-GB', { day: 'numeric', month: 'short' }) }
-function fmtWeekRange(lockTime) {
-  if (!lockTime) return null
-  const lock = new Date(lockTime)
-  const start = new Date(lock); start.setDate(start.getDate() - 6)
+function fmtWeekRange(startDate, endDate) {
+  if (!startDate && !endDate) return null
   const o = { day: 'numeric', month: 'short' }
-  return `${start.toLocaleDateString('en-GB', o)} – ${lock.toLocaleDateString('en-GB', o)}`
+  const s = startDate ? new Date(startDate).toLocaleDateString('en-GB', o) : null
+  const e = endDate   ? new Date(endDate).toLocaleDateString('en-GB', o)   : null
+  if (s && e) return `${s} – ${e}`
+  return s || e
 }
 function fmtCountdown(lockTime) {
   if (!lockTime) return null
@@ -635,7 +636,7 @@ function WeekSelector({ selectedWeek, gwCount, byWeek, currentWeek, weekHasPicks
 
   const todayStr = new Date().toLocaleDateString('en-GB', { weekday:'short', day:'numeric', month:'short' })
   const currentGw = byWeek[selectedWeek]
-  const weekRange = fmtWeekRange(currentGw?.lock_time)
+  const weekRange = fmtWeekRange(currentGw?.start_date, currentGw?.end_date)
 
   return (
     <div className="space-y-3">
