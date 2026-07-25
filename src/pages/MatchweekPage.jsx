@@ -1648,9 +1648,8 @@ export default function MatchweekPage() {
               </div>
             )}
 
-            {/* Entry results card (settled weeks) */}
-            {!gwLoading && effectiveEntry?.status === 'completed' && (
-              effectiveEntry.is_perfect_week ? (
+            {/* Entry results card — perfect week only (normal week shown in liveTally below) */}
+            {!gwLoading && effectiveEntry?.status === 'completed' && effectiveEntry.is_perfect_week && (
                 /* ── Perfect week — spectacular treatment ── */
                 <div className="relative rounded-2xl overflow-hidden"
                   style={{ background: 'linear-gradient(135deg, #1a1200, #2d1f00, #1a0800)', border: '1px solid rgba(250,204,21,0.45)', boxShadow: '0 0 40px -8px rgba(250,204,21,0.55)' }}>
@@ -1699,21 +1698,6 @@ export default function MatchweekPage() {
                     </div>
                   </div>
                 </div>
-              ) : (
-                /* ── Normal completed week ── */
-                <div className="rounded-2xl px-4 py-3 bg-white/4 border border-white/8">
-                  <div className="flex items-center justify-between">
-                    <div>
-                      <p className="text-white font-bold text-sm">{effectiveEntry.correct_picks}/6 correct</p>
-                      <p className="text-gray-600 text-[10px] mt-0.5">this matchweek</p>
-                    </div>
-                    <div className="text-right">
-                      <p className="text-indigo-400 font-black text-xl tabular-nums">+{effectiveEntry.league_points} pts</p>
-                      <p className="text-gray-600 text-[10px] -mt-0.5">LP earned</p>
-                    </div>
-                  </div>
-                </div>
-              )
             )}
           </>
         )}
