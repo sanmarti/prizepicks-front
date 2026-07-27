@@ -760,7 +760,6 @@ function SprintDetailScreen({ sprintSummary, myUserId, onClose }) {
   const navigate = useNavigate()
   const [detail,       setDetail]       = useState(null)
   const [loading,      setLoading]      = useState(true)
-  const [showRankings, setShowRankings] = useState(false)
   const [showOverall,  setShowOverall]  = useState(false)
 
   useEffect(() => {
@@ -833,20 +832,6 @@ function SprintDetailScreen({ sprintSummary, myUserId, onClose }) {
       />
     )
   }
-  if (showRankings && detail) {
-    return (
-      <RankingsScreen
-        sprint={sprint}
-        division={division}
-        rankings={rankings}
-        myUserId={effectiveUserId}
-        onClose={() => setShowRankings(false)}
-        onUserClick={goToUser}
-        isGwLocked={isGwLocked}
-      />
-    )
-  }
-
   return (
     <div className="fixed inset-0 z-50 bg-[#0a0d12] flex flex-col overflow-hidden">
       <div className="flex-1 overflow-y-auto pb-6">
@@ -1066,7 +1051,7 @@ function SprintDetailScreen({ sprintSummary, myUserId, onClose }) {
                     myUserId={effectiveUserId}
                     promLP={promLP}
                     relLP={relLP}
-                    onViewFull={() => setShowRankings(true)}
+                    onViewFull={() => navigate('/divisions')}
                     division={division}
                     myDivRank={myOverallRow?.division_rank}
                     onUserClick={goToUser}
