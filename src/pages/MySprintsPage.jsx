@@ -670,7 +670,7 @@ function OverallRankingsScreen({ sprint, overallRanking, myUserId, onClose, onUs
         </div>
       </div>
 
-      <div className="flex-1 overflow-y-auto pb-6">
+      <div className="flex-1 overflow-y-auto pb-6" style={{ overscrollBehaviorY: 'contain' }}>
         <div className="max-w-md mx-auto divide-y divide-white/4">
           {overallRanking.map((row) => {
             const isMe = row.user_id === myUserId
@@ -693,10 +693,14 @@ function OverallRankingsScreen({ sprint, overallRanking, myUserId, onClose, onUs
                 }`}>{row.overall_rank}</span>
 
                 <button onClick={() => onUserClick?.(row.user_id)} className="relative flex-shrink-0">
-                  <div className={`rounded-full flex items-center justify-center font-bold ${isMe ? 'w-9 h-9 text-sm' : 'w-8 h-8 text-xs bg-white/8 text-gray-400'}`}
-                    style={isMe ? { background: 'rgba(88,28,135,0.6)', color: '#d8b4fe', boxShadow: '0 0 0 2px rgba(168,85,247,0.7), 0 0 12px rgba(168,85,247,0.3)' } : {}}>
-                    {(row.display_name || '?')[0].toUpperCase()}
-                  </div>
+                  {row.avatar_url
+                    ? <img src={row.avatar_url} alt="" className={`rounded-full object-cover ${isMe ? 'w-9 h-9' : 'w-8 h-8'}`}
+                        style={isMe ? { boxShadow: '0 0 0 2px rgba(168,85,247,0.7), 0 0 12px rgba(168,85,247,0.3)' } : {}} />
+                    : <div className={`rounded-full flex items-center justify-center font-bold ${isMe ? 'w-9 h-9 text-sm' : 'w-8 h-8 text-xs bg-white/8 text-gray-400'}`}
+                        style={isMe ? { background: 'rgba(88,28,135,0.6)', color: '#d8b4fe', boxShadow: '0 0 0 2px rgba(168,85,247,0.7), 0 0 12px rgba(168,85,247,0.3)' } : {}}>
+                        {(row.display_name || '?')[0].toUpperCase()}
+                      </div>
+                  }
                   <TierBadgeSm correct={row.total_correct_picks} incorrect={row.total_incorrect_picks} />
                 </button>
 
