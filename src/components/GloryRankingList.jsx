@@ -1,4 +1,5 @@
 import { useNavigate } from 'react-router-dom'
+import { useState } from 'react'
 
 // ── Tier badge helpers ─────────────────────────────────────────────────────────
 
@@ -142,6 +143,35 @@ export function GloryRankingHeader({ division, sprintName, playerCount, promLP, 
   )
 }
 
+// ── Avatar with error fallback ────────────────────────────────────────────────
+function AvatarCell({ row, isMe }) {
+  const [imgFailed, setImgFailed] = useState(false)
+  const sizeClass = isMe ? 'w-9 h-9 text-sm' : 'w-8 h-8 text-sm'
+  const meStyle   = { background: 'rgba(88,28,135,0.6)', color: '#d8b4fe', boxShadow: '0 0 0 2px rgba(168,85,247,0.7), 0 0 16px rgba(168,85,247,0.35)' }
+  const otherStyle = { background: 'rgba(255,255,255,0.08)', color: '#9ca3af' }
+  const imgStyle  = isMe ? { boxShadow: '0 0 0 2px rgba(168,85,247,0.8), 0 0 16px rgba(168,85,247,0.4)' } : {}
+
+  if (row.avatar_url && !imgFailed) {
+    return (
+      <img
+        src={row.avatar_url}
+        alt=""
+        className={`rounded-full object-cover ${sizeClass}`}
+        style={imgStyle}
+        onError={() => setImgFailed(true)}
+      />
+    )
+  }
+  return (
+    <div
+      className={`rounded-full flex items-center justify-center font-bold ${sizeClass}`}
+      style={isMe ? meStyle : otherStyle}
+    >
+      {(row.display_name || '?')[0].toUpperCase()}
+    </div>
+  )
+}
+
 // ── Ranking rows list ──────────────────────────────────────────────────────────
 
 /**
@@ -258,23 +288,7 @@ export default function GloryRankingList({
                 className="relative flex-shrink-0 cursor-pointer"
                 onClick={() => handleUserClick(row.user_id)}
               >
-                {row.avatar_url
-                  ? <img
-                      src={row.avatar_url}
-                      alt=""
-                      className={`rounded-full object-cover ${isMe ? 'w-9 h-9' : 'w-8 h-8'}`}
-                      style={isMe ? { boxShadow: '0 0 0 2px rgba(168,85,247,0.8), 0 0 16px rgba(168,85,247,0.4)' } : {}}
-                    />
-                  : <div
-                      className={`rounded-full flex items-center justify-center font-bold ${isMe ? 'w-9 h-9 text-sm' : 'w-8 h-8 text-sm'}`}
-                      style={isMe
-                        ? { background: 'rgba(88,28,135,0.6)', color: '#d8b4fe', boxShadow: '0 0 0 2px rgba(168,85,247,0.7), 0 0 16px rgba(168,85,247,0.35)' }
-                        : { background: 'rgba(255,255,255,0.08)', color: '#9ca3af' }
-                      }
-                    >
-                      {(row.display_name || '?')[0].toUpperCase()}
-                    </div>
-                }
+                <AvatarCell row={row} isMe={isMe} />
                 <TierBadgeSm row={row} />
               </div>
 

@@ -27,7 +27,7 @@ function DivisionsListScreen({ divisions, divStats, myDivId, activeDiv, onSelect
       if (!container || !card) return
       const cardOffsetTop = card.offsetTop
       const center        = cardOffsetTop - container.clientHeight / 2 + card.offsetHeight / 2
-      container.scrollTo({ top: Math.max(0, center), behavior: 'smooth' })
+      container.scrollTo({ top: Math.max(0, center), behavior: 'instant' })
     }, 80)
   }, [])
 
@@ -70,7 +70,7 @@ function DivisionsListScreen({ divisions, divStats, myDivId, activeDiv, onSelect
       )}
 
       {/* Division cards */}
-      <div ref={scrollRef} className="flex-1 overflow-y-auto py-4 pb-32">
+      <div ref={scrollRef} className="flex-1 overflow-y-auto py-4 pb-32" style={{ overscrollBehaviorY: 'contain' }}>
         <div className="max-w-md mx-auto px-4 space-y-5">
           {[...divisions].reverse().map(div => {
             const v      = getV(div)
@@ -252,7 +252,7 @@ function RankingsScreen({ div, sprintId, sprintName, myUserId, myDivId, onOpenPi
 
   useEffect(() => {
     if (!loading && myRowRef.current) {
-      setTimeout(() => myRowRef.current?.scrollIntoView({ block: 'center', behavior: 'smooth' }), 120)
+      setTimeout(() => myRowRef.current?.scrollIntoView({ block: 'center', behavior: 'instant' }), 50)
     }
   }, [loading])
 
@@ -269,7 +269,7 @@ function RankingsScreen({ div, sprintId, sprintName, myUserId, myDivId, onOpenPi
       />
 
       {/* List */}
-      <div className="flex-1 overflow-y-auto">
+      <div className="flex-1 overflow-y-auto" style={{ overscrollBehaviorY: 'contain' }}>
         <div className="max-w-md mx-auto">
           <GloryRankingList
             rows={rows}
