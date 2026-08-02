@@ -281,6 +281,18 @@ function RankingsScreen({ div, sprintId, sprintName, myUserId, myDivId, onOpenPi
             myRowRef={myRowRef}
             loading={loading}
           />
+          {!loading && rows.length > 0 && (
+            <div className="px-4 py-5">
+              <button
+                onClick={onOpenPicker}
+                className="w-full flex items-center justify-center gap-2 py-3 rounded-xl border border-white/10 text-sm font-semibold text-gray-400 hover:text-white hover:border-white/20 transition-colors"
+                style={{ background: 'rgba(255,255,255,0.03)' }}
+              >
+                <span>See other divisions</span>
+                <span className="text-xs">›</span>
+              </button>
+            </div>
+          )}
         </div>
       </div>
 
