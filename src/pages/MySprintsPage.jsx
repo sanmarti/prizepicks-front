@@ -856,7 +856,7 @@ function SprintDetailScreen({ sprintSummary, myUserId, onClose }) {
         {/* Hero */}
         <div className={`relative bg-gradient-to-b ${oc?.bg || 'from-white/4 to-transparent'} border-b ${oc?.border || 'border-white/8'}`}>
           <div className="max-w-md mx-auto px-4 pt-5 pb-5">
-            <button onClick={onClose} className="w-9 h-9 rounded-xl bg-black/30 flex items-center justify-center text-gray-300 mb-4">←</button>
+            <button onClick={onClose} className="flex items-center gap-1.5 rounded-xl bg-black/30 px-3 h-9 text-gray-300 mb-4 text-sm">← Back</button>
             <div className="flex items-start justify-between">
               <div>
                 <p className="text-gray-400 text-[10px] tracking-widest uppercase font-semibold mb-1">Sprint history</p>
