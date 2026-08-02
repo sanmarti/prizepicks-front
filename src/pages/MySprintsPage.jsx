@@ -760,7 +760,8 @@ function SprintDetailScreen({ sprintSummary, myUserId, onClose }) {
   const navigate = useNavigate()
   const [detail,       setDetail]       = useState(null)
   const [loading,      setLoading]      = useState(true)
-  const [showOverall,  setShowOverall]  = useState(false)
+  const [showOverall,     setShowOverall]     = useState(false)
+  const [showDivRankings, setShowDivRankings] = useState(false)
 
   useEffect(() => {
     setLoading(true)
@@ -819,6 +820,20 @@ function SprintDetailScreen({ sprintSummary, myUserId, onClose }) {
   }
 
   const goToUser = (userId) => navigate(`/users/${userId}`)
+
+  if (showDivRankings && detail) {
+    return (
+      <RankingsScreen
+        sprint={sprint}
+        division={division}
+        rankings={rankings}
+        myUserId={effectiveUserId}
+        onClose={() => setShowDivRankings(false)}
+        onUserClick={goToUser}
+        isGwLocked={isGwLocked}
+      />
+    )
+  }
 
   if (showOverall && detail) {
     return (
@@ -1051,7 +1066,7 @@ function SprintDetailScreen({ sprintSummary, myUserId, onClose }) {
                     myUserId={effectiveUserId}
                     promLP={promLP}
                     relLP={relLP}
-                    onViewFull={() => navigate('/divisions')}
+                    onViewFull={() => isSprintCompleted ? setShowDivRankings(true) : navigate('/divisions')}
                     division={division}
                     myDivRank={myOverallRow?.division_rank}
                     onUserClick={goToUser}
