@@ -851,7 +851,7 @@ function SprintDetailScreen({ sprintSummary, myUserId, onClose }) {
   }
   return (
     <div className="fixed inset-0 z-50 bg-[#0a0d12] flex flex-col overflow-hidden">
-      <div className="flex-1 overflow-y-auto pb-6">
+      <div className="flex-1 overflow-y-auto pb-32">
 
         {/* Hero */}
         <div className={`relative bg-gradient-to-b ${oc?.bg || 'from-white/4 to-transparent'} border-b ${oc?.border || 'border-white/8'}`}>
