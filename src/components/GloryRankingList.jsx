@@ -115,16 +115,6 @@ export function GloryRankingHeader({ division, sprintName, playerCount, promLP, 
               </div>
             </div>
 
-            <button
-              onClick={goToDivs}
-              className="flex items-center gap-1 text-[10px] font-semibold text-white/60 hover:text-white/90 border border-white/15 rounded-lg px-2 py-1 backdrop-blur-sm transition-colors"
-              style={{ background: 'rgba(0,0,0,0.35)' }}
-            >
-              All divisions
-              <svg width="10" height="10" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
-                <polyline points="9 18 15 12 9 6" />
-              </svg>
-            </button>
           </div>
         </div>
       </div>
