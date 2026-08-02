@@ -148,6 +148,7 @@ function RankingsScreen({ sprint, division, rankings, myUserId, onClose, onUserC
             relLP={relLP}
             isHighestDiv={!division?.allows_promotion}
             isGwLocked={isGwLocked}
+            isCompleted={sprint?.status === 'completed' || sprint?.status === 'archived'}
             myRowRef={myRowRef}
             onUserClick={onUserClick}
           />

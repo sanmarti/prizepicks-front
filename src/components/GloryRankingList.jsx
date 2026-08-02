@@ -197,6 +197,7 @@ export default function GloryRankingList({
   relLP,
   isHighestDiv = false,
   isGwLocked = false,
+  isCompleted = false,
   myRowRef,
   onUserClick,
   loading = false,
@@ -237,8 +238,12 @@ export default function GloryRankingList({
       {rows.map((row, i) => {
         const rank        = i + 1
         const isMe        = row.user_id === myUserId
-        const isPromo     = promLP !== null && row.total_league_points >= promLP && !isHighestDiv
-        const isRel       = relLP  !== null && row.total_league_points <= relLP
+        const isPromo     = isCompleted
+          ? row.sprint_outcome === 'promoted'
+          : promLP !== null && row.total_league_points >= promLP && !isHighestDiv
+        const isRel       = isCompleted
+          ? row.sprint_outcome === 'relegated'
+          : relLP  !== null && row.total_league_points <= relLP
         const showRelDiv  = firstRel === i && i > 0
         const showPromDiv = lastPromo === i && i < rows.length - 1 && !isHighestDiv
         const isLive      = (row.live_picks ?? 0) > 0
