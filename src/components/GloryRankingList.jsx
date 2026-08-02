@@ -59,7 +59,7 @@ export const DIVISION_COVER_IMAGES = {
  *   onBack          – () => void
  *   onDivisionsClick– () => void (optional; defaults to navigate('/divisions'))
  */
-export function GloryRankingHeader({ division, sprintName, playerCount, promLP, relLP, onBack, onDivisionsClick }) {
+export function GloryRankingHeader({ division, sprintName, playerCount, promLP, relLP, onBack, onDivisionsClick, showBack }) {
   const navigate  = useNavigate()
   const coverSrc  = division?.badge_url || DIVISION_COVER_IMAGES[division?.display_order] || DIVISION_COVER_IMAGES[1]
   const goToDivs  = onDivisionsClick ?? (() => navigate('/divisions'))
@@ -76,6 +76,20 @@ export function GloryRankingHeader({ division, sprintName, playerCount, promLP, 
             onError={e => { e.target.style.display = 'none' }}
           />
           <div className="absolute inset-0 bg-gradient-to-t from-[#0a0d12] via-[#0a0d12]/25 to-transparent" />
+
+          {/* Back button — only when viewing another division */}
+          {showBack && onBack && (
+            <button
+              onClick={onBack}
+              className="absolute top-3 left-4 flex items-center gap-1.5 text-[11px] font-semibold text-white/70 hover:text-white transition-colors"
+              style={{ background: 'rgba(0,0,0,0.35)', backdropFilter: 'blur(8px)', borderRadius: 8, padding: '4px 10px', border: '1px solid rgba(255,255,255,0.12)' }}
+            >
+              <svg width="12" height="12" fill="none" stroke="currentColor" strokeWidth="2.5" viewBox="0 0 24 24">
+                <polyline points="15 18 9 12 15 6" />
+              </svg>
+              Back
+            </button>
+          )}
 
           {/* Player count */}
           <div

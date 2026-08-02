@@ -266,6 +266,7 @@ function RankingsScreen({ div, sprintId, sprintName, myUserId, myDivId, onOpenPi
         relLP={relLP}
         onBack={onBack}
         onDivisionsClick={onOpenPicker}
+        showBack={div.id !== myDivId}
       />
 
       {/* List */}
