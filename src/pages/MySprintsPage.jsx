@@ -136,6 +136,7 @@ function RankingsScreen({ sprint, division, rankings, myUserId, onClose, onUserC
         promLP={promLP}
         relLP={relLP}
         onBack={onClose}
+        showBack={true}
       />
 
       <div className="flex-1 overflow-y-auto">
