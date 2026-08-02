@@ -55,7 +55,7 @@ const TABS = [
 
 export default function BottomNav() {
   return (
-    <nav className="fixed bottom-0 left-0 right-0 z-40 flex items-stretch"
+    <nav className="fixed bottom-0 left-0 right-0 z-[60] flex items-stretch"
       style={{
         background: 'rgba(10,13,18,0.96)',
         backdropFilter: 'blur(16px)',

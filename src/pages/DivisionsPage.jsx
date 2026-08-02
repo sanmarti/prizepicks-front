@@ -33,23 +33,11 @@ function DivisionsListScreen({ divisions, divStats, myDivId, activeDiv, onSelect
 
   return (
     <div className="fixed inset-0 z-50 bg-[#0a0d12] flex flex-col">
-      {/* Header */}
-      <div className="border-b border-white/6 flex-shrink-0">
-        <div className="max-w-md mx-auto flex items-center px-4 pt-12 pb-4">
-          <button
-            onClick={onClose}
-            className="flex items-center gap-2 text-white"
-          >
-            <span className="text-base">←</span>
-            <span className="font-bold text-base">Back to my division rankings</span>
-          </button>
-        </div>
-      </div>
 
       {/* Your division banner */}
       {myDiv && myV && (
         <div className="flex-shrink-0 border-b border-white/5" style={{ background: myV.bg }}>
-          <div className="max-w-md mx-auto px-4 py-3 flex items-center gap-3">
+          <div className="max-w-md mx-auto px-4 pt-12 py-3 flex items-center gap-3">
             <div className="w-9 h-9 rounded-xl flex items-center justify-center text-lg border flex-shrink-0"
               style={{ background: myV.bg, borderColor: myV.border }}>
               {myDiv.icon}
