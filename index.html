@@ -7,6 +7,14 @@
   </head>
   <body>
     <div id="root"></div>
+    <script>
+      // Force a fresh network load on first open in Safari standalone (Add to Home Screen).
+      // WKWebView can serve stale cached HTML that breaks script loading — this busts it.
+      if (window.navigator.standalone && !sessionStorage.getItem('_sr')) {
+        sessionStorage.setItem('_sr', '1');
+        window.location.replace(window.location.href.split('?')[0] + '?_=' + Date.now());
+      }
+    </script>
     <script type="module" src="/src/main.jsx"></script>
   </body>
 </html>
