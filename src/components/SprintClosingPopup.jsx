@@ -91,9 +91,9 @@ function GoldParticles() {
 function WelcomePopup({ sprint, onClose }) {
   if (!sprint) return null
   return (
-    <div className="fixed inset-0 z-50 flex items-end sm:items-center justify-center">
+    <div className="fixed inset-0 z-[100] flex items-end sm:items-center justify-center">
       <div className="absolute inset-0 bg-black/80 backdrop-blur-sm" />
-      <div className="relative w-full max-w-sm mx-4 mb-4 sm:mb-0 bg-[#0d1117] border border-indigo-500/30 rounded-3xl overflow-hidden shadow-2xl">
+      <div className="relative w-full max-w-sm mx-4 mb-24 sm:mb-0 bg-[#0d1117] border border-indigo-500/30 rounded-3xl overflow-hidden shadow-2xl">
         <div className="bg-gradient-to-b from-indigo-950 via-indigo-900/40 to-[#0d1117] px-6 pt-8 pb-6">
           <div className="text-center">
             <div className="text-5xl mb-3">⚡</div>
@@ -180,10 +180,10 @@ export default function SprintClosingPopup({ sprint, nextSprint, onDismiss, read
   }
 
   return (
-    <div className="fixed inset-0 z-50 flex items-end sm:items-center justify-center">
+    <div className="fixed inset-0 z-[100] flex items-end sm:items-center justify-center">
       <div className="absolute inset-0 bg-black/85 backdrop-blur-sm" />
 
-      <div className="relative w-full max-w-sm mx-4 mb-4 sm:mb-0 rounded-3xl overflow-hidden shadow-2xl border border-white/10">
+      <div className="relative w-full max-w-sm mx-4 mb-24 sm:mb-0 rounded-3xl overflow-hidden shadow-2xl border border-white/10">
         {/* Header gradient */}
         <div className={`relative bg-gradient-to-b ${cfg.bg} px-6 pt-8 pb-6`}>
           {cfg.particles && <GoldParticles />}

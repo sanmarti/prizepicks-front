@@ -68,7 +68,7 @@ const COUNTRY_FLAGS = {
 
 const COMPETITION_ICONS = {
   'World Cup':'🌍','Champions League':'⭐','Premier League':'🏴󠁧󠁢󠁥󠁮󠁧󠁿',
-  'La Liga':'🇪🇸','Serie A':'🇮🇹','Bundesliga':'🇩🇪','Ligue 1':'🇫🇷',
+  'La Liga':'🇪🇸','Serie A':'🇧🇷','Série A':'🇧🇷','Bundesliga':'🇩🇪','Ligue 1':'🇫🇷',
   'Eredivisie':'🇳🇱','Euro':'🇪🇺','Copa America':'🌎','Nations League':'🌐',
 }
 
