@@ -53,7 +53,7 @@ function LoginForm({ email, setEmail, password, setPassword, showPw, setShowPw, 
     border: `1px solid ${T.inputBorder}`,
     borderRadius: 12,
     color: T.inputColor,
-    fontSize: 14, outline: 'none',
+    fontSize: 16, outline: 'none',
     fontFamily: "'IBM Plex Mono', monospace",
     transition: 'border-color 0.2s, box-shadow 0.2s',
   }

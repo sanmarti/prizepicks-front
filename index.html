@@ -14,6 +14,13 @@
         sessionStorage.setItem('_sr', '1');
         window.location.replace(window.location.href.split('?')[0] + '?_=' + Date.now());
       }
+      // Reset viewport zoom after input blur (iOS stays zoomed after dismissing keyboard).
+      document.addEventListener('focusout', function() {
+        var mv = document.querySelector('meta[name="viewport"]');
+        if (mv) {
+          mv.setAttribute('content', 'width=device-width, initial-scale=1.0, viewport-fit=cover');
+        }
+      });
     </script>
     <script type="module" src="/src/main.jsx"></script>
   </body>

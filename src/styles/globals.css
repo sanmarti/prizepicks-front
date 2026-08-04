@@ -44,6 +44,11 @@ body {
   flex-direction: column;
 }
 
+/* Prevent iOS Safari auto-zoom on input focus (requires font-size >= 16px) */
+input, textarea, select {
+  font-size: 16px !important;
+}
+
 /* Safe-area top padding utilities */
 .pt-safe    { padding-top: env(safe-area-inset-top); }
 .pt-safe-4  { padding-top: calc(16px + env(safe-area-inset-top)); }
