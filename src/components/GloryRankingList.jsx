@@ -234,7 +234,7 @@ export default function GloryRankingList({
   }
 
   return (
-    <div className="pb-32">
+    <div>
       {rows.map((row, i) => {
         const rank        = i + 1
         const isMe        = row.user_id === myUserId
