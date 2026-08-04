@@ -1563,7 +1563,7 @@ export default function MatchweekPage() {
     <div className="min-h-screen bg-[#0a0d12] text-white">
 
       {/* ── Top section (non-sticky) ── */}
-      <div className="max-w-md mx-auto px-4 pt-5 space-y-4">
+      <div className="max-w-md mx-auto px-4 pt-safe-5 space-y-4">
 
         {/* Sprint header */}
         <div className="flex items-start justify-between">

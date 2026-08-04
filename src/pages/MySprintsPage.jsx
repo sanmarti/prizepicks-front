@@ -1502,7 +1502,7 @@ export default function MySprintsPage() {
         />
       )}
 
-      <div className="max-w-md mx-auto px-4 pt-5 space-y-6">
+      <div className="max-w-md mx-auto px-4 pt-safe-5 space-y-6">
         <h1 className="text-white text-xl font-bold">Sprints</h1>
 
         {/* ── Current sprint ── */}

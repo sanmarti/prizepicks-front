@@ -359,7 +359,7 @@ export default function EnergyStorePage() {
       {successPack && <SuccessToast pack={successPack} onClose={() => setSuccessPack(null)} />}
       {payingPack  && <PaymentModal pack={payingPack} onClose={() => setPayingPack(null)} onPay={handlePay} />}
 
-      <div className="max-w-md mx-auto px-4 pt-12 pb-28">
+      <div className="max-w-md mx-auto px-4 pt-safe-12 pb-28">
 
         {/* Header */}
         <div className="mb-6">

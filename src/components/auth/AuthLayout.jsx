@@ -947,7 +947,7 @@ export default function AuthLayout({ heading, subheading, children }) {
     <ThemeContext.Provider value={{ dark, toggle, T }}>
       <style>{KEYFRAMES}</style>
 
-      <div className="auth-outer" style={{ height: '100dvh', display: 'flex', flexDirection: 'column', background: T.bg, overflow: 'hidden', transition: 'background 0.25s' }}>
+      <div className="auth-outer" style={{ height: '100dvh', display: 'flex', flexDirection: 'column', background: T.bg, overflow: 'hidden', transition: 'background 0.25s', paddingTop: 'env(safe-area-inset-top)', paddingLeft: 'env(safe-area-inset-left)', paddingRight: 'env(safe-area-inset-right)' }}>
       <div className="auth-inner" style={{ flex: 1, display: 'flex', overflow: 'hidden' }}>
         <HeroPanel onTryIt={() => setShowPreview(true)} gwData={gwData} onHowItWorks={() => setShowGuide(true)} T={T}/>
 
