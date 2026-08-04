@@ -271,7 +271,7 @@ function RankingsScreen({ div, sprintId, sprintName, myUserId, myDivId, onOpenPi
             loading={loading}
           />
           {!loading && rows.length > 0 && (
-            <div className="px-4 py-5">
+            <div className="px-4 pt-2 pb-5">
               <button
                 onClick={onOpenPicker}
                 className="w-full flex items-center justify-center gap-2 py-3 rounded-xl border border-white/10 text-sm font-semibold text-gray-400 hover:text-white hover:border-white/20 transition-colors"
