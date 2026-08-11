@@ -104,6 +104,29 @@ export default function LeagueDetailPage() {
 
         {/* Standings */}
         {tab === 'Standings' && (
+          <div className="space-y-3">
+            {/* Prize pool (if configured) */}
+            {(() => {
+              const prizes = Array.isArray(currentPeriod?.prize_config) ? currentPeriod.prize_config : []
+              if (prizes.length === 0) return null
+              const icons = ['🥇', '🥈', '🥉', '4️⃣', '5️⃣']
+              return (
+                <div className="bg-[#0d1117] border border-amber-500/20 rounded-2xl p-4">
+                  <p className="text-amber-400/80 text-[10px] font-black uppercase tracking-widest mb-3">Prize Pool</p>
+                  <div className="flex flex-wrap gap-3">
+                    {prizes.map((p, i) => (
+                      <div key={i} className="flex items-center gap-2 bg-amber-500/8 border border-amber-500/15 rounded-xl px-3 py-2">
+                        <span className="text-base">{icons[i] || '🏅'}</span>
+                        <div>
+                          <p className="text-amber-300 font-black text-sm leading-none">€{parseFloat(p.amount_euros).toFixed(0)}</p>
+                          <p className="text-amber-700 text-[10px] mt-0.5">{['1st Place','2nd Place','3rd Place','4th Place','5th Place'][i] || `${i+1}th`}</p>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )
+            })()}
           <div className="bg-[#0d1117] border border-white/8 rounded-2xl overflow-hidden">
             {standings.length === 0 ? (
               <div className="text-center py-12">
@@ -134,6 +157,7 @@ export default function LeagueDetailPage() {
                 ))}
               </div>
             )}
+          </div>
           </div>
         )}
 

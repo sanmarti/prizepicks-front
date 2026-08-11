@@ -4,6 +4,7 @@ import {
   getGloryStatus, getGloryGameweek, submitGloryPicks,
   getGloryLeaderboard, getCommunityPicks, getFixtureForm, getFixtureStats, getGameweekLive, getEnergyPacks,
 } from '../api/glory'
+import { getMyLeagues } from '../api/leagues'
 
 function getPlayerTier(correct, incorrect) {
   const total = (correct || 0) + (incorrect || 0)
@@ -1309,6 +1310,7 @@ export default function MatchweekPage() {
   const [liveData,    setLiveData]    = useState({})
   const [walletBalance, setWalletBalance] = useState(0)
   const [leaderboard, setLeaderboard] = useState(null)
+  const [myLeagues, setMyLeagues] = useState([])
   const liveIntervalRef = useRef(null)
 
   const loadStatus = useCallback(() =>
@@ -1356,6 +1358,7 @@ export default function MatchweekPage() {
   // Initial load
   useEffect(() => {
     getEnergyPacks().then(r => setWalletBalance(r.data?.wallet_balance ?? 0)).catch(() => {})
+    getMyLeagues().then(r => setMyLeagues(r.data || [])).catch(() => {})
   }, [])
 
   useEffect(() => {
@@ -1591,6 +1594,27 @@ export default function MatchweekPage() {
             </div>
           </div>
         </div>
+
+        {/* League context pills */}
+        {myLeagues.length > 0 && (
+          <div className="flex gap-2 overflow-x-auto" style={{ scrollbarWidth: 'none' }}>
+            {myLeagues.map(l => (
+              <button key={l.id} onClick={() => navigate(`/leagues/${l.id}`)}
+                className="flex-shrink-0 flex items-center gap-2 bg-indigo-500/10 hover:bg-indigo-500/16 border border-indigo-500/20 rounded-xl px-3 py-2 transition-colors active:scale-95 text-left">
+                <span className="text-sm">🏆</span>
+                <div className="min-w-0">
+                  <p className="text-white text-xs font-bold truncate max-w-[130px]">{l.name}</p>
+                  {l.current_period && (
+                    <p className="text-indigo-400 text-[10px] leading-none mt-0.5">{l.current_period.name}</p>
+                  )}
+                </div>
+                <svg className="w-3 h-3 text-gray-600 flex-shrink-0 ml-1" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
+                  <polyline points="9 18 15 12 9 6" />
+                </svg>
+              </button>
+            ))}
+          </div>
+        )}
 
         {/* No active sprint */}
         {!sprint && (
