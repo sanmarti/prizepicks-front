@@ -55,10 +55,18 @@ export default function LeaguesPage() {
             {leagues.map(l => (
               <LeagueCard key={l.id} league={l} onClick={() => navigate(`/leagues/${l.id}`)} />
             ))}
-            <button onClick={() => setShowJoin(true)}
-              className="w-full py-3 rounded-2xl border border-indigo-500/30 bg-indigo-500/8 text-indigo-400 text-sm font-bold hover:bg-indigo-500/14 transition-colors mt-2">
-              Join with a code
-            </button>
+            <div className="grid grid-cols-2 gap-2 mt-2">
+              <button onClick={() => setShowCreate(true)}
+                className="py-3 rounded-2xl text-white text-sm font-bold transition-colors"
+                style={{ background: 'linear-gradient(90deg,#6366f1,#4f46e5)', boxShadow: '0 4px 16px rgba(99,102,241,0.25)' }}>
+                + Create League
+              </button>
+              <button onClick={() => setShowJoin(true)}
+                className="py-3 rounded-2xl border border-indigo-500/30 bg-indigo-500/8 text-indigo-400 text-sm font-bold hover:bg-indigo-500/14 transition-colors">
+                Join with a Code
+              </button>
+            </div>
+            <p className="text-gray-600 text-xs text-center pb-1">Got an invite code? Tap <span className="text-indigo-400">Join with a Code</span> to enter a league</p>
           </div>
         )}
 
