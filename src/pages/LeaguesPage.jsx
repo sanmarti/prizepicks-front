@@ -132,8 +132,8 @@ function LeagueCard({ league, onClick }) {
 function EmptyState({ onCreate, onJoin }) {
   return (
     <div className="flex flex-col items-center justify-center py-12 text-center space-y-4">
-      <div className="w-20 h-20 rounded-2xl bg-indigo-500/10 border border-indigo-500/20 flex items-center justify-center text-indigo-400">
-        <StarIcon />
+      <div className="w-20 h-20 rounded-2xl bg-indigo-500/10 border border-indigo-500/20 flex items-center justify-center text-4xl">
+        🏆
       </div>
       <div>
         <p className="text-white font-bold text-lg">No leagues yet</p>
