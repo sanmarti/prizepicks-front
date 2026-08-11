@@ -1,9 +1,10 @@
 import { useState, useEffect, useCallback } from 'react'
 import { useParams, useNavigate } from 'react-router-dom'
-import { getLeague, getLeagueStandings } from '../api/leagues'
+import { getLeague, getLeagueStandings, leaveLeague, updateLeague } from '../api/leagues'
 import Spinner from '../components/ui/Spinner'
 
 const TABS = ['Standings', 'Members']
+const ADMIN_TABS = ['Standings', 'Members', 'Settings']
 
 export default function LeagueDetailPage() {
   const { id } = useParams()
@@ -12,6 +13,12 @@ export default function LeagueDetailPage() {
   const [league, setLeague] = useState(null)
   const [standings, setStandings] = useState([])
   const [loading, setLoading] = useState(true)
+  const [leaving, setLeaving] = useState(false)
+  const [editName, setEditName] = useState('')
+  const [editFee, setEditFee] = useState('')
+  const [editImageUrl, setEditImageUrl] = useState('')
+  const [saving, setSaving] = useState(false)
+  const [saveMsg, setSaveMsg] = useState(null)
 
   const load = useCallback(async () => {
     try {
@@ -94,7 +101,7 @@ export default function LeagueDetailPage() {
 
         {/* Tabs */}
         <div className="flex gap-1 bg-white/3 border border-white/8 rounded-2xl p-1 mb-4">
-          {TABS.map(t => (
+          {(isAdmin ? ADMIN_TABS : TABS).map(t => (
             <button key={t} onClick={() => setTab(t)}
               className={`flex-1 py-2 px-3 rounded-xl text-sm font-medium transition-colors ${tab === t ? 'bg-indigo-600 text-white' : 'text-gray-500 hover:text-gray-300'}`}>
               {t}
@@ -188,6 +195,88 @@ export default function LeagueDetailPage() {
                   )}
                 </div>
               ))}
+            </div>
+            <div className="px-4 py-3 border-t border-white/5">
+              <button
+                onClick={async () => {
+                  if (!window.confirm('Leave this league? You can rejoin with the invite code.')) return
+                  setLeaving(true)
+                  try {
+                    await leaveLeague(id)
+                    navigate('/leagues')
+                  } catch (e) {
+                    alert(e.response?.data?.error || 'Could not leave league')
+                    setLeaving(false)
+                  }
+                }}
+                disabled={leaving}
+                className="text-red-500/70 hover:text-red-400 text-sm font-semibold transition-colors disabled:opacity-40"
+              >
+                {leaving ? 'Leaving…' : 'Leave league'}
+              </button>
+            </div>
+          </div>
+        )}
+
+        {/* Settings (admin only) */}
+        {tab === 'Settings' && isAdmin && (
+          <div className="bg-[#0d1117] border border-white/8 rounded-2xl p-5 space-y-4">
+            <div>
+              <label className="text-gray-500 text-[11px] font-semibold uppercase tracking-widest block mb-1.5">League name</label>
+              <input value={editName || league.name} onChange={e => setEditName(e.target.value)}
+                className="w-full bg-white/5 border border-white/8 rounded-xl px-4 py-3 text-white text-sm outline-none focus:border-indigo-500 transition-colors" />
+            </div>
+            <div>
+              <label className="text-gray-500 text-[11px] font-semibold uppercase tracking-widest block mb-1.5">Entry fee (€)</label>
+              <input type="number" step="0.01" min="0"
+                value={editFee !== '' ? editFee : league.entry_fee_euros}
+                onChange={e => setEditFee(e.target.value)}
+                className="w-full bg-white/5 border border-white/8 rounded-xl px-4 py-3 text-white text-sm outline-none focus:border-indigo-500 transition-colors" />
+            </div>
+            <div>
+              <label className="text-gray-500 text-[11px] font-semibold uppercase tracking-widest block mb-1.5">League image URL</label>
+              <div className="flex gap-3 items-start">
+                <input value={editImageUrl || league.image_url || ''} onChange={e => setEditImageUrl(e.target.value)}
+                  placeholder="https://…"
+                  className="flex-1 bg-white/5 border border-white/8 rounded-xl px-4 py-3 text-white text-sm outline-none focus:border-indigo-500 transition-colors placeholder-gray-700" />
+                {(editImageUrl || league.image_url) && (
+                  <div className="w-12 h-12 rounded-xl overflow-hidden border border-white/10 flex-shrink-0 bg-white/5">
+                    <img src={editImageUrl || league.image_url} alt="" className="w-full h-full object-cover"
+                      onError={e => { e.target.style.display = 'none' }} />
+                  </div>
+                )}
+              </div>
+            </div>
+            <div>
+              <label className="text-gray-500 text-[11px] font-semibold uppercase tracking-widest block mb-1.5">Invite code</label>
+              <div className="flex items-center gap-3 bg-white/3 border border-white/8 rounded-xl px-4 py-3">
+                <span className="text-indigo-300 font-mono font-bold tracking-widest text-sm flex-1">{league.invite_code}</span>
+                <button onClick={() => navigator.clipboard.writeText(league.invite_code)}
+                  className="text-gray-500 hover:text-white text-xs transition-colors flex-shrink-0">Copy</button>
+              </div>
+            </div>
+            <div className="flex items-center gap-4 pt-1">
+              <button
+                onClick={async () => {
+                  setSaving(true); setSaveMsg(null)
+                  try {
+                    await updateLeague(id, {
+                      name: editName || undefined,
+                      entry_fee_euros: editFee !== '' ? parseFloat(editFee) : undefined,
+                      image_url: editImageUrl || undefined,
+                    })
+                    setSaveMsg('Saved ✓')
+                    load()
+                  } catch { setSaveMsg('Save failed') }
+                  finally { setSaving(false) }
+                }}
+                disabled={saving}
+                className="px-5 py-2.5 rounded-xl font-bold text-sm text-white transition-colors disabled:opacity-40"
+                style={{ background: 'linear-gradient(90deg,#6366f1,#4f46e5)' }}
+              >
+                {saving ? 'Saving…' : 'Save changes'}
+              </button>
+              {saveMsg && <p className={`text-sm ${saveMsg.includes('✓') ? 'text-green-400' : 'text-red-400'}`}>{saveMsg}</p>}
             </div>
           </div>
         )}

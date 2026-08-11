@@ -1603,10 +1603,15 @@ export default function MatchweekPage() {
                 className="flex-shrink-0 flex items-center gap-2 bg-indigo-500/10 hover:bg-indigo-500/16 border border-indigo-500/20 rounded-xl px-3 py-2 transition-colors active:scale-95 text-left">
                 <span className="text-sm">🏆</span>
                 <div className="min-w-0">
-                  <p className="text-white text-xs font-bold truncate max-w-[130px]">{l.name}</p>
-                  {l.current_period && (
-                    <p className="text-indigo-400 text-[10px] leading-none mt-0.5">{l.current_period.name}</p>
-                  )}
+                  <p className="text-white text-xs font-bold truncate max-w-[120px]">{l.name}</p>
+                  <div className="flex items-center gap-1.5 mt-0.5">
+                    {l.my_position != null && (
+                      <span className="text-indigo-300 text-[10px] font-black">#{l.my_position}</span>
+                    )}
+                    {l.member_count != null && (
+                      <span className="text-gray-600 text-[10px]">of {l.member_count}</span>
+                    )}
+                  </div>
                 </div>
                 <svg className="w-3 h-3 text-gray-600 flex-shrink-0 ml-1" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
                   <polyline points="9 18 15 12 9 6" />

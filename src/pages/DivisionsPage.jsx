@@ -359,6 +359,25 @@ function LeagueStandingsView({ league, onBack }) {
       {/* Standings list */}
       <div className="flex-1 overflow-y-auto" style={{ overscrollBehaviorY: 'contain' }}>
         <div className="max-w-md mx-auto pb-32">
+          {/* Prize pool */}
+          {!loading && (() => {
+            const prizes = Array.isArray(period?.prize_config) ? period.prize_config : []
+            if (prizes.length === 0) return null
+            const icons = ['🥇','🥈','🥉','4️⃣','5️⃣']
+            return (
+              <div className="mx-4 mt-3 mb-1 bg-[#0d1117] border border-amber-500/20 rounded-2xl p-3 flex flex-wrap gap-2">
+                {prizes.map((p, i) => (
+                  <div key={i} className="flex items-center gap-1.5 bg-amber-500/8 border border-amber-500/15 rounded-xl px-2.5 py-1.5">
+                    <span className="text-sm">{icons[i] || '🏅'}</span>
+                    <div>
+                      <p className="text-amber-300 font-black text-xs leading-none">€{parseFloat(p.amount_euros).toFixed(0)}</p>
+                      <p className="text-amber-700 text-[9px]">{['1st','2nd','3rd','4th','5th'][i]}</p>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            )
+          })()}
           {loading ? (
             <div className="flex justify-center py-20"><Spinner size={28} /></div>
           ) : standings.length === 0 ? (

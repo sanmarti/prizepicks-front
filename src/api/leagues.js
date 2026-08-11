@@ -8,3 +8,4 @@ export const joinLeague         = (code)       => client.post(`/leagues/join/${c
 export const getLeagueStandings = (id)         => client.get(`/leagues/${id}/standings`)
 export const createLeaguePeriod = (id, data)   => client.post(`/leagues/${id}/periods`, data)
 export const toggleMemberPayment= (id, userId, has_paid) => client.put(`/leagues/${id}/members/${userId}/payment`, { has_paid })
+export const leaveLeague        = (id)         => client.delete(`/leagues/${id}/leave`)
