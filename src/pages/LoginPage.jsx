@@ -1,6 +1,6 @@
 import { useState } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
-import { login as apiLogin } from '../api/auth'
+import { login as apiLogin, forgotPassword as apiForgotPassword } from '../api/auth'
 import { useAuthStore } from '../store/authStore'
 import Spinner from '../components/ui/Spinner'
 import AuthLayout, { MailIcon, LockIcon, EyeIcon, useTheme } from '../components/auth/AuthLayout'
@@ -11,6 +11,7 @@ export default function LoginPage() {
   const [showPw, setShowPw]     = useState(false)
   const [error, setError]       = useState('')
   const [loading, setLoading]   = useState(false)
+  const [showForgot, setShowForgot] = useState(false)
   const authLogin = useAuthStore((s) => s.login)
   const navigate  = useNavigate()
 
@@ -37,12 +38,115 @@ export default function LoginPage() {
         showPw={showPw} setShowPw={setShowPw}
         error={error} loading={loading}
         onSubmit={handleSubmit}
+        onForgot={() => setShowForgot(true)}
       />
+      {showForgot && <ForgotPasswordModal onClose={() => setShowForgot(false)} />}
     </AuthLayout>
   )
 }
 
-function LoginForm({ email, setEmail, password, setPassword, showPw, setShowPw, error, loading, onSubmit }) {
+function ForgotPasswordModal({ onClose }) {
+  const { T } = useTheme()
+  const [email, setEmail]   = useState('')
+  const [loading, setLoading] = useState(false)
+  const [sent, setSent]       = useState(false)
+  const [error, setError]     = useState('')
+
+  async function handleSubmit(e) {
+    e.preventDefault()
+    setError('')
+    setLoading(true)
+    try {
+      await apiForgotPassword({ email })
+      setSent(true)
+    } catch {
+      setError('Something went wrong. Please try again.')
+    } finally {
+      setLoading(false)
+    }
+  }
+
+  const OVERLAY = {
+    position: 'fixed', inset: 0, zIndex: 100,
+    background: 'rgba(0,0,0,0.75)', backdropFilter: 'blur(4px)',
+    display: 'flex', alignItems: 'center', justifyContent: 'center',
+    padding: '20px',
+  }
+  const CARD = {
+    background: '#0d1117', border: '1px solid rgba(255,255,255,0.1)',
+    borderRadius: 16, padding: '32px 28px', width: '100%', maxWidth: 400,
+    position: 'relative',
+  }
+  const INPUT = {
+    width: '100%', boxSizing: 'border-box',
+    padding: '13px 14px 13px 44px',
+    background: T.inputBg, border: `1px solid ${T.inputBorder}`,
+    borderRadius: 12, color: T.inputColor,
+    fontSize: 16, outline: 'none',
+    fontFamily: "'IBM Plex Mono', monospace",
+  }
+
+  return (
+    <div style={OVERLAY} onClick={e => { if (e.target === e.currentTarget) onClose() }}>
+      <div style={CARD}>
+        <button
+          onClick={onClose}
+          style={{ position: 'absolute', top: 16, right: 16, background: 'none', border: 'none', cursor: 'pointer', color: 'rgba(255,255,255,0.3)', fontSize: 20, lineHeight: 1 }}
+        >×</button>
+
+        {sent ? (
+          <div style={{ textAlign: 'center' }}>
+            <div style={{ fontSize: 40, marginBottom: 12 }}>📬</div>
+            <h2 style={{ margin: '0 0 10px', fontSize: 20, fontWeight: 900, color: '#fff', fontFamily: "'Syne', sans-serif" }}>Check your inbox</h2>
+            <p style={{ margin: '0 0 24px', fontSize: 14, color: 'rgba(255,255,255,0.45)', lineHeight: 1.6 }}>
+              If that email is registered, you'll receive your new password shortly. You can change it anytime from your account settings.
+            </p>
+            <button
+              onClick={onClose}
+              style={{ padding: '12px 28px', background: 'linear-gradient(90deg,#22c55e,#16a34a)', border: 'none', borderRadius: 10, color: '#fff', fontWeight: 700, fontSize: 14, cursor: 'pointer', fontFamily: "'Syne', sans-serif", letterSpacing: '0.06em' }}
+            >BACK TO LOGIN</button>
+          </div>
+        ) : (
+          <form onSubmit={handleSubmit}>
+            <h2 style={{ margin: '0 0 8px', fontSize: 20, fontWeight: 900, color: '#fff', fontFamily: "'Syne', sans-serif" }}>Reset password</h2>
+            <p style={{ margin: '0 0 24px', fontSize: 13, color: 'rgba(255,255,255,0.4)', lineHeight: 1.6 }}>
+              Enter your email and we'll send you a new temporary password.
+            </p>
+
+            <label style={{ display: 'block', fontSize: 10, letterSpacing: '0.12em', color: 'rgba(255,255,255,0.25)', marginBottom: 7, fontFamily: "'IBM Plex Mono', monospace" }}>EMAIL</label>
+            <div style={{ position: 'relative', marginBottom: error ? 10 : 20 }}>
+              <span style={{ position: 'absolute', left: 14, top: '50%', transform: 'translateY(-50%)', color: 'rgba(255,255,255,0.2)', display: 'flex', pointerEvents: 'none' }}>
+                <MailIcon />
+              </span>
+              <input
+                type="email" value={email} onChange={e => setEmail(e.target.value)}
+                required placeholder="you@example.com"
+                style={INPUT}
+                onFocus={e => { e.target.style.borderColor = 'rgba(124,110,245,0.6)'; e.target.style.boxShadow = '0 0 0 3px rgba(124,110,245,0.08)' }}
+                onBlur={e => { e.target.style.borderColor = T.inputBorder; e.target.style.boxShadow = 'none' }}
+              />
+            </div>
+
+            {error && (
+              <div style={{ background: 'rgba(248,113,113,0.07)', border: '1px solid rgba(248,113,113,0.18)', borderRadius: 8, padding: '10px 14px', fontSize: 12, color: '#f87171', marginBottom: 16, fontFamily: "'IBM Plex Mono', monospace" }}>
+                {error}
+              </div>
+            )}
+
+            <button
+              type="submit" disabled={loading}
+              style={{ width: '100%', padding: '14px 0', border: 'none', borderRadius: 12, cursor: loading ? 'not-allowed' : 'pointer', fontFamily: "'Syne', sans-serif", fontWeight: 700, fontSize: 14, letterSpacing: '0.1em', color: '#fff', background: 'linear-gradient(90deg,#7c6ef5,#5b4ee8)', opacity: loading ? 0.6 : 1, display: 'flex', alignItems: 'center', justifyContent: 'center' }}
+            >
+              {loading ? <Spinner size={18} /> : 'SEND NEW PASSWORD →'}
+            </button>
+          </form>
+        )}
+      </div>
+    </div>
+  )
+}
+
+function LoginForm({ email, setEmail, password, setPassword, showPw, setShowPw, error, loading, onSubmit, onForgot }) {
   const { T } = useTheme()
 
   const INPUT = {
@@ -100,6 +204,15 @@ function LoginForm({ email, setEmail, password, setPassword, showPw, setShowPw, 
       </Field>
 
       {error && <ErrorBox T={T}>{error}</ErrorBox>}
+
+      <div style={{ textAlign: 'right', marginTop: -4 }}>
+        <button
+          type="button" onClick={onForgot}
+          style={{ background: 'none', border: 'none', cursor: 'pointer', fontSize: 11, color: 'rgba(124,110,245,0.7)', fontFamily: "'IBM Plex Mono', monospace", padding: 0 }}
+        >
+          Forgot password?
+        </button>
+      </div>
 
       <SubmitBtn loading={loading}>SIGN IN &nbsp;→</SubmitBtn>
 
