@@ -494,26 +494,6 @@ function WalletTab({ walletBalance, transactions, loadingWallet, packs, loadingP
         )}
       </div>
 
-      {usageTxs.length > 0 && (
-        <div className="bg-[#0d1117] border border-white/8 rounded-2xl overflow-hidden">
-          <div className="px-4 py-3 border-b border-white/5">
-            <p className="text-gray-500 text-[11px] font-semibold tracking-widest uppercase">Energy used</p>
-          </div>
-          <div className="divide-y divide-white/4">
-            {usageTxs.map((tx, i) => (
-              <div key={tx.id ?? i} className="flex items-center justify-between px-4 py-3">
-                <div>
-                  <p className="text-white text-xs font-semibold">{tx.description || 'Energy used'}</p>
-                  <p className="text-gray-600 text-[10px] mt-0.5">
-                    {new Date(tx.created_at).toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' })}
-                  </p>
-                </div>
-                <span className="text-red-400 font-black text-sm">{tx.amount}⚡</span>
-              </div>
-            ))}
-          </div>
-        </div>
-      )}
     </div>
   )
 }
