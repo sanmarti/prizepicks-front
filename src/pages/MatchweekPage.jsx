@@ -955,7 +955,9 @@ function EventCard({ event, selectedOptionId, onSelect, isLocked, dimmed, remain
 
                 {/* Flag / icon */}
                 <span className="relative z-10 text-xl flex-shrink-0 leading-none">
-                  {isDraw ? '' : (isSelected && lost ? '❌' : won && !userPickedLost ? '✅' : optFlag || '')}
+                  {isDraw
+                    ? (isSelected && lost ? '❌' : won && !userPickedLost ? '✅' : '🤝')
+                    : (isSelected && lost ? '❌' : won && !userPickedLost ? '✅' : optFlag || '')}
                 </span>
 
                 {/* Label */}
