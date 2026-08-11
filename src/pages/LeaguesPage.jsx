@@ -62,19 +62,6 @@ export default function LeaguesPage() {
           </div>
         )}
 
-        {/* Global league card */}
-        <div className="bg-[#0d1117] border border-white/8 rounded-2xl p-4 mt-4">
-          <div className="flex items-center gap-3 mb-2">
-            <span className="text-2xl">🌍</span>
-            <div>
-              <p className="text-white font-bold text-sm">OddsRivals Global</p>
-              <p className="text-gray-500 text-xs">Open league · everyone participates</p>
-            </div>
-          </div>
-          <p className="text-gray-600 text-xs leading-relaxed">
-            The global ranking is where all players compete by default through the Sprints & Divisions system. Private leagues run in parallel — you can be in both at the same time.
-          </p>
-        </div>
 
       </div>
 
