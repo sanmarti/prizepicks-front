@@ -1,0 +1,174 @@
+import { useState, useEffect, useCallback } from 'react'
+import { useParams, useNavigate } from 'react-router-dom'
+import { getLeague, getLeagueStandings } from '../api/leagues'
+import Spinner from '../components/ui/Spinner'
+
+const TABS = ['Standings', 'Members']
+
+export default function LeagueDetailPage() {
+  const { id } = useParams()
+  const navigate = useNavigate()
+  const [tab, setTab] = useState('Standings')
+  const [league, setLeague] = useState(null)
+  const [standings, setStandings] = useState([])
+  const [loading, setLoading] = useState(true)
+
+  const load = useCallback(async () => {
+    try {
+      const [lRes, sRes] = await Promise.all([getLeague(id), getLeagueStandings(id)])
+      setLeague(lRes.data)
+      setStandings(sRes.data.standings || [])
+    } catch { navigate('/leagues') }
+    finally { setLoading(false) }
+  }, [id, navigate])
+
+  useEffect(() => { load() }, [load])
+
+  if (loading) return (
+    <div className="min-h-screen bg-[#0a0d12] flex items-center justify-center">
+      <Spinner size={32} />
+    </div>
+  )
+  if (!league) return null
+
+  const isAdmin = league.my_role === 'admin'
+  const currentPeriod = league.periods?.[0]
+
+  return (
+    <div className="min-h-screen bg-[#0a0d12] text-white pb-24">
+      <div className="max-w-md mx-auto px-4 pt-safe-5">
+
+        {/* Back */}
+        <div className="pt-4 pb-2">
+          <button onClick={() => navigate('/leagues')}
+            className="flex items-center gap-1.5 text-gray-500 hover:text-white text-sm transition-colors">
+            <svg width="16" height="16" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
+              <polyline points="15 18 9 12 15 6" />
+            </svg>
+            Leagues
+          </button>
+        </div>
+
+        {/* Header */}
+        <div className="bg-gradient-to-br from-indigo-950 via-violet-900/40 to-indigo-950 border border-indigo-500/25 rounded-2xl p-5 mb-4">
+          <div className="flex items-center gap-4">
+            <div className="w-14 h-14 rounded-xl bg-indigo-500/20 border border-indigo-500/30 flex items-center justify-center text-3xl flex-shrink-0 overflow-hidden">
+              {league.image_url
+                ? <img src={league.image_url} alt={league.name} className="w-full h-full object-cover rounded-xl" />
+                : '🏆'}
+            </div>
+            <div className="flex-1 min-w-0">
+              <div className="flex items-center gap-2 mb-0.5">
+                <h1 className="text-white font-black text-lg truncate">{league.name}</h1>
+                {isAdmin && <span className="text-[10px] px-1.5 py-0.5 rounded bg-indigo-500/25 text-indigo-300 font-semibold flex-shrink-0">Admin</span>}
+              </div>
+              <div className="flex items-center gap-3 text-xs text-gray-400">
+                <span>👥 {league.member_count} members</span>
+                {league.entry_fee_euros > 0 && <span>€{parseFloat(league.entry_fee_euros).toFixed(2)} entry</span>}
+              </div>
+            </div>
+          </div>
+
+          {/* Invite code (admin only) */}
+          {isAdmin && (
+            <div className="mt-4 flex items-center gap-3 bg-white/5 border border-white/8 rounded-xl px-4 py-2.5">
+              <span className="text-gray-500 text-xs">Invite code</span>
+              <span className="text-indigo-300 font-mono font-bold tracking-widest text-sm flex-1">{league.invite_code}</span>
+              <button
+                onClick={() => navigator.clipboard.writeText(league.invite_code)}
+                className="text-gray-500 hover:text-white text-xs transition-colors"
+              >Copy</button>
+            </div>
+          )}
+
+          {/* Current period */}
+          {currentPeriod && (
+            <div className="mt-3 flex items-center gap-2">
+              <span className={`px-2.5 py-1 rounded-full text-xs font-semibold ${
+                currentPeriod.status === 'live' ? 'bg-green-500/15 text-green-400' : 'bg-gray-500/15 text-gray-400'
+              }`}>{currentPeriod.name}</span>
+              {currentPeriod.status === 'live' && <span className="text-green-400/70 text-xs">· Active period</span>}
+            </div>
+          )}
+        </div>
+
+        {/* Tabs */}
+        <div className="flex gap-1 bg-white/3 border border-white/8 rounded-2xl p-1 mb-4">
+          {TABS.map(t => (
+            <button key={t} onClick={() => setTab(t)}
+              className={`flex-1 py-2 px-3 rounded-xl text-sm font-medium transition-colors ${tab === t ? 'bg-indigo-600 text-white' : 'text-gray-500 hover:text-gray-300'}`}>
+              {t}
+            </button>
+          ))}
+        </div>
+
+        {/* Standings */}
+        {tab === 'Standings' && (
+          <div className="bg-[#0d1117] border border-white/8 rounded-2xl overflow-hidden">
+            {standings.length === 0 ? (
+              <div className="text-center py-12">
+                <p className="text-gray-500 text-sm">No picks submitted yet</p>
+                <p className="text-gray-700 text-xs mt-1">Standings will appear once gameweeks are settled</p>
+              </div>
+            ) : (
+              <div className="divide-y divide-white/4">
+                {standings.map((row, i) => (
+                  <div key={row.user_id} className="flex items-center gap-4 px-4 py-3">
+                    <span className={`w-6 text-sm font-black text-center flex-shrink-0 ${
+                      i === 0 ? 'text-yellow-400' : i === 1 ? 'text-gray-300' : i === 2 ? 'text-amber-600' : 'text-gray-600'
+                    }`}>{row.position}</span>
+                    <div className="w-9 h-9 rounded-full bg-indigo-500/20 border border-indigo-500/20 flex items-center justify-center text-sm font-bold flex-shrink-0 overflow-hidden">
+                      {row.avatar_url
+                        ? <img src={row.avatar_url} alt="" className="w-full h-full object-cover rounded-full" />
+                        : <span className="text-indigo-300">{row.display_name?.[0]?.toUpperCase()}</span>}
+                    </div>
+                    <div className="flex-1 min-w-0">
+                      <p className="text-white text-sm font-semibold truncate">{row.display_name}</p>
+                      <p className="text-gray-600 text-xs">{row.gameweeks_played} GW · {row.correct_picks} correct</p>
+                    </div>
+                    <div className="text-right flex-shrink-0">
+                      <p className="text-white font-black text-lg leading-none">{row.total_points}</p>
+                      <p className="text-gray-600 text-[10px] mt-0.5">pts</p>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            )}
+          </div>
+        )}
+
+        {/* Members */}
+        {tab === 'Members' && (
+          <div className="bg-[#0d1117] border border-white/8 rounded-2xl overflow-hidden">
+            <div className="px-4 py-3 border-b border-white/5">
+              <p className="text-gray-500 text-xs font-semibold uppercase tracking-widest">{league.members?.length} members</p>
+            </div>
+            <div className="divide-y divide-white/4">
+              {(league.members || []).map(m => (
+                <div key={m.user_id} className="flex items-center gap-3 px-4 py-3">
+                  <div className="w-9 h-9 rounded-full bg-indigo-500/20 border border-indigo-500/20 flex items-center justify-center text-sm font-bold flex-shrink-0 overflow-hidden">
+                    {m.avatar_url
+                      ? <img src={m.avatar_url} alt="" className="w-full h-full object-cover rounded-full" />
+                      : <span className="text-indigo-300">{m.display_name?.[0]?.toUpperCase()}</span>}
+                  </div>
+                  <div className="flex-1 min-w-0">
+                    <div className="flex items-center gap-2">
+                      <p className="text-white text-sm font-medium truncate">{m.display_name}</p>
+                      {m.role === 'admin' && <span className="text-[10px] px-1.5 py-0.5 rounded bg-indigo-500/20 text-indigo-300 font-semibold">Admin</span>}
+                    </div>
+                  </div>
+                  {league.entry_fee_euros > 0 && (
+                    <span className={`text-xs px-2 py-1 rounded-lg font-semibold ${
+                      m.has_paid ? 'bg-green-500/15 text-green-400' : 'bg-red-500/10 text-red-400'
+                    }`}>{m.has_paid ? '✅ Paid' : '⏳ Pending'}</span>
+                  )}
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
+
+      </div>
+    </div>
+  )
+}
