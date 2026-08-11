@@ -13,6 +13,7 @@ import DivisionsPage          from './pages/DivisionsPage'
 import ProfilePage            from './pages/ProfilePage'
 import UserPublicProfilePage  from './pages/UserPublicProfilePage'
 import EnergyStorePage        from './pages/EnergyStorePage'
+import LeaguesPage            from './pages/LeaguesPage'
 import ScoresPage             from './pages/ScoresPage'
 import OnboardingPage        from './pages/OnboardingPage'
 
@@ -84,6 +85,7 @@ function AppShell() {
         <Route path="/sprints"   element={<RequireAuth><MySprintsPage /></RequireAuth>} />
         <Route path="/divisions" element={<RequireAuth><DivisionsPage /></RequireAuth>} />
         <Route path="/store"     element={<RequireAuth><EnergyStorePage /></RequireAuth>} />
+        <Route path="/leagues"   element={<RequireAuth><LeaguesPage /></RequireAuth>} />
         <Route path="/scores"    element={<RequireAuth><ScoresPage /></RequireAuth>} />
         <Route path="/profile"   element={<RequireAuth><ProfilePage /></RequireAuth>} />
         <Route path="/users/:id" element={<RequireAuth><UserPublicProfilePage /></RequireAuth>} />
