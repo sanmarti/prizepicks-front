@@ -1,6 +1,8 @@
-import { useEffect, useState, useRef } from 'react'
+import { useEffect, useState, useRef, useCallback } from 'react'
 import { getGloryDivisions, getGloryLeaderboard, getGloryStatus } from '../api/glory'
 import GloryRankingList, { GloryRankingHeader } from '../components/GloryRankingList'
+import { getMyLeagues, getLeagueStandings } from '../api/leagues'
+import Spinner from '../components/ui/Spinner'
 
 const V = {
   1: { accent: '#6b7280', bg: 'rgba(107,114,128,0.12)', border: 'rgba(107,114,128,0.30)', glow: 'rgba(107,114,128,0.15)', label: 'Academy Pitch',   grad: 'from-slate-800  to-slate-950', image: 'https://images.unsplash.com/photo-1431324155629-1a6deb1dec8d?w=900&q=80&auto=format&fit=crop' },
@@ -318,14 +320,144 @@ function RankingsScreen({ div, sprintId, sprintName, myUserId, myDivId, onOpenPi
   )
 }
 
+// ── My Leagues rankings ────────────────────────────────────────────────────────
+function LeagueStandingsView({ league, onBack }) {
+  const [data, setData]   = useState(null)
+  const [loading, setLoading] = useState(true)
+
+  useEffect(() => {
+    getLeagueStandings(league.id)
+      .then(r => setData(r.data))
+      .catch(() => setData({ standings: [] }))
+      .finally(() => setLoading(false))
+  }, [league.id])
+
+  const standings = data?.standings || []
+  const period    = data?.period
+
+  return (
+    <div className="fixed inset-0 z-40 flex flex-col bg-[#0a0d12]" style={{ paddingTop: 'env(safe-area-inset-top)' }}>
+      {/* Header */}
+      <div className="flex-shrink-0 bg-[#0a0d12] border-b border-white/8">
+        <div className="max-w-md mx-auto px-4 py-3 flex items-center gap-3">
+          <button onClick={onBack} className="text-gray-400 hover:text-white transition-colors p-1">
+            <svg width="20" height="20" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
+              <polyline points="15 18 9 12 15 6" />
+            </svg>
+          </button>
+          <div className="w-9 h-9 rounded-xl bg-indigo-500/15 border border-indigo-500/20 flex items-center justify-center text-lg flex-shrink-0 overflow-hidden">
+            {league.image_url ? <img src={league.image_url} alt="" className="w-full h-full object-cover rounded-xl" /> : '🏆'}
+          </div>
+          <div className="flex-1 min-w-0">
+            <p className="text-white font-bold text-sm truncate">{league.name}</p>
+            {period && <p className="text-gray-500 text-xs">{period.name}</p>}
+          </div>
+          <span className="text-gray-600 text-xs">{standings.length} players</span>
+        </div>
+      </div>
+
+      {/* Standings list */}
+      <div className="flex-1 overflow-y-auto" style={{ overscrollBehaviorY: 'contain' }}>
+        <div className="max-w-md mx-auto pb-32">
+          {loading ? (
+            <div className="flex justify-center py-20"><Spinner size={28} /></div>
+          ) : standings.length === 0 ? (
+            <div className="text-center py-20">
+              <p className="text-gray-500 text-sm">No picks submitted yet</p>
+              <p className="text-gray-700 text-xs mt-1">Standings appear once gameweeks are settled</p>
+            </div>
+          ) : standings.map((row, i) => (
+            <div key={row.user_id} className="flex items-center gap-4 px-4 py-3 border-b border-white/5">
+              <span className={`w-7 text-base font-black text-center flex-shrink-0 ${
+                i === 0 ? 'text-yellow-400' : i === 1 ? 'text-gray-300' : i === 2 ? 'text-amber-600' : 'text-gray-600'
+              }`}>{row.position}</span>
+              <div className="w-10 h-10 rounded-full bg-indigo-500/20 border border-indigo-500/15 flex items-center justify-center text-sm font-bold flex-shrink-0 overflow-hidden">
+                {row.avatar_url
+                  ? <img src={row.avatar_url} alt="" className="w-full h-full object-cover rounded-full" />
+                  : <span className="text-indigo-300">{row.display_name?.[0]?.toUpperCase()}</span>}
+              </div>
+              <div className="flex-1 min-w-0">
+                <p className="text-white text-sm font-semibold truncate">{row.display_name}</p>
+                <p className="text-gray-600 text-xs">{row.gameweeks_played} GW · {row.correct_picks} correct</p>
+              </div>
+              <div className="text-right flex-shrink-0">
+                <p className="text-white font-black text-xl leading-none">{row.total_points}</p>
+                <p className="text-gray-600 text-[10px] mt-0.5">pts</p>
+              </div>
+            </div>
+          ))}
+        </div>
+      </div>
+    </div>
+  )
+}
+
+function MyLeaguesScreen({ onSelectLeague }) {
+  const [leagues, setLeagues] = useState([])
+  const [loading, setLoading] = useState(true)
+
+  useEffect(() => {
+    getMyLeagues()
+      .then(r => setLeagues(r.data || []))
+      .catch(() => {})
+      .finally(() => setLoading(false))
+  }, [])
+
+  return (
+    <div className="fixed inset-0 z-40 flex flex-col bg-[#0a0d12]">
+      {/* Spacer so content starts below the fixed tab bar */}
+      <div className="flex-shrink-0" style={{ height: 'calc(env(safe-area-inset-top) + 44px)' }} />
+      <div className="flex-1 overflow-y-auto" style={{ overscrollBehaviorY: 'contain' }}>
+        <div className="max-w-md mx-auto px-4 py-4 pb-32 space-y-3">
+          {loading ? (
+            <div className="flex justify-center py-20"><Spinner size={28} /></div>
+          ) : leagues.length === 0 ? (
+            <div className="text-center py-20">
+              <p className="text-3xl mb-3">🏆</p>
+              <p className="text-white font-bold text-base">No leagues yet</p>
+              <p className="text-gray-500 text-sm mt-1">Join or create a league from the Leagues tab</p>
+            </div>
+          ) : leagues.map(l => (
+            <button key={l.id} onClick={() => onSelectLeague(l)}
+              className="w-full flex items-center gap-4 bg-[#0d1117] border border-white/8 rounded-2xl p-4 hover:border-indigo-500/30 hover:bg-indigo-500/5 transition-all active:scale-[0.99] text-left">
+              <div className="w-12 h-12 rounded-xl bg-indigo-500/15 border border-indigo-500/20 flex items-center justify-center text-2xl flex-shrink-0 overflow-hidden">
+                {l.image_url ? <img src={l.image_url} alt="" className="w-full h-full object-cover rounded-xl" /> : '🏆'}
+              </div>
+              <div className="flex-1 min-w-0">
+                <div className="flex items-center gap-2 mb-0.5">
+                  <p className="text-white font-bold text-sm truncate">{l.name}</p>
+                  {l.role === 'admin' && <span className="text-[10px] px-1.5 py-0.5 rounded bg-indigo-500/20 text-indigo-300 font-semibold flex-shrink-0">Admin</span>}
+                </div>
+                <div className="flex items-center gap-3 text-xs text-gray-500">
+                  <span>👥 {l.member_count} members</span>
+                  {l.current_period && (
+                    <span className={`px-2 py-0.5 rounded-full text-[10px] font-semibold ${l.current_period.status === 'live' ? 'bg-green-500/15 text-green-400' : 'bg-gray-500/15 text-gray-400'}`}>
+                      {l.current_period.name}
+                    </span>
+                  )}
+                </div>
+              </div>
+              <svg className="w-4 h-4 text-gray-600 flex-shrink-0" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
+                <polyline points="9 18 15 12 9 6" />
+              </svg>
+            </button>
+          ))}
+        </div>
+      </div>
+    </div>
+  )
+}
+
 // ── Main page ──────────────────────────────────────────────────────────────────
 export default function DivisionsPage() {
-  const [divisions,  setDivisions]  = useState([])
-  const [myStatus,   setMyStatus]   = useState(null)
-  const [divStats,   setDivStats]   = useState({})   // divId → { count, myRank, topLP }
-  const [loading,    setLoading]    = useState(true)
-  const [activeDiv,  setActiveDiv]  = useState(null)
-  const [listOpen,   setListOpen]   = useState(false)
+  const [divisions,      setDivisions]      = useState([])
+  const [myStatus,       setMyStatus]       = useState(null)
+  const [divStats,       setDivStats]       = useState({})
+  const [loading,        setLoading]        = useState(true)
+  const [activeDiv,      setActiveDiv]      = useState(null)
+  const [listOpen,       setListOpen]       = useState(false)
+  const [section,        setSection]        = useState('global')   // 'global' | 'leagues'
+  const [selectedLeague, setSelectedLeague] = useState(null)
 
   useEffect(() => {
     Promise.all([getGloryDivisions(), getGloryStatus()])
@@ -380,29 +512,69 @@ export default function DivisionsPage() {
     </div>
   )
 
+  const showTabBar = !listOpen && !selectedLeague
+
   return (
     <>
-      <RankingsScreen
-        div={activeDiv}
-        sprintId={sprintId}
-        sprintName={sprintName}
-        myUserId={myUserId}
-        myDivId={myDivId}
-        onOpenPicker={() => setListOpen(true)}
-        onBack={() => setListOpen(true)}
-        totalPlayers={totalPlayers}
-        isGwLocked={isGwLocked}
-      />
-      {listOpen && (
-        <DivisionsListScreen
-          divisions={divisions}
-          divStats={divStats}
-          myDivId={myDivId}
-          activeDiv={activeDiv}
-          onSelect={div => { setActiveDiv(div); setListOpen(false) }}
-          onClose={() => setListOpen(false)}
-          totalPlayers={totalPlayers}
-        />
+      {/* ── Section tab bar ─────────────────────────────────────────────────── */}
+      {showTabBar && (
+        <div
+          className="fixed top-0 inset-x-0 z-[70] border-b border-white/6"
+          style={{ paddingTop: 'env(safe-area-inset-top)', backdropFilter: 'blur(14px)', background: 'rgba(10,13,18,0.88)' }}
+        >
+          <div className="max-w-md mx-auto px-4 py-2 flex gap-1">
+            {[
+              { key: 'global',  label: 'Global' },
+              { key: 'leagues', label: 'My Leagues' },
+            ].map(({ key, label }) => (
+              <button
+                key={key}
+                onClick={() => { setSection(key); setSelectedLeague(null) }}
+                className={`flex-1 py-2 px-3 rounded-xl text-sm font-bold transition-colors ${
+                  section === key ? 'bg-white/10 text-white' : 'text-gray-500 hover:text-gray-300'
+                }`}
+              >
+                {label}
+              </button>
+            ))}
+          </div>
+        </div>
+      )}
+
+      {/* ── Global rankings ─────────────────────────────────────────────────── */}
+      {section === 'global' && (
+        <>
+          <RankingsScreen
+            div={activeDiv}
+            sprintId={sprintId}
+            sprintName={sprintName}
+            myUserId={myUserId}
+            myDivId={myDivId}
+            onOpenPicker={() => setListOpen(true)}
+            onBack={() => setListOpen(true)}
+            totalPlayers={totalPlayers}
+            isGwLocked={isGwLocked}
+          />
+          {listOpen && (
+            <DivisionsListScreen
+              divisions={divisions}
+              divStats={divStats}
+              myDivId={myDivId}
+              activeDiv={activeDiv}
+              onSelect={div => { setActiveDiv(div); setListOpen(false) }}
+              onClose={() => setListOpen(false)}
+              totalPlayers={totalPlayers}
+            />
+          )}
+        </>
+      )}
+
+      {/* ── My Leagues rankings ─────────────────────────────────────────────── */}
+      {section === 'leagues' && !selectedLeague && (
+        <MyLeaguesScreen onSelectLeague={setSelectedLeague} />
+      )}
+      {section === 'leagues' && selectedLeague && (
+        <LeagueStandingsView league={selectedLeague} onBack={() => setSelectedLeague(null)} />
       )}
     </>
   )
