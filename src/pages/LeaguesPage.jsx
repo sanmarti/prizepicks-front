@@ -88,32 +88,56 @@ function LeagueCard({ league, onClick }) {
   const period = league.current_period
   return (
     <div onClick={onClick}
-      className="bg-[#0d1117] border border-white/8 rounded-2xl p-4 flex items-center gap-4 cursor-pointer hover:border-indigo-500/30 hover:bg-indigo-500/5 transition-all active:scale-[0.99]">
-      <div className="w-12 h-12 rounded-xl bg-indigo-500/15 border border-indigo-500/20 flex items-center justify-center text-2xl flex-shrink-0 overflow-hidden">
-        {league.image_url
-          ? <img src={league.image_url} alt={league.name} className="w-full h-full object-cover rounded-xl" />
-          : '🏆'}
-      </div>
-      <div className="flex-1 min-w-0">
-        <div className="flex items-center gap-2 mb-0.5">
-          <p className="text-white font-bold text-sm truncate">{league.name}</p>
+      className="bg-[#0d1117] border border-white/8 rounded-2xl overflow-hidden cursor-pointer hover:border-indigo-500/30 transition-all active:scale-[0.99]">
+
+      {/* Header image / banner */}
+      <div className="relative h-32 overflow-hidden">
+        {league.image_url ? (
+          <img src={league.image_url} alt={league.name} className="w-full h-full object-cover object-center" />
+        ) : (
+          <div className="w-full h-full bg-gradient-to-br from-indigo-950 via-violet-900/50 to-slate-950" />
+        )}
+        {/* Dark gradient overlay */}
+        <div className="absolute inset-0 bg-gradient-to-t from-[#0d1117]/95 via-[#0d1117]/30 to-transparent" />
+
+        {/* Top-right badges */}
+        <div className="absolute top-3 right-3 flex flex-col items-end gap-1.5">
           {league.role === 'admin' && (
-            <span className="text-[10px] px-1.5 py-0.5 rounded bg-indigo-500/20 text-indigo-300 font-semibold flex-shrink-0">Admin</span>
+            <span className="text-[10px] px-2 py-0.5 rounded-full bg-black/60 backdrop-blur-sm text-indigo-300 border border-indigo-500/30 font-bold">Admin</span>
           )}
-        </div>
-        <div className="flex items-center gap-3 text-xs text-gray-500">
-          <span>👥 {league.member_count}</span>
           {period && (
-            <span className={`px-2 py-0.5 rounded-full text-[10px] font-semibold ${
-              period.status === 'live' ? 'bg-green-500/15 text-green-400' : 'bg-gray-500/15 text-gray-400'
+            <span className={`text-[10px] px-2 py-0.5 rounded-full backdrop-blur-sm font-bold ${
+              period.status === 'live'
+                ? 'bg-green-500/20 text-green-400 border border-green-500/30'
+                : 'bg-black/60 text-gray-400 border border-white/10'
             }`}>{period.name}</span>
           )}
-          {league.entry_fee_euros > 0 && <span>€{parseFloat(league.entry_fee_euros).toFixed(2)} entry</span>}
+        </div>
+
+        {/* Bottom: trophy emoji + league name */}
+        <div className="absolute bottom-0 left-0 right-0 px-4 pb-3 flex items-end gap-2.5">
+          <span className="text-2xl leading-none flex-shrink-0">🏆</span>
+          <p className="text-white font-black text-base leading-tight truncate">{league.name}</p>
         </div>
       </div>
-      <svg className="w-4 h-4 text-gray-600 flex-shrink-0" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
-        <polyline points="9 18 15 12 9 6" />
-      </svg>
+
+      {/* Info row */}
+      <div className="px-4 py-3 flex items-center justify-between border-t border-white/5">
+        <div className="flex items-center gap-3 text-xs text-gray-500">
+          <span>👥 {league.member_count} members</span>
+          {league.entry_fee_euros > 0 && (
+            <span className="text-gray-500">€{parseFloat(league.entry_fee_euros).toFixed(2)} entry</span>
+          )}
+        </div>
+        <div className="flex items-center gap-3">
+          {league.my_position != null && (
+            <span className="text-indigo-400 font-black text-sm">#{league.my_position} <span className="text-gray-600 font-normal text-xs">of {league.member_count}</span></span>
+          )}
+          <svg className="w-4 h-4 text-gray-600 flex-shrink-0" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
+            <polyline points="9 18 15 12 9 6" />
+          </svg>
+        </div>
+      </div>
     </div>
   )
 }
