@@ -223,11 +223,93 @@ function getAccuracyTier(pct) {
 
 const MAX_ENERGY_PER_WEEK = 5
 
-const PACK_ACCENTS = [
-  { border: 'border-cyan-500/25',   badge: 'bg-cyan-900/40 text-cyan-300',   btn: 'bg-cyan-600 hover:bg-cyan-500' },
-  { border: 'border-purple-500/25', badge: 'bg-purple-900/40 text-purple-300', btn: 'bg-violet-600 hover:bg-violet-500' },
-  { border: 'border-orange-500/25', badge: 'bg-orange-900/40 text-orange-300', btn: 'bg-orange-600 hover:bg-orange-500' },
-  { border: 'border-emerald-500/25',badge: 'bg-emerald-900/40 text-emerald-300', btn: 'bg-emerald-600 hover:bg-emerald-500' },
+const PACK_THEMES = [
+  {
+    bg: 'from-blue-950 via-cyan-900/60 to-blue-950',
+    glow: 'shadow-[0_0_40px_-8px_rgba(56,189,248,0.5)]',
+    border: 'border-cyan-500/30',
+    badge: 'bg-cyan-900/60 border-cyan-500/30 text-cyan-300',
+    btn: 'bg-cyan-600 hover:bg-cyan-500 shadow-[0_4px_14px_-4px_rgba(6,182,212,0.7)]',
+    visual: (
+      <div className="relative w-full h-full flex items-center justify-center select-none">
+        <div className="absolute inset-0 opacity-10">
+          <div className="absolute left-1/2 top-0 bottom-0 w-px bg-white -translate-x-1/2" />
+          <div className="absolute left-1/2 top-1/2 w-16 h-16 rounded-full border border-white -translate-x-1/2 -translate-y-1/2" />
+        </div>
+        <div className="relative flex flex-col items-center gap-1">
+          <span className="text-5xl drop-shadow-[0_0_12px_rgba(56,189,248,0.9)]">⚡</span>
+          <span className="text-2xl -mt-2">⚽</span>
+        </div>
+        <div className="absolute top-3 right-6 text-cyan-400/50 text-lg font-black rotate-12">⚡</div>
+        <div className="absolute bottom-4 left-5 text-cyan-400/30 text-sm rotate-[-20deg]">⚡</div>
+      </div>
+    ),
+  },
+  {
+    bg: 'from-purple-950 via-violet-900/60 to-indigo-950',
+    glow: 'shadow-[0_0_40px_-8px_rgba(168,85,247,0.5)]',
+    border: 'border-purple-500/30',
+    badge: 'bg-purple-900/60 border-purple-500/30 text-purple-300',
+    btn: 'bg-violet-600 hover:bg-violet-500 shadow-[0_4px_14px_-4px_rgba(139,92,246,0.7)]',
+    visual: (
+      <div className="relative w-full h-full flex items-center justify-center select-none">
+        <div className="absolute inset-0 opacity-10">
+          <div className="absolute left-1/2 top-0 bottom-0 w-px bg-white -translate-x-1/2" />
+          <div className="absolute left-1/2 top-1/2 w-16 h-16 rounded-full border border-white -translate-x-1/2 -translate-y-1/2" />
+        </div>
+        <div className="relative flex flex-col items-center">
+          <span className="text-3xl">⚽</span>
+          <span className="text-4xl -mt-1 drop-shadow-[0_0_14px_rgba(168,85,247,0.9)]">⚡</span>
+        </div>
+        <div className="absolute top-2 left-6 text-purple-400/50 text-lg rotate-[-15deg]">✦</div>
+        <div className="absolute bottom-3 right-5 text-yellow-400/50 text-sm">✦</div>
+      </div>
+    ),
+  },
+  {
+    bg: 'from-orange-950 via-red-900/60 to-yellow-950',
+    glow: 'shadow-[0_0_40px_-8px_rgba(251,146,60,0.5)]',
+    border: 'border-orange-500/30',
+    badge: 'bg-orange-900/60 border-orange-500/30 text-orange-300',
+    btn: 'bg-orange-600 hover:bg-orange-500 shadow-[0_4px_14px_-4px_rgba(234,88,12,0.7)]',
+    visual: (
+      <div className="relative w-full h-full flex items-center justify-center select-none">
+        <div className="absolute inset-0 opacity-10">
+          <div className="absolute left-1/2 top-0 bottom-0 w-px bg-white -translate-x-1/2" />
+          <div className="absolute left-1/2 top-1/2 w-16 h-16 rounded-full border border-white -translate-x-1/2 -translate-y-1/2" />
+        </div>
+        <div className="relative flex items-center gap-1">
+          <span className="text-4xl drop-shadow-[0_0_14px_rgba(251,146,60,0.9)]">⚡</span>
+          <span className="text-3xl">⚽</span>
+          <span className="text-4xl drop-shadow-[0_0_14px_rgba(251,146,60,0.9)]">⚡</span>
+        </div>
+        <div className="absolute top-2 right-4 text-red-400/60 text-xl">🔥</div>
+        <div className="absolute bottom-2 left-4 text-orange-400/40 text-sm">🔥</div>
+      </div>
+    ),
+  },
+  {
+    bg: 'from-emerald-950 via-green-900/60 to-teal-950',
+    glow: 'shadow-[0_0_40px_-8px_rgba(52,211,153,0.5)]',
+    border: 'border-emerald-500/30',
+    badge: 'bg-emerald-900/60 border-emerald-500/30 text-emerald-300',
+    btn: 'bg-emerald-600 hover:bg-emerald-500 shadow-[0_4px_14px_-4px_rgba(16,185,129,0.7)]',
+    visual: (
+      <div className="relative w-full h-full flex items-center justify-center select-none">
+        <div className="absolute inset-0 opacity-10">
+          <div className="absolute left-1/2 top-0 bottom-0 w-px bg-white -translate-x-1/2" />
+          <div className="absolute left-1/2 top-1/2 w-16 h-16 rounded-full border border-white -translate-x-1/2 -translate-y-1/2" />
+        </div>
+        <div className="relative flex flex-col items-center gap-0.5">
+          <span className="text-2xl">🏆</span>
+          <span className="text-4xl drop-shadow-[0_0_16px_rgba(52,211,153,0.9)]">⚡</span>
+          <span className="text-xl -mt-1">⚽</span>
+        </div>
+        <div className="absolute top-3 left-5 text-emerald-400/50 text-sm">⭐</div>
+        <div className="absolute bottom-3 right-5 text-yellow-400/40 text-sm">⭐</div>
+      </div>
+    ),
+  },
 ]
 
 function PackPaymentModal({ pack, onClose, onPay }) {
@@ -308,43 +390,62 @@ function WalletTab({ walletBalance, transactions, loadingWallet, packs, loadingP
       </div>
 
       {/* Energy packs */}
-      <div className="bg-[#0d1117] border border-white/8 rounded-2xl overflow-hidden">
-        <div className="px-4 py-3 border-b border-white/5">
-          <p className="text-gray-500 text-[11px] font-semibold tracking-widest uppercase">Buy bonus energy</p>
-        </div>
-        <div className="p-3 space-y-2">
-          {loadingPacks ? (
-            [1,2,3].map(i => <div key={i} className="h-16 bg-white/4 rounded-xl animate-pulse" />)
-          ) : packs.length === 0 ? (
-            <p className="text-center text-gray-600 text-sm py-4">No packs available</p>
-          ) : packs.map((pack, idx) => {
-            const ac = PACK_ACCENTS[idx % PACK_ACCENTS.length]
-            const orig = pack.discount_pct > 0
-              ? (parseFloat(pack.price_euros) / (1 - pack.discount_pct / 100)).toFixed(2)
-              : null
-            return (
-              <div key={pack.id} className={`flex items-center gap-3 p-3 rounded-xl border bg-white/3 ${ac.border}`}>
-                <div className={`flex-shrink-0 px-2.5 py-1 rounded-lg border text-xs font-black ${ac.badge}`}>
-                  +{pack.energy_amount}⚡
-                </div>
-                <div className="flex-1 min-w-0">
-                  <p className="text-white text-sm font-semibold leading-tight">{pack.name}</p>
-                  {pack.description && <p className="text-gray-600 text-[11px] truncate">{pack.description}</p>}
-                </div>
-                <div className="flex-shrink-0 flex items-center gap-2">
-                  <div className="text-right">
-                    {orig && <p className="text-gray-600 text-[10px] line-through">€{orig}</p>}
-                    <p className="text-white font-black text-sm">€{parseFloat(pack.price_euros).toFixed(2)}</p>
+      <div>
+        <p className="text-gray-600 text-xs uppercase tracking-widest font-semibold mb-3">Buy bonus energy</p>
+        {loadingPacks ? (
+          <div className="flex flex-col gap-3">
+            {[1,2,3].map(i => <div key={i} className="h-32 bg-white/4 border border-white/8 rounded-2xl animate-pulse" />)}
+          </div>
+        ) : packs.length === 0 ? (
+          <p className="text-center text-gray-600 text-sm py-4">No packs available</p>
+        ) : (
+          <div className="flex flex-col gap-3">
+            {packs.map((pack, idx) => {
+              const theme = PACK_THEMES[idx % PACK_THEMES.length]
+              const orig = pack.discount_pct > 0
+                ? (parseFloat(pack.price_euros) / (1 - pack.discount_pct / 100)).toFixed(2)
+                : null
+              return (
+                <div key={pack.id} className={`relative rounded-2xl border overflow-hidden transition-all hover:scale-[1.005] ${theme.border} ${theme.glow} bg-gradient-to-br ${theme.bg}`}>
+                  {pack.discount_pct > 0 && (
+                    <div className="absolute top-3 right-3 z-10 bg-red-600 text-white text-[10px] font-black px-2 py-0.5 rounded-full tracking-wide">
+                      -{pack.discount_pct}% OFF
+                    </div>
+                  )}
+                  <div className="flex items-stretch">
+                    <div className="w-28 flex-shrink-0 relative overflow-hidden">
+                      {pack.image_url
+                        ? <img src={pack.image_url} alt={pack.name} className="w-full h-full object-cover" />
+                        : <div className="w-full h-full">{theme.visual}</div>}
+                      <div className="absolute top-0 right-0 bottom-0 w-6 bg-gradient-to-r from-transparent to-black/30" />
+                    </div>
+                    <div className="flex-1 p-4 flex flex-col gap-2.5 min-w-0">
+                      <div>
+                        <p className="text-white font-bold text-sm leading-tight">{pack.name}</p>
+                        {pack.description && (
+                          <p className="text-gray-500 text-xs mt-0.5 leading-relaxed line-clamp-2">{pack.description}</p>
+                        )}
+                      </div>
+                      <div className={`inline-flex items-center gap-1.5 self-start rounded-lg px-2.5 py-1 border text-xs font-black ${theme.badge}`}>
+                        <span>⚡</span><span>+{pack.energy_amount} energy</span>
+                      </div>
+                      <div className="flex items-center justify-between mt-auto pt-2 border-t border-white/8">
+                        <div className="leading-none">
+                          {orig && <p className="text-gray-600 text-[11px] line-through">€{orig}</p>}
+                          <p className="text-white font-black text-xl">€{parseFloat(pack.price_euros).toFixed(2)}</p>
+                        </div>
+                        <button onClick={() => onPurchase(pack)}
+                          className={`flex items-center gap-2 font-bold text-sm px-5 py-2 rounded-xl transition-all active:scale-95 text-white ${theme.btn}`}>
+                          Purchase
+                        </button>
+                      </div>
+                    </div>
                   </div>
-                  <button onClick={() => onPurchase(pack)}
-                    className={`px-3 py-1.5 rounded-lg text-white text-xs font-bold transition-colors ${ac.btn}`}>
-                    Buy
-                  </button>
                 </div>
-              </div>
-            )
-          })}
-        </div>
+              )
+            })}
+          </div>
+        )}
       </div>
 
       {/* Purchase history */}
