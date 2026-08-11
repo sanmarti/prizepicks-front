@@ -962,8 +962,12 @@ function EventCard({ event, selectedOptionId, onSelect, isLocked, dimmed, remain
 
                 {/* Label */}
                 <span className="relative z-10 flex-1 text-left font-semibold">
-                  {optTeam ? optTeam : opt.label}
-                  {optTeam && optSubLabel && <span className="text-xs font-normal ml-1 opacity-70">{optSubLabel}</span>}
+                  {(won || lost)
+                    ? isSelected ? 'Your choice' : won ? 'Correct choice' : (optTeam || opt.label)
+                    : (optTeam || opt.label)}
+                  {!(won || lost) && optTeam && optSubLabel && (
+                    <span className="text-xs font-normal ml-1 opacity-70">{optSubLabel}</span>
+                  )}
                 </span>
 
                 {/* Right side: energy + community % + result */}
