@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState, useCallback } from 'react'
 import { getProfile, updateProfile, changePassword } from '../api/users'
-import { getGloryProfile, getGloryStatus, getPurchaseHistory } from '../api/glory'
+import { getGloryProfile, getGloryStatus, getPurchaseHistory, getEnergyPacks, purchaseEnergyPack } from '../api/glory'
 import { useAuthStore } from '../store/authStore'
 import Spinner from '../components/ui/Spinner'
 
@@ -223,8 +223,49 @@ function getAccuracyTier(pct) {
 
 const MAX_ENERGY_PER_WEEK = 5
 
+const PACK_ACCENTS = [
+  { border: 'border-cyan-500/25',   badge: 'bg-cyan-900/40 text-cyan-300',   btn: 'bg-cyan-600 hover:bg-cyan-500' },
+  { border: 'border-purple-500/25', badge: 'bg-purple-900/40 text-purple-300', btn: 'bg-violet-600 hover:bg-violet-500' },
+  { border: 'border-orange-500/25', badge: 'bg-orange-900/40 text-orange-300', btn: 'bg-orange-600 hover:bg-orange-500' },
+  { border: 'border-emerald-500/25',badge: 'bg-emerald-900/40 text-emerald-300', btn: 'bg-emerald-600 hover:bg-emerald-500' },
+]
+
+function PackPaymentModal({ pack, onClose, onPay }) {
+  const [processing, setProcessing] = useState(false)
+  async function submit() {
+    setProcessing(true)
+    try { await onPay() } finally { setProcessing(false) }
+  }
+  return (
+    <div className="fixed inset-0 z-50 flex items-end justify-center bg-black/75 backdrop-blur-sm"
+      onClick={e => e.target === e.currentTarget && onClose()}>
+      <div className="w-full max-w-md bg-[#0f1219] rounded-t-3xl border border-white/8 border-b-0 px-5 pt-4 pb-10">
+        <div className="w-10 h-1 rounded-full bg-white/15 mx-auto mb-5" />
+        <div className="flex items-center gap-4 mb-6 p-4 rounded-2xl bg-white/4 border border-white/8">
+          <div className="w-12 h-12 rounded-xl bg-indigo-500/15 border border-indigo-500/20 flex items-center justify-center text-2xl flex-shrink-0">⚡</div>
+          <div className="flex-1 min-w-0">
+            <p className="text-white font-bold text-sm">{pack.name}</p>
+            <p className="text-gray-500 text-xs mt-0.5">+{pack.energy_amount} energy added to wallet</p>
+          </div>
+          <p className="text-white font-black text-xl flex-shrink-0">€{parseFloat(pack.price_euros).toFixed(2)}</p>
+        </div>
+        <button onClick={submit} disabled={processing}
+          className={`w-full py-4 rounded-2xl font-black text-base transition-all ${
+            processing ? 'bg-white/8 text-white/30 cursor-not-allowed'
+                       : 'bg-gradient-to-r from-indigo-600 to-violet-600 text-white shadow-[0_4px_24px_-4px_rgba(99,102,241,0.55)]'
+          }`}>
+          {processing
+            ? <span className="flex items-center justify-center gap-2"><svg className="animate-spin h-4 w-4" fill="none" viewBox="0 0 24 24"><circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"/><path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z"/></svg> Processing…</span>
+            : `Pay €${parseFloat(pack.price_euros).toFixed(2)}`}
+        </button>
+        <p className="text-center text-gray-700 text-[11px] mt-3">🔒 Secure payment · Energy added instantly</p>
+      </div>
+    </div>
+  )
+}
+
 // ── Wallet tab ─────────────────────────────────────────────────────────────────
-function WalletTab({ walletBalance, transactions, loadingWallet, onGoToStore }) {
+function WalletTab({ walletBalance, transactions, loadingWallet, packs, loadingPacks, onPurchase }) {
   const [showHistory, setShowHistory] = useState(false)
   const hasPurchased = walletBalance > 0 || transactions.length > 0
   const weeksAvailable = walletBalance > 0 ? Math.floor(walletBalance / MAX_ENERGY_PER_WEEK) : 0
@@ -238,29 +279,17 @@ function WalletTab({ walletBalance, transactions, loadingWallet, onGoToStore }) 
         hasPurchased ? 'bg-gradient-to-br from-purple-950 via-violet-900/60 to-indigo-950'
                      : 'bg-gradient-to-br from-[#0e0c18] via-[#0a0c16] to-[#080910]'
       }`}>
-        {/* Glow blob */}
         <div className={`absolute -top-10 -right-10 w-52 h-52 rounded-full blur-3xl pointer-events-none ${
           hasPurchased ? 'bg-yellow-500/15' : 'bg-violet-600/8'
         }`} />
-        {/* Scan lines */}
         <div className="absolute inset-0 opacity-[0.03] pointer-events-none"
           style={{ backgroundImage: 'repeating-linear-gradient(0deg, transparent, transparent 2px, white 2px, white 3px)', backgroundSize: '100% 3px' }} />
-
-        <div className={`relative border rounded-2xl p-5 ${
-          hasPurchased ? 'border-purple-500/30' : 'border-white/6'
-        }`}>
-          {/* Balance row */}
-          <div className="flex items-start justify-between mb-5">
+        <div className={`relative border rounded-2xl p-5 ${hasPurchased ? 'border-purple-500/30' : 'border-white/6'}`}>
+          <div className="flex items-start justify-between mb-3">
             <div>
-              <p className={`text-[10px] font-black uppercase tracking-[0.2em] mb-1 ${
-                hasPurchased ? 'text-violet-400' : 'text-gray-600'
-              }`}>Bonus Energy Wallet</p>
+              <p className={`text-[10px] font-black uppercase tracking-[0.2em] mb-1 ${hasPurchased ? 'text-violet-400' : 'text-gray-600'}`}>Bonus Energy Wallet</p>
               <div className="flex items-end gap-2">
-                <span className={`font-black leading-none ${
-                  hasPurchased
-                    ? 'text-5xl text-yellow-400 drop-shadow-[0_0_20px_rgba(250,204,21,0.55)]'
-                    : 'text-5xl text-gray-700'
-                }`}>{walletBalance}</span>
+                <span className={`font-black leading-none ${hasPurchased ? 'text-5xl text-yellow-400 drop-shadow-[0_0_20px_rgba(250,204,21,0.55)]' : 'text-5xl text-gray-700'}`}>{walletBalance}</span>
                 <span className={`text-xl mb-0.5 ${hasPurchased ? 'text-yellow-400/70' : 'text-gray-700'}`}>⚡</span>
               </div>
               {hasPurchased && weeksAvailable > 0 && (
@@ -268,71 +297,65 @@ function WalletTab({ walletBalance, transactions, loadingWallet, onGoToStore }) 
               )}
             </div>
           </div>
-
-          {/* Value props */}
-          <div className="space-y-2 mb-5">
-            {/* Mini pick demo */}
-            <div className={`rounded-xl px-3 py-3 border ${
-              hasPurchased ? 'bg-purple-500/10 border-purple-500/20' : 'bg-white/4 border-white/6'
-            }`}>
-              <p className={`text-xs font-semibold mb-2 ${hasPurchased ? 'text-purple-200' : 'text-white'}`}>
-                🔒 Unlock the pick you actually want
-              </p>
-              <div className="flex gap-1.5 items-center">
-                <div className="flex flex-col items-center justify-center rounded-lg px-3 py-1.5 bg-white/5 border border-white/10 min-w-[52px]">
-                  <span className="text-xs font-mono text-gray-300">Home</span>
-                  <span className="text-[10px] text-gray-500 mt-0.5">3⚡</span>
-                </div>
-                <div className="flex flex-col items-center justify-center rounded-lg px-3 py-1.5 bg-white/5 border border-white/10 min-w-[52px]">
-                  <span className="text-xs font-mono text-gray-300">Draw</span>
-                  <span className="text-[10px] text-gray-500 mt-0.5">6⚡</span>
-                </div>
-                <div className="flex flex-col items-center justify-center rounded-lg px-3 py-1.5 min-w-[52px] border border-white/10" style={{ background: 'rgba(15,15,20,0.6)' }}>
-                  <span className="text-base">🔒</span>
-                  <span className="text-[9px] text-gray-600 mt-0.5">Away 8⚡</span>
-                </div>
-              </div>
-              <p className={`text-[11px] mt-2 ${hasPurchased ? 'text-purple-400/70' : 'text-gray-500'}`}>
-                Safer outcomes cost more energy. Run out and the best picks get locked.
-              </p>
-            </div>
-
-            <div className="flex items-center gap-2.5 rounded-xl px-3 py-2.5 border border-yellow-400/25 bg-yellow-400/8">
-              <span className="text-lg flex-shrink-0">♾️</span>
-              <div>
-                <p className="text-yellow-300 text-xs font-semibold">Never expires · use up to +5⚡ per matchweek</p>
-                <p className="text-yellow-500/70 text-[11px]">Stays in your wallet until you need it — no rush, no deadline.</p>
-              </div>
+          <div className="flex items-center gap-2.5 rounded-xl px-3 py-2.5 border border-yellow-400/25 bg-yellow-400/8">
+            <span className="text-lg flex-shrink-0">♾️</span>
+            <div>
+              <p className="text-yellow-300 text-xs font-semibold">Never expires · use up to +5⚡ per matchweek</p>
+              <p className="text-yellow-500/70 text-[11px]">Stays in your wallet until you need it.</p>
             </div>
           </div>
+        </div>
+      </div>
 
-          {!hasPurchased ? (
-            <button onClick={onGoToStore}
-              className="w-full py-3 rounded-xl bg-yellow-500/15 border border-yellow-400/25 text-yellow-400 text-sm font-semibold hover:bg-yellow-500/25 transition-colors">
-              ⚡ Get bonus energy
-            </button>
-          ) : (
-            <button onClick={onGoToStore}
-              className="w-full py-3 rounded-xl bg-white/5 border border-white/10 text-gray-300 text-sm font-semibold hover:bg-white/8 transition-colors">
-              ⚡ Buy more energy
-            </button>
-          )}
+      {/* Energy packs */}
+      <div className="bg-[#0d1117] border border-white/8 rounded-2xl overflow-hidden">
+        <div className="px-4 py-3 border-b border-white/5">
+          <p className="text-gray-500 text-[11px] font-semibold tracking-widest uppercase">Buy bonus energy</p>
+        </div>
+        <div className="p-3 space-y-2">
+          {loadingPacks ? (
+            [1,2,3].map(i => <div key={i} className="h-16 bg-white/4 rounded-xl animate-pulse" />)
+          ) : packs.length === 0 ? (
+            <p className="text-center text-gray-600 text-sm py-4">No packs available</p>
+          ) : packs.map((pack, idx) => {
+            const ac = PACK_ACCENTS[idx % PACK_ACCENTS.length]
+            const orig = pack.discount_pct > 0
+              ? (parseFloat(pack.price_euros) / (1 - pack.discount_pct / 100)).toFixed(2)
+              : null
+            return (
+              <div key={pack.id} className={`flex items-center gap-3 p-3 rounded-xl border bg-white/3 ${ac.border}`}>
+                <div className={`flex-shrink-0 px-2.5 py-1 rounded-lg border text-xs font-black ${ac.badge}`}>
+                  +{pack.energy_amount}⚡
+                </div>
+                <div className="flex-1 min-w-0">
+                  <p className="text-white text-sm font-semibold leading-tight">{pack.name}</p>
+                  {pack.description && <p className="text-gray-600 text-[11px] truncate">{pack.description}</p>}
+                </div>
+                <div className="flex-shrink-0 flex items-center gap-2">
+                  <div className="text-right">
+                    {orig && <p className="text-gray-600 text-[10px] line-through">€{orig}</p>}
+                    <p className="text-white font-black text-sm">€{parseFloat(pack.price_euros).toFixed(2)}</p>
+                  </div>
+                  <button onClick={() => onPurchase(pack)}
+                    className={`px-3 py-1.5 rounded-lg text-white text-xs font-bold transition-colors ${ac.btn}`}>
+                    Buy
+                  </button>
+                </div>
+              </div>
+            )
+          })}
         </div>
       </div>
 
       {/* Purchase history */}
       <div className="bg-[#0d1117] border border-white/8 rounded-2xl overflow-hidden">
-        <button
-          onClick={() => setShowHistory(h => !h)}
-          className="w-full flex items-center justify-between px-4 py-3.5 text-left hover:bg-white/3 transition-colors"
-        >
+        <button onClick={() => setShowHistory(h => !h)}
+          className="w-full flex items-center justify-between px-4 py-3.5 text-left hover:bg-white/3 transition-colors">
           <div className="flex items-center gap-2.5">
             <span className="text-base">🧾</span>
             <div>
               <p className="text-white text-sm font-semibold">Purchase history</p>
-              {purchaseTxs.length > 0 && (
-                <p className="text-gray-600 text-[11px]">{purchaseTxs.length} purchase{purchaseTxs.length !== 1 ? 's' : ''}</p>
-              )}
+              {purchaseTxs.length > 0 && <p className="text-gray-600 text-[11px]">{purchaseTxs.length} purchase{purchaseTxs.length !== 1 ? 's' : ''}</p>}
             </div>
           </div>
           <svg className={`w-4 h-4 text-gray-600 transition-transform ${showHistory ? 'rotate-180' : ''}`}
@@ -340,7 +363,6 @@ function WalletTab({ walletBalance, transactions, loadingWallet, onGoToStore }) 
             <polyline points="6 9 12 15 18 9" />
           </svg>
         </button>
-
         {showHistory && (
           <div className="border-t border-white/5">
             {loadingWallet ? (
@@ -349,7 +371,6 @@ function WalletTab({ walletBalance, transactions, loadingWallet, onGoToStore }) 
               <div className="text-center py-8 px-4">
                 <p className="text-3xl mb-2">⚡</p>
                 <p className="text-gray-500 text-sm">No purchases yet</p>
-                <p className="text-gray-700 text-xs mt-1">Visit the Energy Store to get bonus energy</p>
               </div>
             ) : (
               <div className="divide-y divide-white/4">
@@ -372,7 +393,6 @@ function WalletTab({ walletBalance, transactions, loadingWallet, onGoToStore }) 
         )}
       </div>
 
-      {/* Usage history (if any consumption txs exist) */}
       {usageTxs.length > 0 && (
         <div className="bg-[#0d1117] border border-white/8 rounded-2xl overflow-hidden">
           <div className="px-4 py-3 border-b border-white/5">
@@ -424,6 +444,11 @@ export default function ProfilePage() {
   const [walletTxs,        setWalletTxs]        = useState([])
   const [loadingWallet,    setLoadingWallet]    = useState(false)
   const [walletLoaded,     setWalletLoaded]     = useState(false)
+  const [packs,            setPacks]            = useState([])
+  const [loadingPacks,     setLoadingPacks]     = useState(false)
+  const [packsLoaded,      setPacksLoaded]      = useState(false)
+  const [payingPack,       setPayingPack]       = useState(null)
+  const [successPack,      setSuccessPack]      = useState(null)
 
   const loadWallet = useCallback(async () => {
     if (walletLoaded) return
@@ -436,6 +461,30 @@ export default function ProfilePage() {
     } catch {}
     finally { setLoadingWallet(false) }
   }, [walletLoaded])
+
+  const loadPacks = useCallback(async () => {
+    if (packsLoaded) return
+    setLoadingPacks(true)
+    try {
+      const { data } = await getEnergyPacks()
+      setPacks(data.packs ?? [])
+      setPacksLoaded(true)
+    } catch {}
+    finally { setLoadingPacks(false) }
+  }, [packsLoaded])
+
+  async function handlePurchasePack(pack) {
+    try {
+      const { data } = await purchaseEnergyPack(pack.id)
+      setWalletBalance(data.new_balance ?? walletBalance)
+      setWalletLoaded(false)
+      setPayingPack(null)
+      setSuccessPack(pack)
+      setTimeout(() => setSuccessPack(null), 3000)
+    } catch (err) {
+      alert(err.response?.data?.error ?? 'Purchase failed. Please try again.')
+    }
+  }
 
   useEffect(() => {
     const emailPrefix = (jwt?.email ?? '').split('@')[0]
@@ -455,8 +504,8 @@ export default function ProfilePage() {
   }, [jwt])
 
   useEffect(() => {
-    if (activeTab === 'wallet') loadWallet()
-  }, [activeTab, loadWallet])
+    if (activeTab === 'wallet') { loadWallet(); loadPacks() }
+  }, [activeTab, loadWallet, loadPacks])
 
   async function handleAvatarFile(file) {
     setUploadingAv(true); setAvatarMsg(null)
@@ -976,8 +1025,26 @@ export default function ProfilePage() {
             walletBalance={walletBalance}
             transactions={walletTxs}
             loadingWallet={loadingWallet}
-            onGoToStore={() => window.location.href = '/store'}
+            packs={packs}
+            loadingPacks={loadingPacks}
+            onPurchase={pack => setPayingPack(pack)}
           />
+        )}
+
+        {/* Pack payment modal */}
+        {payingPack && (
+          <PackPaymentModal
+            pack={payingPack}
+            onClose={() => setPayingPack(null)}
+            onPay={() => handlePurchasePack(payingPack)}
+          />
+        )}
+
+        {/* Success toast */}
+        {successPack && (
+          <div className="fixed bottom-24 left-1/2 -translate-x-1/2 z-50 px-5 py-3 rounded-2xl bg-green-600 text-white text-sm font-bold shadow-xl flex items-center gap-2 whitespace-nowrap">
+            <span>⚡</span> +{successPack.energy_amount} energy added to wallet!
+          </div>
         )}
 
         {/* Guide tab */}
