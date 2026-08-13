@@ -1,6 +1,6 @@
 import { useState, useEffect, useCallback } from 'react'
 import { useParams, useNavigate } from 'react-router-dom'
-import { getLeague, getLeagueStandings, leaveLeague, updateLeague } from '../api/leagues'
+import { getLeague, getLeagueStandings, leaveLeague, updateLeague, getSprints, updatePeriod } from '../api/leagues'
 import Spinner from '../components/ui/Spinner'
 
 const TABS = ['Standings', 'Members']
@@ -19,6 +19,12 @@ export default function LeagueDetailPage() {
   const [editImageUrl, setEditImageUrl] = useState('')
   const [saving, setSaving] = useState(false)
   const [saveMsg, setSaveMsg] = useState(null)
+  const [sprints, setSprints] = useState([])
+  const [periodName, setPeriodName] = useState('')
+  const [startSprintId, setStartSprintId] = useState('')
+  const [endSprintId, setEndSprintId] = useState('')
+  const [savingPeriod, setSavingPeriod] = useState(false)
+  const [periodMsg, setPeriodMsg] = useState(null)
 
   const load = useCallback(async () => {
     try {
@@ -30,6 +36,16 @@ export default function LeagueDetailPage() {
   }, [id, navigate])
 
   useEffect(() => { load() }, [load])
+
+  useEffect(() => {
+    if (!league) return
+    if (league.my_role === 'admin') {
+      getSprints().then(r => setSprints(r.data || [])).catch(() => {})
+    }
+    if (league.periods?.[0]) {
+      setPeriodName(league.periods[0].name || '')
+    }
+  }, [league])
 
   if (loading) return (
     <div className="min-h-screen bg-[#0a0d12] flex items-center justify-center">
@@ -278,6 +294,77 @@ export default function LeagueDetailPage() {
               </button>
               {saveMsg && <p className={`text-sm ${saveMsg.includes('✓') ? 'text-green-400' : 'text-red-400'}`}>{saveMsg}</p>}
             </div>
+
+            {/* Period date range */}
+            {currentPeriod && (
+              <div className="pt-2 border-t border-white/8 space-y-3">
+                <p className="text-gray-500 text-[11px] font-semibold uppercase tracking-widest">League Period</p>
+                <div>
+                  <label className="text-gray-500 text-[11px] font-semibold uppercase tracking-widest block mb-1.5">Period name</label>
+                  <input value={periodName} onChange={e => setPeriodName(e.target.value)}
+                    className="w-full bg-white/5 border border-white/8 rounded-xl px-4 py-3 text-white text-sm outline-none focus:border-indigo-500 transition-colors" />
+                </div>
+                <div className="grid grid-cols-2 gap-2">
+                  <div>
+                    <label className="text-gray-500 text-[11px] font-semibold uppercase tracking-widest block mb-1.5">Starts from</label>
+                    <select value={startSprintId} onChange={e => setStartSprintId(e.target.value)}
+                      className="w-full bg-white/5 border border-white/8 rounded-xl px-3 py-3 text-white text-sm outline-none focus:border-indigo-500 transition-colors appearance-none">
+                      <option value="">All time</option>
+                      {sprints.map(s => (
+                        <option key={s.id} value={s.id} className="bg-[#0d1117]">
+                          {s.name}
+                        </option>
+                      ))}
+                    </select>
+                  </div>
+                  <div>
+                    <label className="text-gray-500 text-[11px] font-semibold uppercase tracking-widest block mb-1.5">Ends after</label>
+                    <select value={endSprintId} onChange={e => setEndSprintId(e.target.value)}
+                      className="w-full bg-white/5 border border-white/8 rounded-xl px-3 py-3 text-white text-sm outline-none focus:border-indigo-500 transition-colors appearance-none">
+                      <option value="">All time</option>
+                      {sprints.map(s => (
+                        <option key={s.id} value={s.id} className="bg-[#0d1117]">
+                          {s.name}
+                        </option>
+                      ))}
+                    </select>
+                  </div>
+                </div>
+                {(startSprintId || endSprintId) && (() => {
+                  const s = sprints.find(x => x.id === startSprintId)
+                  const e = sprints.find(x => x.id === endSprintId)
+                  const fmt = d => new Date(d).toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' })
+                  if (s || e) return (
+                    <p className="text-indigo-400/70 text-xs">
+                      Standings cover: {s ? fmt(s.start_date) : '…'} → {e ? fmt(e.end_date) : '…'}
+                    </p>
+                  )
+                })()}
+                <div className="flex items-center gap-4">
+                  <button
+                    onClick={async () => {
+                      setSavingPeriod(true); setPeriodMsg(null)
+                      try {
+                        await updatePeriod(id, currentPeriod.id, {
+                          name: periodName || undefined,
+                          start_sprint_id: startSprintId || undefined,
+                          end_sprint_id: endSprintId || undefined,
+                        })
+                        setPeriodMsg('Saved ✓')
+                        load()
+                      } catch { setPeriodMsg('Save failed') }
+                      finally { setSavingPeriod(false) }
+                    }}
+                    disabled={savingPeriod}
+                    className="px-5 py-2.5 rounded-xl font-bold text-sm text-white transition-colors disabled:opacity-40"
+                    style={{ background: 'linear-gradient(90deg,#6366f1,#4f46e5)' }}
+                  >
+                    {savingPeriod ? 'Saving…' : 'Save period'}
+                  </button>
+                  {periodMsg && <p className={`text-sm ${periodMsg.includes('✓') ? 'text-green-400' : 'text-red-400'}`}>{periodMsg}</p>}
+                </div>
+              </div>
+            )}
           </div>
         )}
 
