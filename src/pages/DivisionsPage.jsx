@@ -475,21 +475,31 @@ export default function DivisionsPage() {
   const [loading,        setLoading]        = useState(true)
   const [activeDiv,      setActiveDiv]      = useState(null)
   const [listOpen,       setListOpen]       = useState(false)
-  const [section,        setSection]        = useState('global')   // 'global' | 'leagues'
+  const [section,        setSection]        = useState('leagues')  // 'global' | 'leagues'
   const [selectedLeague, setSelectedLeague] = useState(null)
 
   useEffect(() => {
-    Promise.all([getGloryDivisions(), getGloryStatus()])
-      .then(async ([divsRes, statusRes]) => {
+    Promise.all([getGloryDivisions(), getGloryStatus(), getMyLeagues()])
+      .then(async ([divsRes, statusRes, leaguesRes]) => {
         const sorted   = [...divsRes.data].sort((a, b) => a.display_order - b.display_order)
         const status   = statusRes.data
         const myDivId  = status?.division?.division_id
         const sprintId = status?.sprint?.id
         const myUid    = status?.user?.id
+        const leagues  = leaguesRes.data || []
 
         setDivisions(sorted)
         setMyStatus(status)
         setActiveDiv(sorted.find(d => d.id === myDivId) ?? sorted[0] ?? null)
+
+        // If no leagues, fall back to global
+        if (leagues.length === 0) {
+          setSection('global')
+        } else if (leagues.length === 1) {
+          // Only one league — go straight to its standings
+          setSelectedLeague(leagues[0])
+        }
+        // else: multiple leagues → show selector (default section='leagues')
 
         // Fetch all leaderboards in parallel to build stats for each card
         const results = await Promise.allSettled(
@@ -593,7 +603,13 @@ export default function DivisionsPage() {
         <MyLeaguesScreen onSelectLeague={setSelectedLeague} />
       )}
       {section === 'leagues' && selectedLeague && (
-        <LeagueStandingsView league={selectedLeague} onBack={() => setSelectedLeague(null)} />
+        <LeagueStandingsView
+          league={selectedLeague}
+          onBack={() => {
+            // If came from a single-league auto-select, back goes to global tab
+            setSelectedLeague(null)
+          }}
+        />
       )}
     </>
   )
