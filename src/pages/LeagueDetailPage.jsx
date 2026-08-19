@@ -3,7 +3,7 @@ import { useParams, useNavigate } from 'react-router-dom'
 import { getLeague, getLeagueStandings, leaveLeague, updateLeague, getSprints, updatePeriod } from '../api/leagues'
 import Spinner from '../components/ui/Spinner'
 
-const TABS = ['Standings', 'Members']
+const TABS = ['Standings', 'Members', 'Settings']
 const ADMIN_TABS = ['Standings', 'Members', 'Settings']
 
 export default function LeagueDetailPage() {
@@ -234,7 +234,36 @@ export default function LeagueDetailPage() {
           </div>
         )}
 
-        {/* Settings (admin only) */}
+        {/* Settings */}
+        {tab === 'Settings' && !isAdmin && (
+          <div className="bg-[#0d1117] border border-white/8 rounded-2xl p-5 space-y-4">
+            <div>
+              <label className="text-gray-500 text-[11px] font-semibold uppercase tracking-widest block mb-1.5">League name</label>
+              <div className="bg-white/3 border border-white/8 rounded-xl px-4 py-3 text-white text-sm">{league.name}</div>
+            </div>
+            {league.entry_fee_euros > 0 && (
+              <div>
+                <label className="text-gray-500 text-[11px] font-semibold uppercase tracking-widest block mb-1.5">Entry fee (€)</label>
+                <div className="bg-white/3 border border-white/8 rounded-xl px-4 py-3 text-white text-sm">€{parseFloat(league.entry_fee_euros).toFixed(2)}</div>
+              </div>
+            )}
+            {league.image_url && (
+              <div>
+                <label className="text-gray-500 text-[11px] font-semibold uppercase tracking-widest block mb-1.5">League image</label>
+                <div className="w-full h-24 rounded-xl overflow-hidden border border-white/8">
+                  <img src={league.image_url} alt="" className="w-full h-full object-cover" />
+                </div>
+              </div>
+            )}
+            {currentPeriod && (
+              <div>
+                <label className="text-gray-500 text-[11px] font-semibold uppercase tracking-widest block mb-1.5">Current period</label>
+                <div className="bg-white/3 border border-white/8 rounded-xl px-4 py-3 text-white text-sm">{currentPeriod.name}</div>
+              </div>
+            )}
+          </div>
+        )}
+
         {tab === 'Settings' && isAdmin && (
           <div className="bg-[#0d1117] border border-white/8 rounded-2xl p-5 space-y-4">
             <div>
