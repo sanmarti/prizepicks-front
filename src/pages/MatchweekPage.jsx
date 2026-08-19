@@ -1606,54 +1606,31 @@ export default function MatchweekPage() {
           </div>
         </div>
 
-        {/* League banner header */}
-        {myLeagues.length > 0 && (() => {
-          const primary = myLeagues[0]
-          return (
-            <div className="space-y-2">
-              <button onClick={() => navigate(`/leagues/${primary.id}`)}
-                className="w-full relative rounded-2xl overflow-hidden active:scale-[0.99] transition-transform"
-                style={{ height: 88 }}>
-                {primary.image_url
-                  ? <img src={primary.image_url} alt={primary.name} className="w-full h-full object-cover object-center" />
+        {/* League headers — non-interactive, shows all leagues the user is in */}
+        {myLeagues.length > 0 && (
+          <div className={myLeagues.length === 1 ? '' : 'flex gap-2 overflow-x-auto'} style={{ scrollbarWidth: 'none' }}>
+            {myLeagues.map(l => (
+              <div key={l.id}
+                className={`relative rounded-2xl overflow-hidden flex-shrink-0 ${myLeagues.length === 1 ? 'w-full' : 'w-48'}`}
+                style={{ height: 72 }}>
+                {l.image_url
+                  ? <img src={l.image_url} alt={l.name} className="w-full h-full object-cover object-center" />
                   : <div className="w-full h-full bg-gradient-to-br from-indigo-950 via-violet-900/50 to-slate-950" />
                 }
-                <div className="absolute inset-0 bg-gradient-to-r from-black/70 via-black/40 to-black/20" />
-                <div className="absolute inset-0 flex items-center px-4 justify-between">
-                  <div className="flex items-center gap-3 min-w-0">
-                    <span className="text-2xl leading-none flex-shrink-0">🏆</span>
-                    <div className="min-w-0">
-                      <p className="text-white font-black text-sm leading-tight truncate">{primary.name}</p>
-                      <p className="text-white/50 text-[11px] mt-0.5">
-                        {primary.my_position != null ? `#${primary.my_position} of ${primary.member_count}` : `${primary.member_count} members`}
-                      </p>
-                    </div>
+                <div className="absolute inset-0 bg-gradient-to-r from-black/75 via-black/45 to-black/20" />
+                <div className="absolute inset-0 flex items-center px-3 gap-2.5">
+                  <span className="text-xl leading-none flex-shrink-0">🏆</span>
+                  <div className="min-w-0">
+                    <p className="text-white font-black text-xs leading-tight truncate">{l.name}</p>
+                    <p className="text-white/50 text-[10px] mt-0.5">
+                      {l.my_position != null ? `#${l.my_position} of ${l.member_count}` : `${l.member_count} members`}
+                    </p>
                   </div>
-                  <svg className="w-4 h-4 text-white/50 flex-shrink-0" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
-                    <polyline points="9 18 15 12 9 6" />
-                  </svg>
                 </div>
-              </button>
-              {/* Extra leagues as small pills if >1 */}
-              {myLeagues.length > 1 && (
-                <div className="flex gap-2 overflow-x-auto" style={{ scrollbarWidth: 'none' }}>
-                  {myLeagues.slice(1).map(l => (
-                    <button key={l.id} onClick={() => navigate(`/leagues/${l.id}`)}
-                      className="flex-shrink-0 flex items-center gap-2 bg-indigo-500/10 border border-indigo-500/20 rounded-xl px-3 py-2 transition-colors active:scale-95">
-                      <span className="text-xs">🏆</span>
-                      <div className="min-w-0">
-                        <p className="text-white text-xs font-bold truncate max-w-[110px]">{l.name}</p>
-                        {l.my_position != null && (
-                          <p className="text-indigo-300 text-[10px]">#{l.my_position} of {l.member_count}</p>
-                        )}
-                      </div>
-                    </button>
-                  ))}
-                </div>
-              )}
-            </div>
-          )
-        })()}
+              </div>
+            ))}
+          </div>
+        )}
 
         {/* No active sprint */}
         {!sprint && (
