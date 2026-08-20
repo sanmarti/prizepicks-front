@@ -320,10 +320,27 @@ function RankingsScreen({ div, sprintId, sprintName, myUserId, myDivId, onOpenPi
   )
 }
 
+// ── League standings avatar ────────────────────────────────────────────────────
+function LeagueAvatar({ row, isMe }) {
+  const [failed, setFailed] = useState(false)
+  const sz = isMe ? 'w-9 h-9' : 'w-8 h-8'
+  const meStyle    = { background: 'rgba(88,28,135,0.6)', color: '#d8b4fe', boxShadow: '0 0 0 2px rgba(168,85,247,0.7), 0 0 16px rgba(168,85,247,0.35)' }
+  const otherStyle = { background: 'rgba(255,255,255,0.08)', color: '#9ca3af' }
+  const imgStyle   = isMe ? { boxShadow: '0 0 0 2px rgba(168,85,247,0.8), 0 0 16px rgba(168,85,247,0.4)' } : {}
+  if (row.avatar_url && !failed)
+    return <img src={row.avatar_url} alt="" className={`rounded-full object-cover ${sz}`} style={imgStyle} onError={() => setFailed(true)} />
+  return (
+    <div className={`rounded-full flex items-center justify-center font-bold text-sm ${sz}`} style={isMe ? meStyle : otherStyle}>
+      {(row.display_name || '?')[0].toUpperCase()}
+    </div>
+  )
+}
+
 // ── My Leagues rankings ────────────────────────────────────────────────────────
-function LeagueStandingsView({ league, onBack }) {
-  const [data, setData]   = useState(null)
+function LeagueStandingsView({ league, onBack, myUserId }) {
+  const [data, setData]       = useState(null)
   const [loading, setLoading] = useState(true)
+  const myRowRef              = useRef(null)
 
   useEffect(() => {
     getLeagueStandings(league.id)
@@ -332,81 +349,183 @@ function LeagueStandingsView({ league, onBack }) {
       .finally(() => setLoading(false))
   }, [league.id])
 
+  useEffect(() => {
+    if (!loading && myRowRef.current)
+      setTimeout(() => myRowRef.current?.scrollIntoView({ block: 'center', behavior: 'instant' }), 50)
+  }, [loading])
+
   const standings = data?.standings || []
   const period    = data?.period
+  const prizes    = Array.isArray(period?.prize_config) ? period.prize_config : []
+  const myIdx     = standings.findIndex(r => r.user_id === myUserId)
 
   return (
-    <div className="fixed inset-0 z-40 flex flex-col bg-[#0a0d12]" style={{ paddingTop: 'env(safe-area-inset-top)' }}>
-      {/* Header */}
-      <div className="flex-shrink-0 bg-[#0a0d12] border-b border-white/8">
-        <div className="max-w-md mx-auto px-4 py-3 flex items-center gap-3">
-          <button onClick={onBack} className="text-gray-400 hover:text-white transition-colors p-1">
-            <svg width="20" height="20" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
+    <div className="fixed inset-0 z-40 flex flex-col bg-[#0a0d12]">
+
+      {/* ── Hero header (matches GloryRankingHeader style) ── */}
+      <div className="flex-shrink-0 h-36 bg-[#0a0d12]">
+        <div className="relative h-36 max-w-md mx-auto overflow-hidden">
+          {league.image_url ? (
+            <img src={league.image_url} alt={league.name} className="w-full h-full object-cover object-center opacity-65" />
+          ) : (
+            <div className="w-full h-full" style={{ background: 'linear-gradient(135deg,#1e1b4b,#312e81,#1e1b4b)' }} />
+          )}
+          <div className="absolute inset-0 bg-gradient-to-t from-[#0a0d12] via-[#0a0d12]/25 to-transparent" />
+
+          {/* Back button */}
+          <button
+            onClick={onBack}
+            className="absolute top-3 left-4 flex items-center gap-1.5 text-[11px] font-semibold text-white/70 hover:text-white transition-colors"
+            style={{ background: 'rgba(0,0,0,0.35)', backdropFilter: 'blur(8px)', borderRadius: 8, padding: '4px 10px', border: '1px solid rgba(255,255,255,0.12)' }}
+          >
+            <svg width="12" height="12" fill="none" stroke="currentColor" strokeWidth="2.5" viewBox="0 0 24 24">
               <polyline points="15 18 9 12 15 6" />
             </svg>
+            Back
           </button>
-          <div className="w-9 h-9 rounded-xl bg-indigo-500/15 border border-indigo-500/20 flex items-center justify-center text-lg flex-shrink-0 overflow-hidden">
-            {league.image_url ? <img src={league.image_url} alt="" className="w-full h-full object-cover rounded-xl" /> : '🏆'}
+
+          {/* Member count badge */}
+          <div className="absolute top-3 right-4 px-2.5 py-1 rounded-xl border border-white/10 backdrop-blur-sm" style={{ background: 'rgba(0,0,0,0.40)' }}>
+            <p className="text-white/70 text-[11px] font-semibold">{standings.length || league.member_count || 0} players</p>
           </div>
-          <div className="flex-1 min-w-0">
-            <p className="text-white font-bold text-sm truncate">{league.name}</p>
-            {period && <p className="text-gray-500 text-xs">{period.name}</p>}
+
+          {/* League name + period */}
+          <div className="absolute bottom-3 left-4 right-4 flex items-end">
+            <div className="flex items-center gap-2">
+              <span className="text-2xl leading-none">🏆</span>
+              <div>
+                <p className="font-black text-base leading-tight text-white drop-shadow-sm">{league.name}</p>
+                {period && <p className="text-white/50 text-[11px] leading-tight">{period.name}</p>}
+              </div>
+            </div>
           </div>
-          <span className="text-gray-600 text-xs">{standings.length} players</span>
         </div>
       </div>
 
-      {/* Standings list */}
+      {/* ── Prize pool strip ── */}
+      {prizes.length > 0 && (
+        <div className="flex-shrink-0 border-b border-white/5">
+          <div className="max-w-md mx-auto px-4 py-2 flex flex-wrap gap-2">
+            {prizes.map((p, i) => {
+              const icons = ['🥇','🥈','🥉','4️⃣','5️⃣']
+              return (
+                <div key={i} className="flex items-center gap-1.5 bg-amber-500/8 border border-amber-500/15 rounded-xl px-2.5 py-1.5">
+                  <span className="text-sm">{icons[i] || '🏅'}</span>
+                  <div>
+                    <p className="text-amber-300 font-black text-xs leading-none">€{parseFloat(p.amount_euros).toFixed(0)}</p>
+                    <p className="text-amber-700 text-[9px]">{['1st','2nd','3rd','4th','5th'][i]}</p>
+                  </div>
+                </div>
+              )
+            })}
+          </div>
+        </div>
+      )}
+
+      {/* ── Tiebreaker note ── */}
+      <div className="flex-shrink-0 border-b border-white/5">
+        <p className="max-w-md mx-auto px-4 py-2 text-[9px] text-gray-600">
+          ⚡ Tiebreaker: equal points → more correct picks ranks higher
+        </p>
+      </div>
+
+      {/* ── Scrollable standings list ── */}
       <div className="flex-1 overflow-y-auto" style={{ overscrollBehaviorY: 'contain' }}>
-        <div className="max-w-md mx-auto pb-32">
-          {/* Prize pool */}
-          {!loading && (() => {
-            const prizes = Array.isArray(period?.prize_config) ? period.prize_config : []
-            if (prizes.length === 0) return null
-            const icons = ['🥇','🥈','🥉','4️⃣','5️⃣']
-            return (
-              <div className="mx-4 mt-3 mb-1 bg-[#0d1117] border border-amber-500/20 rounded-2xl p-3 flex flex-wrap gap-2">
-                {prizes.map((p, i) => (
-                  <div key={i} className="flex items-center gap-1.5 bg-amber-500/8 border border-amber-500/15 rounded-xl px-2.5 py-1.5">
-                    <span className="text-sm">{icons[i] || '🏅'}</span>
-                    <div>
-                      <p className="text-amber-300 font-black text-xs leading-none">€{parseFloat(p.amount_euros).toFixed(0)}</p>
-                      <p className="text-amber-700 text-[9px]">{['1st','2nd','3rd','4th','5th'][i]}</p>
+        <div className="max-w-md mx-auto">
+          {loading ? (
+            <div className="flex items-center justify-center py-24">
+              <div className="w-5 h-5 border-2 border-t-transparent rounded-full animate-spin" style={{ borderColor: 'rgba(168,85,247,0.8)', borderTopColor: 'transparent' }} />
+            </div>
+          ) : standings.length === 0 ? (
+            <div className="flex flex-col items-center justify-center py-24 gap-2">
+              <span className="text-5xl">🏆</span>
+              <p className="text-gray-300 text-sm font-semibold">No standings yet</p>
+              <p className="text-gray-600 text-xs mt-0.5">Appears once gameweeks are settled</p>
+            </div>
+          ) : (
+            standings.map((row, i) => {
+              const rank = i + 1
+              const isMe = row.user_id === myUserId
+              return (
+                <div
+                  key={row.user_id}
+                  ref={isMe ? myRowRef : null}
+                  className={`w-full flex items-center gap-3 border-b relative ${isMe ? 'px-4 py-3' : 'px-4 py-2.5'}`}
+                  style={isMe ? {
+                    background:  'linear-gradient(90deg, rgba(88,28,135,0.35) 0%, rgba(88,28,135,0.15) 60%, transparent 100%)',
+                    borderColor: 'rgba(168,85,247,0.35)',
+                    boxShadow:   'inset 0 0 40px -10px rgba(168,85,247,0.2)',
+                  } : { borderColor: 'rgba(255,255,255,0.04)' }}
+                >
+                  {/* Left bar */}
+                  {isMe && <span className="absolute left-0 top-0 bottom-0 w-1 rounded-r-full bg-purple-500" />}
+
+                  {/* Rank */}
+                  <span className={`text-center font-black flex-shrink-0 ${isMe ? 'w-8 text-base text-purple-300' : 'w-7 text-sm'} ${
+                    !isMe ? (rank === 1 ? 'text-yellow-400' : rank === 2 ? 'text-gray-300' : rank === 3 ? 'text-amber-600' : 'text-gray-600') : ''
+                  }`}>{rank}</span>
+
+                  {/* Avatar */}
+                  <div className="relative flex-shrink-0">
+                    <LeagueAvatar row={row} isMe={isMe} />
+                  </div>
+
+                  {/* Name + stats */}
+                  <div className="flex-1 min-w-0">
+                    <div className="flex items-center gap-1.5 flex-wrap">
+                      <p className={`font-semibold truncate text-sm ${isMe ? 'text-white' : 'text-gray-300'}`}>
+                        {row.display_name || 'Player'}
+                      </p>
+                      {isMe && (
+                        <span className="text-[10px] font-black px-1.5 py-0.5 rounded-full border flex-shrink-0 bg-purple-900/50 border-purple-500/50 text-purple-300">
+                          YOU
+                        </span>
+                      )}
+                    </div>
+                    <div className="flex items-center gap-1.5 mt-0.5 flex-wrap">
+                      <span className={`font-semibold ${isMe ? 'text-[11px] text-green-400' : 'text-[10px] text-green-400'}`}>
+                        {row.correct_picks ?? 0}✓
+                      </span>
+                      <span className="text-[10px] text-gray-600">·</span>
+                      <span className={`${isMe ? 'text-[11px] text-gray-400' : 'text-[10px] text-gray-400'}`}>
+                        {row.gameweeks_played ?? 0} GW
+                      </span>
                     </div>
                   </div>
-                ))}
-              </div>
-            )
-          })()}
-          {loading ? (
-            <div className="flex justify-center py-20"><Spinner size={28} /></div>
-          ) : standings.length === 0 ? (
-            <div className="text-center py-20">
-              <p className="text-gray-500 text-sm">No picks submitted yet</p>
-              <p className="text-gray-700 text-xs mt-1">Standings appear once gameweeks are settled</p>
-            </div>
-          ) : standings.map((row, i) => (
-            <div key={row.user_id} className="flex items-center gap-4 px-4 py-3 border-b border-white/5">
-              <span className={`w-7 text-base font-black text-center flex-shrink-0 ${
-                i === 0 ? 'text-yellow-400' : i === 1 ? 'text-gray-300' : i === 2 ? 'text-amber-600' : 'text-gray-600'
-              }`}>{row.position}</span>
-              <div className="w-10 h-10 rounded-full bg-indigo-500/20 border border-indigo-500/15 flex items-center justify-center text-sm font-bold flex-shrink-0 overflow-hidden">
-                {row.avatar_url
-                  ? <img src={row.avatar_url} alt="" className="w-full h-full object-cover rounded-full" />
-                  : <span className="text-indigo-300">{row.display_name?.[0]?.toUpperCase()}</span>}
-              </div>
-              <div className="flex-1 min-w-0">
-                <p className="text-white text-sm font-semibold truncate">{row.display_name}</p>
-                <p className="text-gray-600 text-xs">{row.gameweeks_played} GW · {row.correct_picks} correct</p>
-              </div>
-              <div className="text-right flex-shrink-0">
-                <p className="text-white font-black text-xl leading-none">{row.total_points}</p>
-                <p className="text-gray-600 text-[10px] mt-0.5">pts</p>
-              </div>
-            </div>
-          ))}
+
+                  {/* Points */}
+                  <div className="flex-shrink-0 text-right">
+                    <span
+                      className={`font-black tabular-nums ${isMe ? 'text-xl text-white' : 'text-base text-indigo-300'}`}
+                      style={isMe ? { textShadow: '0 0 16px rgba(168,85,247,0.6)' } : {}}
+                    >
+                      {row.total_points}
+                    </span>
+                    <p className={`font-normal ${isMe ? 'text-[11px] text-purple-400/70' : 'text-[10px] text-gray-500'}`}>pts</p>
+                  </div>
+                </div>
+              )
+            })
+          )}
+          {!loading && standings.length > 0 && <div className="pb-32" />}
         </div>
       </div>
+
+      {/* ── Sticky footer: your position ── */}
+      {!loading && myIdx >= 0 && (
+        <div className="flex-shrink-0 border-t border-white/8" style={{ backdropFilter: 'blur(12px)', background: 'rgba(10,13,18,0.95)' }}>
+          <div className="max-w-md mx-auto px-4 py-3 flex items-center justify-between">
+            <div>
+              <p className="text-white text-xs font-semibold">Your position</p>
+              <p className="text-purple-400 text-[11px] mt-0.5">#{myIdx + 1} of {standings.length}</p>
+            </div>
+            <div className="text-right">
+              <p className="font-black text-2xl leading-none text-white">{standings[myIdx]?.total_points}</p>
+              <p className="text-[10px] text-gray-500">pts</p>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   )
 }
@@ -605,10 +724,8 @@ export default function DivisionsPage() {
       {section === 'leagues' && selectedLeague && (
         <LeagueStandingsView
           league={selectedLeague}
-          onBack={() => {
-            // If came from a single-league auto-select, back goes to global tab
-            setSelectedLeague(null)
-          }}
+          myUserId={myUserId}
+          onBack={() => setSelectedLeague(null)}
         />
       )}
     </>
