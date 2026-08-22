@@ -39,7 +39,11 @@ const TABS = [
     label: 'Leagues',
     icon: (active) => (
       <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={active ? 2.2 : 1.8} strokeLinecap="round" strokeLinejoin="round">
-        <path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z"/>
+        <path d="M6 9H4a2 2 0 0 1-2-2V5h4"/>
+        <path d="M18 9h2a2 2 0 0 0 2-2V5h-4"/>
+        <path d="M6 5h12v7a6 6 0 0 1-12 0V5z"/>
+        <path d="M12 18v3"/>
+        <path d="M8 21h8"/>
       </svg>
     ),
   },
