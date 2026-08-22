@@ -318,6 +318,11 @@ export default function GloryRankingList({
                       LIVE
                     </span>
                   )}
+                  {row.division_name && (
+                    <span className="text-[9px] font-semibold px-1.5 py-0.5 rounded-full border flex-shrink-0 bg-white/4 border-white/8 text-gray-500">
+                      {row.division_name}
+                    </span>
+                  )}
                 </div>
 
                 <div className="flex items-center gap-1.5 mt-0.5 flex-wrap">

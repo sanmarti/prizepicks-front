@@ -1,6 +1,6 @@
-import { useEffect, useState, useRef, useCallback } from 'react'
+import { useEffect, useState, useRef } from 'react'
 import { getGloryDivisions, getGloryLeaderboard, getGloryStatus } from '../api/glory'
-import GloryRankingList, { GloryRankingHeader } from '../components/GloryRankingList'
+import GloryRankingList from '../components/GloryRankingList'
 import { getMyLeagues, getLeagueStandings } from '../api/leagues'
 import Spinner from '../components/ui/Spinner'
 
@@ -15,215 +15,9 @@ const V = {
 const getV = d => V[d.display_order] || V[1]
 
 
-// ── Full-screen "All Divisions" list ──────────────────────────────────────────
-function DivisionsListScreen({ divisions, divStats, myDivId, activeDiv, onSelect, onClose, totalPlayers }) {
-  const myDiv       = divisions.find(d => d.id === myDivId)
-  const myV         = myDiv ? getV(myDiv) : null
-  const myCardRef   = useRef(null)
-  const scrollRef   = useRef(null)
 
-  useEffect(() => {
-    setTimeout(() => {
-      const container = scrollRef.current
-      const card      = myCardRef.current
-      if (!container || !card) return
-      const cardOffsetTop = card.offsetTop
-      const center        = cardOffsetTop - container.clientHeight / 2 + card.offsetHeight / 2
-      container.scrollTo({ top: Math.max(0, center), behavior: 'instant' })
-    }, 80)
-  }, [])
-
-  return (
-    <div className="fixed inset-0 z-50 bg-[#0a0d12] flex flex-col">
-
-      {/* Your division banner */}
-      {myDiv && myV && (
-        <div className="flex-shrink-0 border-b border-white/5" style={{ background: myV.bg }}>
-          <div className="max-w-md mx-auto px-4 pt-safe-12 py-3 flex items-center gap-3">
-            <div className="w-9 h-9 rounded-xl flex items-center justify-center text-lg border flex-shrink-0"
-              style={{ background: myV.bg, borderColor: myV.border }}>
-              {myDiv.icon}
-            </div>
-            <div className="flex-1 min-w-0">
-              <p className="text-[10px] font-black tracking-widest" style={{ color: myV.accent }}>YOUR CURRENT DIVISION</p>
-              <p className="text-white font-bold text-sm truncate">{myDiv.name}</p>
-            </div>
-            <button
-              onClick={() => onSelect(myDiv)}
-              className="flex-shrink-0 text-xs font-black px-3 py-1.5 rounded-xl"
-              style={{ background: myV.accent + '25', color: myV.accent, border: `1px solid ${myV.border}` }}
-            >
-              View ›
-            </button>
-          </div>
-        </div>
-      )}
-
-      {/* Division cards */}
-      <div ref={scrollRef} className="flex-1 overflow-y-auto py-4 pb-32" style={{ overscrollBehaviorY: 'contain' }}>
-        <div className="max-w-md mx-auto px-4 space-y-5">
-          {[...divisions].reverse().map(div => {
-            const v      = getV(div)
-            const stats  = divStats[div.id] || {}
-            const isMe   = div.id === myDivId
-            const isActive = div.id === activeDiv?.id
-            const count  = stats.count
-            const myRank = stats.myRank
-            const topLP  = stats.topLP
-
-            const promLP = div.promotion_min_points
-            const relLP  = div.allows_relegation && div.relegation_max_points !== null ? div.relegation_max_points : null
-            const isTop  = div.is_highest
-            const safeMin = relLP !== null ? relLP + 1 : 1
-            const safeMax = !isTop && promLP !== null ? promLP - 1 : null
-
-            return (
-              <div
-                key={div.id}
-                ref={isMe ? myCardRef : null}
-                className="rounded-2xl overflow-hidden border transition-all"
-                style={{
-                  borderColor: isMe ? v.accent : isActive ? v.border : 'rgba(255,255,255,0.10)',
-                  boxShadow: isMe ? `0 4px 32px ${v.glow}` : isActive ? `0 4px 18px ${v.glow}` : undefined,
-                }}
-              >
-                {/* ── Cover image (admin-panel style) ── */}
-                <div className="relative h-36 overflow-hidden">
-                  <img
-                    src={div.badge_url || v.image}
-                    alt={div.name}
-                    className="w-full h-full object-cover object-center"
-                    onError={e => { e.target.style.display = 'none' }}
-                  />
-                  {/* Gradient overlays */}
-                  <div className="absolute inset-0 bg-gradient-to-t from-[#0d1117]/95 via-[#0d1117]/40 to-transparent" />
-                  <div className="absolute inset-0 bg-gradient-to-r from-black/30 via-transparent to-black/30" />
-
-                  {/* Top badges */}
-                  <div className="absolute top-3 left-3 flex gap-1.5">
-                    {isTop && (
-                      <span className="text-[10px] font-black px-2 py-0.5 rounded-full bg-black/60 backdrop-blur-sm text-yellow-400 border border-yellow-500/40">
-                        TOP DIV
-                      </span>
-                    )}
-                    {isMe && (
-                      <span className="text-[10px] font-black px-2 py-0.5 rounded-full backdrop-blur-sm"
-                        style={{ background: 'rgba(0,0,0,0.6)', color: v.accent, border: `1px solid ${v.border}` }}>
-                        YOUR DIVISION
-                      </span>
-                    )}
-                  </div>
-
-                  {/* Stats top-right */}
-                  <div className="absolute top-3 right-3 text-right">
-                    {count != null && (
-                      <p className="text-white font-black text-sm drop-shadow">{count} <span className="text-white/50 text-[10px] font-normal">players</span></p>
-                    )}
-                    {topLP != null && (
-                      <p className="text-yellow-400 text-[11px] font-bold drop-shadow">Leader {topLP} LP</p>
-                    )}
-                  </div>
-
-                  {/* Division identity — bottom of image */}
-                  <div className="absolute bottom-0 left-0 right-0 px-4 pb-3 flex items-end gap-3">
-                    <div className="w-11 h-11 rounded-2xl flex items-center justify-center text-xl border flex-shrink-0 shadow-lg"
-                      style={{ background: v.bg, borderColor: v.border, backdropFilter: 'blur(8px)' }}>
-                      {div.icon}
-                    </div>
-                    <div className="min-w-0">
-                      <p className="font-black text-base leading-tight" style={{ color: v.accent, textShadow: `0 0 20px ${v.accent}60` }}>
-                        {div.name}
-                      </p>
-                      {totalPlayers > 0 && count != null && (
-                        <p className="text-white/50 text-[11px]">{Math.round((count / totalPlayers) * 100)}% of players</p>
-                      )}
-                    </div>
-                    {myRank != null && (
-                      <div className="ml-auto flex-shrink-0 text-right">
-                        <p className="font-black text-lg leading-none" style={{ color: v.accent }}>#{myRank}</p>
-                        <p className="text-white/40 text-[10px]">your rank</p>
-                      </div>
-                    )}
-                  </div>
-                </div>
-
-                {/* ── Zone breakdown ── */}
-                <div className="bg-[#0d1117] divide-y divide-white/5">
-                  {/* Promotion */}
-                  {!isTop && promLP !== null && (
-                    <div className="flex items-center gap-3 px-4 py-2.5">
-                      <span className="w-1 h-7 rounded-full bg-green-500 flex-shrink-0" />
-                      <div className="flex-1 min-w-0">
-                        <p className="text-green-400 text-[11px] font-black">⬆ Promotion</p>
-                        <p className="text-green-700 text-[10px]">Score {promLP}+ LP this sprint to move up</p>
-                      </div>
-                      <span className="text-green-400 font-black text-xs flex-shrink-0">≥{promLP} LP</span>
-                    </div>
-                  )}
-
-                  {/* Maintain */}
-                  <div className="flex items-center gap-3 px-4 py-2.5">
-                    <span className="w-1 h-7 rounded-full bg-white/20 flex-shrink-0" />
-                    <div className="flex-1 min-w-0">
-                      <p className="text-gray-300 text-[11px] font-black">↔ Maintain</p>
-                      <p className="text-gray-600 text-[10px]">
-                        {isTop
-                          ? 'Hold your spot at the top division'
-                          : relLP !== null
-                            ? `Stay ${safeMin}–${safeMax ?? '?'} LP to keep your division`
-                            : `Stay below ${promLP} LP — no relegation here`
-                        }
-                      </p>
-                    </div>
-                    <span className="text-gray-500 font-bold text-xs flex-shrink-0">
-                      {safeMax != null ? `${safeMin}–${safeMax}` : `1–${(promLP ?? 1) - 1}`} LP
-                    </span>
-                  </div>
-
-                  {/* Relegation */}
-                  {relLP !== null ? (
-                    <div className="flex items-center gap-3 px-4 py-2.5">
-                      <span className="w-1 h-7 rounded-full bg-red-500 flex-shrink-0" />
-                      <div className="flex-1 min-w-0">
-                        <p className="text-red-400 text-[11px] font-black">⬇ Relegation</p>
-                        <p className="text-red-800 text-[10px]">Finish at {relLP} LP or below to drop down</p>
-                      </div>
-                      <span className="text-red-400 font-black text-xs flex-shrink-0">≤{relLP} LP</span>
-                    </div>
-                  ) : !isTop && (
-                    <div className="flex items-center gap-3 px-4 py-2.5">
-                      <span className="w-1 h-7 rounded-full bg-gray-800 flex-shrink-0" />
-                      <p className="text-gray-700 text-[10px]">No relegation in this division</p>
-                    </div>
-                  )}
-
-                  {/* View Rankings button */}
-                  <div className="px-4 py-3">
-                    <button
-                      onClick={() => onSelect(div)}
-                      className="w-full py-2.5 rounded-xl text-sm font-black transition-all active:scale-[0.98] flex items-center justify-center gap-2"
-                      style={{ background: v.bg, color: v.accent, border: `1px solid ${v.border}` }}
-                    >
-                      View Rankings ›
-                    </button>
-                  </div>
-                </div>
-              </div>
-            )
-          })}
-        </div>
-      </div>
-
-
-    </div>
-  )
-}
-
-// ── Rankings screen ────────────────────────────────────────────────────────────
-function RankingsScreen({ div, sprintId, sprintName, myUserId, myDivId, onOpenPicker, onBack, totalPlayers, isGwLocked }) {
-  const promLP = div.promotion_min_points ?? null
-  const relLP  = div.allows_relegation && div.relegation_max_points !== null ? div.relegation_max_points : null
-
+// ── Global rankings screen (all players, level shown per row) ─────────────────
+function RankingsScreen({ sprintId, sprintName, myUserId, myDiv, totalPlayers, isGwLocked }) {
   const [lb, setLb]           = useState(null)
   const [loading, setLoading] = useState(true)
   const myRowRef = useRef(null)
@@ -231,33 +25,52 @@ function RankingsScreen({ div, sprintId, sprintName, myUserId, myDivId, onOpenPi
   useEffect(() => {
     setLoading(true)
     setLb(null)
-    getGloryLeaderboard({ division_id: div.id, sprint_id: sprintId })
+    getGloryLeaderboard({ sprint_id: sprintId })
       .then(r => setLb(r.data))
       .catch(() => setLb({ rows: [] }))
       .finally(() => setLoading(false))
-  }, [div.id, sprintId])
+  }, [sprintId])
 
   const rows  = lb?.rows || []
   const myIdx = rows.findIndex(r => r.user_id === myUserId)
 
   useEffect(() => {
-    if (!loading && myRowRef.current) {
+    if (!loading && myRowRef.current)
       setTimeout(() => myRowRef.current?.scrollIntoView({ block: 'center', behavior: 'instant' }), 50)
-    }
   }, [loading])
 
   return (
     <div className="fixed inset-0 z-40 flex flex-col bg-[#0a0d12]">
-      <GloryRankingHeader
-        division={div}
-        sprintName={sprintName}
-        playerCount={rows.length}
-        promLP={promLP}
-        relLP={relLP}
-        onBack={onBack}
-        onDivisionsClick={onOpenPicker}
-        showBack={div.id !== myDivId}
-      />
+      {/* Hero header */}
+      <div className="flex-shrink-0 h-36 bg-[#0a0d12]">
+        <div className="relative h-36 max-w-md mx-auto overflow-hidden">
+          <img
+            src={myDiv?.badge_url || V[myDiv?.display_order]?.image || V[1].image}
+            alt=""
+            className="w-full h-full object-cover object-center opacity-65"
+            onError={e => { e.target.style.display = 'none' }}
+          />
+          <div className="absolute inset-0 bg-gradient-to-t from-[#0a0d12] via-[#0a0d12]/25 to-transparent" />
+          <div className="absolute top-3 right-4 px-2.5 py-1 rounded-xl border border-white/10 backdrop-blur-sm" style={{ background: 'rgba(0,0,0,0.40)' }}>
+            <p className="text-white/70 text-[11px] font-semibold">{rows.length || totalPlayers || 0} players</p>
+          </div>
+          <div className="absolute bottom-3 left-4">
+            <p className="font-black text-base leading-tight text-white drop-shadow-sm">Global Ranking</p>
+            {sprintName && <p className="text-white/50 text-[11px] leading-tight">{sprintName}</p>}
+          </div>
+        </div>
+      </div>
+
+      {/* Your level strip */}
+      {myDiv && (
+        <div className="flex-shrink-0 border-b border-white/5">
+          <div className="max-w-md mx-auto px-4 py-2 flex items-center gap-2">
+            <span className="text-[10px] text-gray-600">Your level:</span>
+            <span className="text-[10px] font-bold text-white/70">{myDiv.name}</span>
+            <span className="text-[9px] text-gray-600 ml-auto">⚡ Tiebreaker: equal LP → fewer energy used ranks higher</span>
+          </div>
+        </div>
+      )}
 
       {/* List */}
       <div className="flex-1 overflow-y-auto" style={{ overscrollBehaviorY: 'contain' }}>
@@ -265,25 +78,14 @@ function RankingsScreen({ div, sprintId, sprintName, myUserId, myDivId, onOpenPi
           <GloryRankingList
             rows={rows}
             myUserId={myUserId}
-            promLP={promLP}
-            relLP={relLP}
-            isHighestDiv={div.is_highest}
+            promLP={null}
+            relLP={null}
+            isHighestDiv={true}
             isGwLocked={isGwLocked}
             myRowRef={myRowRef}
             loading={loading}
           />
-          {!loading && rows.length > 0 && (
-            <div className="px-4 pt-2 pb-32">
-              <button
-                onClick={onOpenPicker}
-                className="w-full flex items-center justify-center gap-2 py-3 rounded-xl border border-white/10 text-sm font-semibold text-gray-400 hover:text-white hover:border-white/20 transition-colors"
-                style={{ background: 'rgba(255,255,255,0.03)' }}
-              >
-                <span>See other divisions</span>
-                <span className="text-xs">›</span>
-              </button>
-            </div>
-          )}
+          {!loading && rows.length > 0 && <div className="pb-32" />}
         </div>
       </div>
 
@@ -295,27 +97,13 @@ function RankingsScreen({ div, sprintId, sprintName, myUserId, myDivId, onOpenPi
               <p className="text-white text-xs font-semibold">Your position</p>
               <p className="text-purple-400 text-[11px] mt-0.5">#{rows[myIdx]?.rank ?? myIdx + 1} of {rows.length}</p>
             </div>
-            <div className="flex items-center gap-3">
-              {!div.is_highest && promLP !== null && (
-                <div className="text-right">
-                  <p className="text-[10px] text-gray-500">to promotion</p>
-                  <p className="font-bold text-sm text-green-400">
-                    {Math.max(0, promLP - (rows[myIdx]?.total_league_points ?? 0))} LP
-                  </p>
-                </div>
-              )}
-              <div className="text-right">
-                <p className="font-black text-2xl leading-none text-white">
-                  {rows[myIdx]?.total_league_points}
-                </p>
-                <p className="text-[10px] text-gray-500">LP</p>
-              </div>
+            <div className="text-right">
+              <p className="font-black text-2xl leading-none text-white">{rows[myIdx]?.total_league_points}</p>
+              <p className="text-[10px] text-gray-500">LP</p>
             </div>
           </div>
         </div>
       )}
-
-
     </div>
   )
 }
@@ -590,52 +378,19 @@ function MyLeaguesScreen({ onSelectLeague }) {
 export default function DivisionsPage() {
   const [divisions,      setDivisions]      = useState([])
   const [myStatus,       setMyStatus]       = useState(null)
-  const [divStats,       setDivStats]       = useState({})
   const [loading,        setLoading]        = useState(true)
-  const [activeDiv,      setActiveDiv]      = useState(null)
-  const [listOpen,       setListOpen]       = useState(false)
   const [section,        setSection]        = useState('leagues')  // 'global' | 'leagues'
   const [selectedLeague, setSelectedLeague] = useState(null)
 
   useEffect(() => {
     Promise.all([getGloryDivisions(), getGloryStatus(), getMyLeagues()])
-      .then(async ([divsRes, statusRes, leaguesRes]) => {
-        const sorted   = [...divsRes.data].sort((a, b) => a.display_order - b.display_order)
-        const status   = statusRes.data
-        const myDivId  = status?.division?.division_id
-        const sprintId = status?.sprint?.id
-        const myUid    = status?.user?.id
-        const leagues  = leaguesRes.data || []
-
+      .then(([divsRes, statusRes, leaguesRes]) => {
+        const sorted  = [...divsRes.data].sort((a, b) => a.display_order - b.display_order)
+        const leagues = leaguesRes.data || []
         setDivisions(sorted)
-        setMyStatus(status)
-        setActiveDiv(sorted.find(d => d.id === myDivId) ?? sorted[0] ?? null)
-
-        // If no leagues, fall back to global
-        if (leagues.length === 0) {
-          setSection('global')
-        } else if (leagues.length === 1) {
-          // Only one league — go straight to its standings
-          setSelectedLeague(leagues[0])
-        }
-        // else: multiple leagues → show selector (default section='leagues')
-
-        // Fetch all leaderboards in parallel to build stats for each card
-        const results = await Promise.allSettled(
-          sorted.map(d => getGloryLeaderboard({ division_id: d.id, sprint_id: sprintId }))
-        )
-        const stats = {}
-        results.forEach((res, i) => {
-          if (res.status !== 'fulfilled') return
-          const rows  = res.value.data?.rows ?? []
-          const myIdx = myUid ? rows.findIndex(r => r.user_id === myUid) : -1
-          stats[sorted[i].id] = {
-            count:  rows.length,
-            myRank: myIdx >= 0 ? myIdx + 1 : null,
-            topLP:  rows[0]?.total_league_points ?? null,
-          }
-        })
-        setDivStats(stats)
+        setMyStatus(statusRes.data)
+        if (leagues.length === 0) setSection('global')
+        else if (leagues.length === 1) setSelectedLeague(leagues[0])
       })
       .catch(() => {})
       .finally(() => setLoading(false))
@@ -647,20 +402,14 @@ export default function DivisionsPage() {
     </div>
   )
 
-  const myUserId    = myStatus?.user?.id
-  const myDivId     = myStatus?.division?.division_id
-  const sprintId    = myStatus?.sprint?.id
-  const sprintName  = myStatus?.sprint?.name
-  const totalPlayers = Object.values(divStats).reduce((sum, s) => sum + (s.count || 0), 0)
-  const isGwLocked  = (myStatus?.sprint?.gameweeks ?? []).some(g => g.status === 'LOCKED')
+  const myUserId   = myStatus?.user?.id
+  const myDivId    = myStatus?.division?.division_id
+  const sprintId   = myStatus?.sprint?.id
+  const sprintName = myStatus?.sprint?.name
+  const myDiv      = divisions.find(d => d.id === myDivId) ?? null
+  const isGwLocked = (myStatus?.sprint?.gameweeks ?? []).some(g => g.status === 'LOCKED')
 
-  if (!activeDiv) return (
-    <div className="min-h-screen bg-[#0a0d12] flex items-center justify-center text-gray-500 text-sm">
-      No divisions found
-    </div>
-  )
-
-  const showTabBar = !listOpen && !selectedLeague
+  const showTabBar = !selectedLeague
 
   return (
     <>
@@ -691,30 +440,14 @@ export default function DivisionsPage() {
 
       {/* ── Global rankings ─────────────────────────────────────────────────── */}
       {section === 'global' && (
-        <>
-          <RankingsScreen
-            div={activeDiv}
-            sprintId={sprintId}
-            sprintName={sprintName}
-            myUserId={myUserId}
-            myDivId={myDivId}
-            onOpenPicker={() => setListOpen(true)}
-            onBack={() => setListOpen(true)}
-            totalPlayers={totalPlayers}
-            isGwLocked={isGwLocked}
-          />
-          {listOpen && (
-            <DivisionsListScreen
-              divisions={divisions}
-              divStats={divStats}
-              myDivId={myDivId}
-              activeDiv={activeDiv}
-              onSelect={div => { setActiveDiv(div); setListOpen(false) }}
-              onClose={() => setListOpen(false)}
-              totalPlayers={totalPlayers}
-            />
-          )}
-        </>
+        <RankingsScreen
+          sprintId={sprintId}
+          sprintName={sprintName}
+          myUserId={myUserId}
+          myDiv={myDiv}
+          totalPlayers={divisions.length}
+          isGwLocked={isGwLocked}
+        />
       )}
 
       {/* ── My Leagues rankings ─────────────────────────────────────────────── */}
