@@ -24,13 +24,15 @@ const TABS = [
     ),
   },
   {
-    to: '/divisions',
-    label: 'Rankings',
+    to: '/matchup',
+    label: 'Matchup',
     icon: (active) => (
       <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={active ? 2.2 : 1.8} strokeLinecap="round" strokeLinejoin="round">
-        <rect x="2" y="12" width="5" height="9" rx="1"/>
-        <rect x="9.5" y="7" width="5" height="14" rx="1"/>
-        <rect x="17" y="16" width="5" height="5" rx="1"/>
+        <circle cx="7" cy="8" r="3"/>
+        <circle cx="17" cy="8" r="3"/>
+        <path d="M11 8h2"/>
+        <path d="M4 20c0-2.2 1.35-4 3-4s3 1.8 3 4"/>
+        <path d="M14 20c0-2.2 1.35-4 3-4s3 1.8 3 4"/>
       </svg>
     ),
   },

@@ -78,54 +78,65 @@ export default function LeaguesPage() {
   )
 }
 
+const STATUS_BADGE = {
+  draft:     'bg-gray-500/20 text-gray-400 border-gray-500/30',
+  open:      'bg-blue-500/20 text-blue-400 border-blue-500/30',
+  active:    'bg-green-500/20 text-green-400 border-green-500/30',
+  completed: 'bg-amber-500/20 text-amber-400 border-amber-500/30',
+}
+const STATUS_LABEL = { draft: 'Draft', open: 'Open', active: 'Active', completed: 'Finished' }
+
 function LeagueCard({ league, onClick }) {
-  const period = league.current_period
+  const statusCls = STATUS_BADGE[league.status] || STATUS_BADGE.draft
   return (
     <div onClick={onClick}
       className="bg-[#0d1117] border border-white/8 rounded-2xl overflow-hidden cursor-pointer hover:border-indigo-500/30 transition-all active:scale-[0.99]">
 
       {/* Header image / banner */}
       <div className="relative h-32 overflow-hidden">
-        {league.image_url ? (
-          <img src={league.image_url} alt={league.name} className="w-full h-full object-cover object-center" />
-        ) : (
-          <div className="w-full h-full bg-gradient-to-br from-indigo-950 via-violet-900/50 to-slate-950" />
-        )}
-        {/* Dark gradient overlay */}
+        {league.image_url
+          ? <img src={league.image_url} alt={league.name} className="w-full h-full object-cover object-center" />
+          : <div className="w-full h-full bg-gradient-to-br from-indigo-950 via-violet-900/50 to-slate-950" />}
         <div className="absolute inset-0 bg-gradient-to-t from-[#0d1117]/95 via-[#0d1117]/30 to-transparent" />
 
-        {/* Top-right badges */}
-        <div className="absolute top-3 right-3 flex flex-col items-end gap-1.5">
+        {/* Top badges */}
+        <div className="absolute top-3 left-3 right-3 flex items-center justify-between">
+          <span className={`text-[10px] px-2 py-0.5 rounded-full backdrop-blur-sm font-bold border ${statusCls}`}>
+            {STATUS_LABEL[league.status] || 'Draft'}
+          </span>
           {league.role === 'admin' && (
             <span className="text-[10px] px-2 py-0.5 rounded-full bg-black/60 backdrop-blur-sm text-indigo-300 border border-indigo-500/30 font-bold">Admin</span>
           )}
-          {period && (
-            <span className={`text-[10px] px-2 py-0.5 rounded-full backdrop-blur-sm font-bold ${
-              period.status === 'live'
-                ? 'bg-green-500/20 text-green-400 border border-green-500/30'
-                : 'bg-black/60 text-gray-400 border border-white/10'
-            }`}>{period.name}</span>
-          )}
         </div>
 
-        {/* Bottom: trophy emoji + league name */}
-        <div className="absolute bottom-0 left-0 right-0 px-4 pb-3 flex items-end gap-2.5">
-          <span className="text-2xl leading-none flex-shrink-0">🏆</span>
+        {/* Bottom: name */}
+        <div className="absolute bottom-0 left-0 right-0 px-4 pb-3">
           <p className="text-white font-black text-base leading-tight truncate">{league.name}</p>
+          {league.total_weeks > 0 && (
+            <p className="text-white/40 text-[11px] mt-0.5">Week {league.current_week} of {league.total_weeks}</p>
+          )}
         </div>
       </div>
+
+      {/* Progress bar (active leagues) */}
+      {league.status === 'active' && league.total_weeks > 0 && (
+        <div className="h-0.5 bg-white/8">
+          <div className="h-full bg-indigo-500 transition-all"
+            style={{ width: `${Math.min((league.current_week / league.total_weeks) * 100, 100)}%` }} />
+        </div>
+      )}
 
       {/* Info row */}
       <div className="px-4 py-3 flex items-center justify-between border-t border-white/5">
         <div className="flex items-center gap-3 text-xs text-gray-500">
-          <span>👥 {league.member_count} members</span>
-          {league.entry_fee_euros > 0 && (
-            <span className="text-gray-500">€{parseFloat(league.entry_fee_euros).toFixed(2)} entry</span>
-          )}
+          <span>👥 {league.member_count}</span>
+          {league.entry_fee_euros > 0 && <span>€{parseFloat(league.entry_fee_euros).toFixed(2)}</span>}
         </div>
         <div className="flex items-center gap-3">
           {league.my_position != null && (
-            <span className="text-indigo-400 font-black text-sm">#{league.my_position} <span className="text-gray-600 font-normal text-xs">of {league.member_count}</span></span>
+            <span className="text-indigo-400 font-black text-sm">
+              #{league.my_position} <span className="text-gray-600 font-normal text-xs">of {league.member_count}</span>
+            </span>
           )}
           <svg className="w-4 h-4 text-gray-600 flex-shrink-0" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
             <polyline points="9 18 15 12 9 6" />

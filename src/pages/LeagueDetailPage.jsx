@@ -1,64 +1,58 @@
 import { useState, useEffect, useCallback } from 'react'
 import { useParams, useNavigate } from 'react-router-dom'
-import { getLeague, getLeagueStandings, leaveLeague, updateLeague, getSprints, updatePeriod } from '../api/leagues'
+import { getLeague, getLeagueStandings, getLeagueCalendar, leaveLeague, updateLeague, toggleMemberPayment } from '../api/leagues'
 import Spinner from '../components/ui/Spinner'
 
-const TABS = ['Standings', 'Members', 'Settings']
-const ADMIN_TABS = ['Standings', 'Members', 'Settings']
+const TABS = ['Standings', 'Calendar', 'Members', 'Settings']
+
+const STATUS_LABEL = {
+  draft:     { label: 'Draft',    cls: 'bg-gray-500/15 text-gray-400 border-gray-500/25' },
+  open:      { label: 'Open',     cls: 'bg-blue-500/15 text-blue-400 border-blue-500/25' },
+  active:    { label: 'Active',   cls: 'bg-green-500/15 text-green-400 border-green-500/25' },
+  completed: { label: 'Finished', cls: 'bg-amber-500/15 text-amber-400 border-amber-500/25' },
+}
 
 export default function LeagueDetailPage() {
   const { id } = useParams()
   const navigate = useNavigate()
-  const [tab, setTab] = useState('Standings')
-  const [league, setLeague] = useState(null)
-  const [standings, setStandings] = useState([])
-  const [loading, setLoading] = useState(true)
-  const [leaving, setLeaving] = useState(false)
-  const [editName, setEditName] = useState('')
-  const [editFee, setEditFee] = useState('')
-  const [editImageUrl, setEditImageUrl] = useState('')
-  const [saving, setSaving] = useState(false)
-  const [saveMsg, setSaveMsg] = useState(null)
-  const [sprints, setSprints] = useState([])
-  const [periodName, setPeriodName] = useState('')
-  const [startSprintId, setStartSprintId] = useState('')
-  const [endSprintId, setEndSprintId] = useState('')
-  const [savingPeriod, setSavingPeriod] = useState(false)
-  const [periodMsg, setPeriodMsg] = useState(null)
+  const [tab,        setTab]        = useState('Standings')
+  const [league,     setLeague]     = useState(null)
+  const [standings,  setStandings]  = useState([])
+  const [calendar,   setCalendar]   = useState(null)
+  const [loading,    setLoading]    = useState(true)
+  const [leaving,    setLeaving]    = useState(false)
+  const [editName,   setEditName]   = useState('')
+  const [editFee,    setEditFee]    = useState('')
+  const [editImg,    setEditImg]    = useState('')
+  const [saving,     setSaving]     = useState(false)
+  const [saveMsg,    setSaveMsg]    = useState(null)
 
   const load = useCallback(async () => {
     try {
-      const [lRes, sRes] = await Promise.all([getLeague(id), getLeagueStandings(id)])
+      const [lRes, sRes, cRes] = await Promise.all([
+        getLeague(id),
+        getLeagueStandings(id),
+        getLeagueCalendar(id).catch(() => ({ data: null })),
+      ])
       setLeague(lRes.data)
-      setStandings(sRes.data.standings || [])
+      setStandings(sRes.data?.standings || [])
+      setCalendar(cRes.data)
     } catch { navigate('/leagues') }
     finally { setLoading(false) }
   }, [id, navigate])
 
   useEffect(() => { load() }, [load])
 
-  useEffect(() => {
-    if (!league) return
-    if (league.my_role === 'admin') {
-      getSprints().then(r => setSprints(r.data || [])).catch(() => {})
-    }
-    if (league.periods?.[0]) {
-      setPeriodName(league.periods[0].name || '')
-    }
-  }, [league])
-
   if (loading) return (
-    <div className="min-h-screen bg-[#0a0d12] flex items-center justify-center">
-      <Spinner size={32} />
-    </div>
+    <div className="min-h-screen bg-[#0a0d12] flex items-center justify-center"><Spinner size={32} /></div>
   )
   if (!league) return null
 
   const isAdmin = league.my_role === 'admin'
-  const currentPeriod = league.periods?.[0]
+  const statusInfo = STATUS_LABEL[league.status] ?? STATUS_LABEL.draft
 
   return (
-    <div className="min-h-screen bg-[#0a0d12] text-white pb-24">
+    <div className="min-h-screen bg-[#0a0d12] text-white pb-28">
       <div className="max-w-md mx-auto px-4 pt-safe-5">
 
         {/* Back */}
@@ -72,198 +66,91 @@ export default function LeagueDetailPage() {
           </button>
         </div>
 
-        {/* Header */}
-        <div className="bg-gradient-to-br from-indigo-950 via-violet-900/40 to-indigo-950 border border-indigo-500/25 rounded-2xl p-5 mb-4">
-          <div className="flex items-center gap-4">
-            <div className="w-14 h-14 rounded-xl bg-indigo-500/20 border border-indigo-500/30 flex items-center justify-center text-3xl flex-shrink-0 overflow-hidden">
-              {league.image_url
-                ? <img src={league.image_url} alt={league.name} className="w-full h-full object-cover rounded-xl" />
-                : '🏆'}
-            </div>
-            <div className="flex-1 min-w-0">
-              <div className="flex items-center gap-2 mb-0.5">
-                <h1 className="text-white font-black text-lg truncate">{league.name}</h1>
-                {isAdmin && <span className="text-[10px] px-1.5 py-0.5 rounded bg-indigo-500/25 text-indigo-300 font-semibold flex-shrink-0">Admin</span>}
+        {/* Hero header */}
+        <div className="relative rounded-2xl overflow-hidden mb-4" style={{ minHeight: 140 }}>
+          {league.image_url
+            ? <img src={league.image_url} alt={league.name} className="absolute inset-0 w-full h-full object-cover" />
+            : <div className="absolute inset-0 bg-gradient-to-br from-indigo-950 via-violet-900/40 to-indigo-950" />}
+          <div className="absolute inset-0 bg-gradient-to-t from-black/90 via-black/40 to-transparent" />
+          <div className="relative px-5 pt-4 pb-5 flex flex-col justify-end h-full" style={{ minHeight: 140 }}>
+            <div className="flex items-end justify-between gap-3">
+              <div className="flex-1 min-w-0">
+                <div className="flex items-center gap-2 mb-1.5">
+                  <span className={`text-[10px] font-black px-2 py-0.5 rounded-full border ${statusInfo.cls}`}>{statusInfo.label}</span>
+                  {isAdmin && <span className="text-[10px] px-1.5 py-0.5 rounded bg-indigo-500/25 text-indigo-300 font-semibold border border-indigo-500/30">Admin</span>}
+                </div>
+                <h1 className="text-white font-black text-xl leading-tight truncate">{league.name}</h1>
+                <div className="flex items-center gap-3 text-xs text-white/40 mt-1">
+                  <span>👥 {league.member_count} members</span>
+                  {league.total_weeks > 0 && <span>Week {league.current_week}/{league.total_weeks}</span>}
+                  {league.entry_fee_euros > 0 && <span>€{parseFloat(league.entry_fee_euros).toFixed(2)}</span>}
+                </div>
               </div>
-              <div className="flex items-center gap-3 text-xs text-gray-400">
-                <span>👥 {league.member_count} members</span>
-                {league.entry_fee_euros > 0 && <span>€{parseFloat(league.entry_fee_euros).toFixed(2)} entry</span>}
-              </div>
+              {league.total_weeks > 0 && (
+                <div className="flex-shrink-0 w-14 h-14 rounded-xl bg-black/40 border border-white/10 flex flex-col items-center justify-center">
+                  <p className="text-white font-black text-lg leading-none">{league.current_week}</p>
+                  <p className="text-white/40 text-[9px]">of {league.total_weeks}</p>
+                </div>
+              )}
             </div>
+            {/* Season progress bar */}
+            {league.total_weeks > 0 && (
+              <div className="mt-3 h-1 bg-white/15 rounded-full overflow-hidden">
+                <div className="h-full bg-indigo-400 rounded-full"
+                  style={{ width: `${Math.min((league.current_week / league.total_weeks) * 100, 100)}%` }} />
+              </div>
+            )}
           </div>
-
-          {/* Invite code (admin only) */}
-          {isAdmin && (
-            <div className="mt-4 flex items-center gap-3 bg-white/5 border border-white/8 rounded-xl px-4 py-2.5">
-              <span className="text-gray-500 text-xs">Invite code</span>
-              <span className="text-indigo-300 font-mono font-bold tracking-widest text-sm flex-1">{league.invite_code}</span>
-              <button
-                onClick={() => navigator.clipboard.writeText(league.invite_code)}
-                className="text-gray-500 hover:text-white text-xs transition-colors"
-              >Copy</button>
-            </div>
-          )}
-
-          {/* Current period */}
-          {currentPeriod && (
-            <div className="mt-3 flex items-center gap-2">
-              <span className={`px-2.5 py-1 rounded-full text-xs font-semibold ${
-                currentPeriod.status === 'live' ? 'bg-green-500/15 text-green-400' : 'bg-gray-500/15 text-gray-400'
-              }`}>{currentPeriod.name}</span>
-              {currentPeriod.status === 'live' && <span className="text-green-400/70 text-xs">· Active period</span>}
-            </div>
-          )}
         </div>
+
+        {/* Invite code strip (admin) */}
+        {isAdmin && (
+          <div className="flex items-center gap-3 bg-white/4 border border-white/8 rounded-xl px-4 py-2.5 mb-4">
+            <span className="text-gray-500 text-xs">Invite</span>
+            <span className="text-indigo-300 font-mono font-bold tracking-widest text-sm flex-1">{league.invite_code}</span>
+            <button onClick={() => navigator.clipboard.writeText(league.invite_code)}
+              className="text-gray-500 hover:text-white text-xs transition-colors">Copy</button>
+          </div>
+        )}
 
         {/* Tabs */}
         <div className="flex gap-1 bg-white/3 border border-white/8 rounded-2xl p-1 mb-4">
-          {(isAdmin ? ADMIN_TABS : TABS).map(t => (
+          {(isAdmin ? TABS : TABS.filter(t => t !== 'Settings')).map(t => (
             <button key={t} onClick={() => setTab(t)}
-              className={`flex-1 py-2 px-3 rounded-xl text-sm font-medium transition-colors ${tab === t ? 'bg-indigo-600 text-white' : 'text-gray-500 hover:text-gray-300'}`}>
+              className={`flex-1 py-2 px-1 rounded-xl text-xs font-semibold transition-colors ${tab === t ? 'bg-indigo-600 text-white' : 'text-gray-500 hover:text-gray-300'}`}>
               {t}
             </button>
           ))}
         </div>
 
-        {/* Standings */}
+        {/* ── Standings ── */}
         {tab === 'Standings' && (
-          <div className="space-y-3">
-            {/* Prize pool (if configured) */}
-            {(() => {
-              const prizes = Array.isArray(currentPeriod?.prize_config) ? currentPeriod.prize_config : []
-              if (prizes.length === 0) return null
-              const icons = ['🥇', '🥈', '🥉', '4️⃣', '5️⃣']
-              return (
-                <div className="bg-[#0d1117] border border-amber-500/20 rounded-2xl p-4">
-                  <p className="text-amber-400/80 text-[10px] font-black uppercase tracking-widest mb-3">Prize Pool</p>
-                  <div className="flex flex-wrap gap-3">
-                    {prizes.map((p, i) => (
-                      <div key={i} className="flex items-center gap-2 bg-amber-500/8 border border-amber-500/15 rounded-xl px-3 py-2">
-                        <span className="text-base">{icons[i] || '🏅'}</span>
-                        <div>
-                          <p className="text-amber-300 font-black text-sm leading-none">€{parseFloat(p.amount_euros).toFixed(0)}</p>
-                          <p className="text-amber-700 text-[10px] mt-0.5">{['1st Place','2nd Place','3rd Place','4th Place','5th Place'][i] || `${i+1}th`}</p>
-                        </div>
-                      </div>
-                    ))}
-                  </div>
-                </div>
-              )
-            })()}
-          <div className="bg-[#0d1117] border border-white/8 rounded-2xl overflow-hidden">
-            {standings.length === 0 ? (
-              <div className="text-center py-12">
-                <p className="text-gray-500 text-sm">No picks submitted yet</p>
-                <p className="text-gray-700 text-xs mt-1">Standings will appear once gameweeks are settled</p>
-              </div>
-            ) : (
-              <div className="divide-y divide-white/4">
-                {standings.map((row, i) => (
-                  <div key={row.user_id} className="flex items-center gap-4 px-4 py-3">
-                    <span className={`w-6 text-sm font-black text-center flex-shrink-0 ${
-                      i === 0 ? 'text-yellow-400' : i === 1 ? 'text-gray-300' : i === 2 ? 'text-amber-600' : 'text-gray-600'
-                    }`}>{row.position}</span>
-                    <div className="w-9 h-9 rounded-full bg-indigo-500/20 border border-indigo-500/20 flex items-center justify-center text-sm font-bold flex-shrink-0 overflow-hidden">
-                      {row.avatar_url
-                        ? <img src={row.avatar_url} alt="" className="w-full h-full object-cover rounded-full" />
-                        : <span className="text-indigo-300">{row.display_name?.[0]?.toUpperCase()}</span>}
-                    </div>
-                    <div className="flex-1 min-w-0">
-                      <p className="text-white text-sm font-semibold truncate">{row.display_name}</p>
-                      <p className="text-gray-600 text-xs">{row.gameweeks_played} GW · {row.correct_picks} correct</p>
-                    </div>
-                    <div className="text-right flex-shrink-0">
-                      <p className="text-white font-black text-lg leading-none">{row.total_points}</p>
-                      <p className="text-gray-600 text-[10px] mt-0.5">pts</p>
-                    </div>
-                  </div>
-                ))}
-              </div>
-            )}
-          </div>
-          </div>
+          <StandingsTab standings={standings} leagueStatus={league.status} />
         )}
 
-        {/* Members */}
+        {/* ── Calendar ── */}
+        {tab === 'Calendar' && (
+          <CalendarTab calendar={calendar} currentWeek={league.current_week} />
+        )}
+
+        {/* ── Members ── */}
         {tab === 'Members' && (
-          <div className="bg-[#0d1117] border border-white/8 rounded-2xl overflow-hidden">
-            <div className="px-4 py-3 border-b border-white/5">
-              <p className="text-gray-500 text-xs font-semibold uppercase tracking-widest">{league.members?.length} members</p>
-            </div>
-            <div className="divide-y divide-white/4">
-              {(league.members || []).map(m => (
-                <div key={m.user_id} className="flex items-center gap-3 px-4 py-3">
-                  <div className="w-9 h-9 rounded-full bg-indigo-500/20 border border-indigo-500/20 flex items-center justify-center text-sm font-bold flex-shrink-0 overflow-hidden">
-                    {m.avatar_url
-                      ? <img src={m.avatar_url} alt="" className="w-full h-full object-cover rounded-full" />
-                      : <span className="text-indigo-300">{m.display_name?.[0]?.toUpperCase()}</span>}
-                  </div>
-                  <div className="flex-1 min-w-0">
-                    <div className="flex items-center gap-2">
-                      <p className="text-white text-sm font-medium truncate">{m.display_name}</p>
-                      {m.role === 'admin' && <span className="text-[10px] px-1.5 py-0.5 rounded bg-indigo-500/20 text-indigo-300 font-semibold">Admin</span>}
-                    </div>
-                  </div>
-                  {league.entry_fee_euros > 0 && (
-                    <span className={`text-xs px-2 py-1 rounded-lg font-semibold ${
-                      m.has_paid ? 'bg-green-500/15 text-green-400' : 'bg-red-500/10 text-red-400'
-                    }`}>{m.has_paid ? '✅ Paid' : '⏳ Pending'}</span>
-                  )}
-                </div>
-              ))}
-            </div>
-            <div className="px-4 py-3 border-t border-white/5">
-              <button
-                onClick={async () => {
-                  if (!window.confirm('Leave this league? You can rejoin with the invite code.')) return
-                  setLeaving(true)
-                  try {
-                    await leaveLeague(id)
-                    navigate('/leagues')
-                  } catch (e) {
-                    alert(e.response?.data?.error || 'Could not leave league')
-                    setLeaving(false)
-                  }
-                }}
-                disabled={leaving}
-                className="text-red-500/70 hover:text-red-400 text-sm font-semibold transition-colors disabled:opacity-40"
-              >
-                {leaving ? 'Leaving…' : 'Leave league'}
-              </button>
-            </div>
-          </div>
+          <MembersTab
+            members={league.members || []}
+            leagueId={id}
+            entryFee={league.entry_fee_euros}
+            isAdmin={isAdmin}
+            onLeave={async () => {
+              if (!window.confirm('Leave this league?')) return
+              setLeaving(true)
+              try { await leaveLeague(id); navigate('/leagues') }
+              catch (e) { alert(e.response?.data?.error || 'Could not leave'); setLeaving(false) }
+            }}
+            leaving={leaving}
+          />
         )}
 
-        {/* Settings */}
-        {tab === 'Settings' && !isAdmin && (
-          <div className="bg-[#0d1117] border border-white/8 rounded-2xl p-5 space-y-4">
-            <div>
-              <label className="text-gray-500 text-[11px] font-semibold uppercase tracking-widest block mb-1.5">League name</label>
-              <div className="bg-white/3 border border-white/8 rounded-xl px-4 py-3 text-white text-sm">{league.name}</div>
-            </div>
-            {league.entry_fee_euros > 0 && (
-              <div>
-                <label className="text-gray-500 text-[11px] font-semibold uppercase tracking-widest block mb-1.5">Entry fee (€)</label>
-                <div className="bg-white/3 border border-white/8 rounded-xl px-4 py-3 text-white text-sm">€{parseFloat(league.entry_fee_euros).toFixed(2)}</div>
-              </div>
-            )}
-            {league.image_url && (
-              <div>
-                <label className="text-gray-500 text-[11px] font-semibold uppercase tracking-widest block mb-1.5">League image</label>
-                <div className="w-full h-24 rounded-xl overflow-hidden border border-white/8">
-                  <img src={league.image_url} alt="" className="w-full h-full object-cover" />
-                </div>
-              </div>
-            )}
-            {currentPeriod && (
-              <div>
-                <label className="text-gray-500 text-[11px] font-semibold uppercase tracking-widest block mb-1.5">Current period</label>
-                <div className="bg-white/3 border border-white/8 rounded-xl px-4 py-3 text-white text-sm">{currentPeriod.name}</div>
-              </div>
-            )}
-          </div>
-        )}
-
+        {/* ── Settings (admin) ── */}
         {tab === 'Settings' && isAdmin && (
           <div className="bg-[#0d1117] border border-white/8 rounded-2xl p-5 space-y-4">
             <div>
@@ -281,23 +168,15 @@ export default function LeagueDetailPage() {
             <div>
               <label className="text-gray-500 text-[11px] font-semibold uppercase tracking-widest block mb-1.5">League image URL</label>
               <div className="flex gap-3 items-start">
-                <input value={editImageUrl || league.image_url || ''} onChange={e => setEditImageUrl(e.target.value)}
+                <input value={editImg || league.image_url || ''} onChange={e => setEditImg(e.target.value)}
                   placeholder="https://…"
                   className="flex-1 bg-white/5 border border-white/8 rounded-xl px-4 py-3 text-white text-sm outline-none focus:border-indigo-500 transition-colors placeholder-gray-700" />
-                {(editImageUrl || league.image_url) && (
+                {(editImg || league.image_url) && (
                   <div className="w-12 h-12 rounded-xl overflow-hidden border border-white/10 flex-shrink-0 bg-white/5">
-                    <img src={editImageUrl || league.image_url} alt="" className="w-full h-full object-cover"
+                    <img src={editImg || league.image_url} alt="" className="w-full h-full object-cover"
                       onError={e => { e.target.style.display = 'none' }} />
                   </div>
                 )}
-              </div>
-            </div>
-            <div>
-              <label className="text-gray-500 text-[11px] font-semibold uppercase tracking-widest block mb-1.5">Invite code</label>
-              <div className="flex items-center gap-3 bg-white/3 border border-white/8 rounded-xl px-4 py-3">
-                <span className="text-indigo-300 font-mono font-bold tracking-widest text-sm flex-1">{league.invite_code}</span>
-                <button onClick={() => navigator.clipboard.writeText(league.invite_code)}
-                  className="text-gray-500 hover:text-white text-xs transition-colors flex-shrink-0">Copy</button>
               </div>
             </div>
             <div className="flex items-center gap-4 pt-1">
@@ -306,9 +185,9 @@ export default function LeagueDetailPage() {
                   setSaving(true); setSaveMsg(null)
                   try {
                     await updateLeague(id, {
-                      name: editName || undefined,
+                      name:            editName  || undefined,
                       entry_fee_euros: editFee !== '' ? parseFloat(editFee) : undefined,
-                      image_url: editImageUrl || undefined,
+                      image_url:       editImg   || undefined,
                     })
                     setSaveMsg('Saved ✓')
                     load()
@@ -317,87 +196,171 @@ export default function LeagueDetailPage() {
                 }}
                 disabled={saving}
                 className="px-5 py-2.5 rounded-xl font-bold text-sm text-white transition-colors disabled:opacity-40"
-                style={{ background: 'linear-gradient(90deg,#6366f1,#4f46e5)' }}
-              >
+                style={{ background: 'linear-gradient(90deg,#6366f1,#4f46e5)' }}>
                 {saving ? 'Saving…' : 'Save changes'}
               </button>
               {saveMsg && <p className={`text-sm ${saveMsg.includes('✓') ? 'text-green-400' : 'text-red-400'}`}>{saveMsg}</p>}
             </div>
-
-            {/* Period date range */}
-            {currentPeriod && (
-              <div className="pt-2 border-t border-white/8 space-y-3">
-                <p className="text-gray-500 text-[11px] font-semibold uppercase tracking-widest">League Period</p>
-                <div>
-                  <label className="text-gray-500 text-[11px] font-semibold uppercase tracking-widest block mb-1.5">Period name</label>
-                  <input value={periodName} onChange={e => setPeriodName(e.target.value)}
-                    className="w-full bg-white/5 border border-white/8 rounded-xl px-4 py-3 text-white text-sm outline-none focus:border-indigo-500 transition-colors" />
-                </div>
-                <div className="grid grid-cols-2 gap-2">
-                  <div>
-                    <label className="text-gray-500 text-[11px] font-semibold uppercase tracking-widest block mb-1.5">Starts from</label>
-                    <select value={startSprintId} onChange={e => setStartSprintId(e.target.value)}
-                      className="w-full bg-white/5 border border-white/8 rounded-xl px-3 py-3 text-white text-sm outline-none focus:border-indigo-500 transition-colors appearance-none">
-                      <option value="">All time</option>
-                      {sprints.map(s => (
-                        <option key={s.id} value={s.id} className="bg-[#0d1117]">
-                          {s.name}
-                        </option>
-                      ))}
-                    </select>
-                  </div>
-                  <div>
-                    <label className="text-gray-500 text-[11px] font-semibold uppercase tracking-widest block mb-1.5">Ends after</label>
-                    <select value={endSprintId} onChange={e => setEndSprintId(e.target.value)}
-                      className="w-full bg-white/5 border border-white/8 rounded-xl px-3 py-3 text-white text-sm outline-none focus:border-indigo-500 transition-colors appearance-none">
-                      <option value="">All time</option>
-                      {sprints.map(s => (
-                        <option key={s.id} value={s.id} className="bg-[#0d1117]">
-                          {s.name}
-                        </option>
-                      ))}
-                    </select>
-                  </div>
-                </div>
-                {(startSprintId || endSprintId) && (() => {
-                  const s = sprints.find(x => x.id === startSprintId)
-                  const e = sprints.find(x => x.id === endSprintId)
-                  const fmt = d => new Date(d).toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' })
-                  if (s || e) return (
-                    <p className="text-indigo-400/70 text-xs">
-                      Standings cover: {s ? fmt(s.start_date) : '…'} → {e ? fmt(e.end_date) : '…'}
-                    </p>
-                  )
-                })()}
-                <div className="flex items-center gap-4">
-                  <button
-                    onClick={async () => {
-                      setSavingPeriod(true); setPeriodMsg(null)
-                      try {
-                        await updatePeriod(id, currentPeriod.id, {
-                          name: periodName || undefined,
-                          start_sprint_id: startSprintId || undefined,
-                          end_sprint_id: endSprintId || undefined,
-                        })
-                        setPeriodMsg('Saved ✓')
-                        load()
-                      } catch { setPeriodMsg('Save failed') }
-                      finally { setSavingPeriod(false) }
-                    }}
-                    disabled={savingPeriod}
-                    className="px-5 py-2.5 rounded-xl font-bold text-sm text-white transition-colors disabled:opacity-40"
-                    style={{ background: 'linear-gradient(90deg,#6366f1,#4f46e5)' }}
-                  >
-                    {savingPeriod ? 'Saving…' : 'Save period'}
-                  </button>
-                  {periodMsg && <p className={`text-sm ${periodMsg.includes('✓') ? 'text-green-400' : 'text-red-400'}`}>{periodMsg}</p>}
-                </div>
-              </div>
-            )}
           </div>
         )}
-
       </div>
+    </div>
+  )
+}
+
+// ── Standings tab ─────────────────────────────────────────────────────────────
+function StandingsTab({ standings, leagueStatus }) {
+  if (standings.length === 0) return (
+    <div className="bg-[#0d1117] border border-white/8 rounded-2xl p-8 text-center">
+      <p className="text-gray-500 text-sm">No standings yet</p>
+      <p className="text-gray-700 text-xs mt-1">
+        {leagueStatus === 'draft' || leagueStatus === 'open'
+          ? 'Standings appear once the season starts and weeks are settled.'
+          : 'Standings will update after each week is settled.'}
+      </p>
+    </div>
+  )
+
+  return (
+    <div className="bg-[#0d1117] border border-white/8 rounded-2xl overflow-hidden">
+      {/* Header row */}
+      <div className="grid grid-cols-[32px_1fr_28px_28px_28px_28px_40px] gap-1 px-4 py-2 border-b border-white/5">
+        <span />
+        <span className="text-gray-600 text-[10px] font-semibold uppercase tracking-widest">Player</span>
+        <span className="text-gray-600 text-[10px] font-semibold uppercase tracking-widest text-center">W</span>
+        <span className="text-gray-600 text-[10px] font-semibold uppercase tracking-widest text-center">D</span>
+        <span className="text-gray-600 text-[10px] font-semibold uppercase tracking-widest text-center">L</span>
+        <span className="text-gray-600 text-[10px] font-semibold uppercase tracking-widest text-center">GD</span>
+        <span className="text-gray-600 text-[10px] font-semibold uppercase tracking-widest text-right">Pts</span>
+      </div>
+      <div className="divide-y divide-white/4">
+        {standings.map((row, i) => (
+          <div key={row.user_id} className={`grid grid-cols-[32px_1fr_28px_28px_28px_28px_40px] gap-1 items-center px-4 py-3 ${i === 0 ? 'bg-amber-500/4' : ''}`}>
+            <span className={`text-sm font-black text-center ${
+              i === 0 ? 'text-yellow-400' : i === 1 ? 'text-gray-300' : i === 2 ? 'text-amber-600' : 'text-gray-600'
+            }`}>{row.position}</span>
+            <div className="flex items-center gap-2 min-w-0">
+              <div className="w-7 h-7 rounded-full bg-indigo-500/20 border border-indigo-500/20 flex items-center justify-center text-xs font-bold flex-shrink-0 overflow-hidden">
+                {row.avatar_url
+                  ? <img src={row.avatar_url} alt="" className="w-full h-full object-cover rounded-full" />
+                  : <span className="text-indigo-300">{row.display_name?.[0]?.toUpperCase()}</span>}
+              </div>
+              <div className="min-w-0">
+                <p className="text-white text-xs font-semibold truncate">{row.display_name}</p>
+                {row.division_name && <p className="text-gray-700 text-[9px]">{row.division_name}</p>}
+              </div>
+            </div>
+            <span className="text-green-400 text-xs font-bold text-center">{row.wins ?? 0}</span>
+            <span className="text-gray-400 text-xs font-bold text-center">{row.draws ?? 0}</span>
+            <span className="text-red-400/70 text-xs font-bold text-center">{row.losses ?? 0}</span>
+            <span className="text-gray-400 text-xs text-center tabular-nums">
+              {(row.goals_for ?? 0) - (row.goals_against ?? 0) >= 0
+                ? `+${(row.goals_for ?? 0) - (row.goals_against ?? 0)}`
+                : (row.goals_for ?? 0) - (row.goals_against ?? 0)}
+            </span>
+            <span className="text-white font-black text-sm text-right tabular-nums">{row.league_points ?? 0}</span>
+          </div>
+        ))}
+      </div>
+    </div>
+  )
+}
+
+// ── Calendar tab ──────────────────────────────────────────────────────────────
+function CalendarTab({ calendar, currentWeek }) {
+  if (!calendar?.calendar || Object.keys(calendar.calendar).length === 0) return (
+    <div className="bg-[#0d1117] border border-white/8 rounded-2xl p-8 text-center">
+      <p className="text-gray-500 text-sm">No calendar yet</p>
+      <p className="text-gray-700 text-xs mt-1">The admin will generate the season calendar once all players have joined.</p>
+    </div>
+  )
+
+  const weeks = Object.keys(calendar.calendar).map(Number).sort((a, b) => a - b)
+
+  return (
+    <div className="space-y-3">
+      {weeks.map(week => {
+        const matches = calendar.calendar[week] || []
+        const isCurrent = week === currentWeek
+        return (
+          <div key={week} className={`bg-[#0d1117] border rounded-2xl overflow-hidden ${isCurrent ? 'border-indigo-500/30' : 'border-white/8'}`}>
+            <div className={`px-4 py-2.5 border-b border-white/5 flex items-center justify-between ${isCurrent ? 'bg-indigo-500/8' : ''}`}>
+              <p className={`text-[11px] font-black uppercase tracking-widest ${isCurrent ? 'text-indigo-400' : 'text-gray-500'}`}>Week {week}</p>
+              {isCurrent && <span className="text-[9px] font-black text-indigo-400 bg-indigo-500/20 px-2 py-0.5 rounded-full">Current</span>}
+            </div>
+            <div className="divide-y divide-white/4">
+              {matches.map(m => {
+                const settled = m.status === 'SETTLED'
+                return (
+                  <div key={m.id} className="flex items-center gap-3 px-4 py-3">
+                    <div className="flex-1 min-w-0 text-right">
+                      <p className="text-white text-xs font-semibold truncate">{m.home_name}</p>
+                      {settled && (
+                        <p className={`text-[10px] font-black ${m.home_league_points === 3 ? 'text-green-400' : m.home_league_points === 1 ? 'text-gray-400' : 'text-red-400/60'}`}>
+                          {m.home_league_points === 3 ? 'W' : m.home_league_points === 1 ? 'D' : 'L'}
+                        </p>
+                      )}
+                    </div>
+                    <div className="flex-shrink-0 text-center w-14">
+                      {settled
+                        ? <p className="text-white font-black text-sm">{m.home_score} – {m.away_score}</p>
+                        : <p className="text-gray-600 text-xs">vs</p>}
+                      <p className="text-gray-700 text-[9px]">{settled ? 'FT' : m.status === 'PENDING' ? 'Open' : '—'}</p>
+                    </div>
+                    <div className="flex-1 min-w-0">
+                      <p className="text-white text-xs font-semibold truncate">{m.away_name}</p>
+                      {settled && (
+                        <p className={`text-[10px] font-black ${m.away_league_points === 3 ? 'text-green-400' : m.away_league_points === 1 ? 'text-gray-400' : 'text-red-400/60'}`}>
+                          {m.away_league_points === 3 ? 'W' : m.away_league_points === 1 ? 'D' : 'L'}
+                        </p>
+                      )}
+                    </div>
+                  </div>
+                )
+              })}
+            </div>
+          </div>
+        )
+      })}
+    </div>
+  )
+}
+
+// ── Members tab ───────────────────────────────────────────────────────────────
+function MembersTab({ members, leagueId, entryFee, isAdmin, onLeave, leaving }) {
+  return (
+    <div className="space-y-3">
+      <div className="bg-[#0d1117] border border-white/8 rounded-2xl overflow-hidden">
+        <div className="px-4 py-3 border-b border-white/5">
+          <p className="text-gray-500 text-xs font-semibold uppercase tracking-widest">{members.length} members</p>
+        </div>
+        <div className="divide-y divide-white/4">
+          {members.map(m => (
+            <div key={m.user_id} className="flex items-center gap-3 px-4 py-3">
+              <div className="w-9 h-9 rounded-full bg-indigo-500/20 border border-indigo-500/20 flex items-center justify-center text-sm font-bold flex-shrink-0 overflow-hidden">
+                {m.avatar_url
+                  ? <img src={m.avatar_url} alt="" className="w-full h-full object-cover rounded-full" />
+                  : <span className="text-indigo-300">{m.display_name?.[0]?.toUpperCase()}</span>}
+              </div>
+              <div className="flex-1 min-w-0">
+                <div className="flex items-center gap-2">
+                  <p className="text-white text-sm font-medium truncate">{m.display_name}</p>
+                  {m.role === 'admin' && <span className="text-[10px] px-1.5 py-0.5 rounded bg-indigo-500/20 text-indigo-300 font-semibold">Admin</span>}
+                </div>
+              </div>
+              {entryFee > 0 && (
+                <span className={`text-xs px-2 py-1 rounded-lg font-semibold ${
+                  m.has_paid ? 'bg-green-500/15 text-green-400' : 'bg-red-500/10 text-red-400'
+                }`}>{m.has_paid ? '✅ Paid' : '⏳ Pending'}</span>
+              )}
+            </div>
+          ))}
+        </div>
+      </div>
+      <button onClick={onLeave} disabled={leaving}
+        className="w-full py-3 rounded-xl text-sm font-semibold text-red-500/70 hover:text-red-400 transition-colors disabled:opacity-40">
+        {leaving ? 'Leaving…' : 'Leave league'}
+      </button>
     </div>
   )
 }
