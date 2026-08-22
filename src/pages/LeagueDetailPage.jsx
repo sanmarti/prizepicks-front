@@ -129,14 +129,15 @@ export default function LeagueDetailPage() {
             currentWeek={league.current_week}
             isAdmin={isAdmin}
             leagueStatus={league.status}
-            activating={activating}
-            activateErr={activateErr}
-            onActivate={async () => {
+            memberCount={league.member_count}
+            onActivate={async (startWeek) => {
               setActivating(true); setActivateErr(null)
-              try { await activateLeague(id); await load() }
+              try { await activateLeague(id, startWeek); await load() }
               catch (e) { setActivateErr(e.response?.data?.error || 'Could not activate league') }
               finally { setActivating(false) }
             }}
+            activating={activating}
+            activateErr={activateErr}
           />
         )}
 
@@ -299,26 +300,61 @@ function StandingsTab({ standings, leagueStatus, myUserId, inviteCode }) {
 }
 
 // ── Calendar tab ──────────────────────────────────────────────────────────────
-function CalendarTab({ calendar, currentWeek, isAdmin, leagueStatus, activating, activateErr, onActivate }) {
+function CalendarTab({ calendar, currentWeek, isAdmin, leagueStatus, memberCount, activating, activateErr, onActivate }) {
+  const [startWeek, setStartWeek] = useState('')
+
+  const totalWeeks   = memberCount >= 4 ? (memberCount - 1) * 2 : null
+  const endWeek      = startWeek && totalWeeks ? parseInt(startWeek) + totalWeeks - 1 : null
+  const canActivate  = startWeek && parseInt(startWeek) >= 1 && memberCount >= 4
+
   if (!calendar?.calendar || Object.keys(calendar.calendar).length === 0) {
     if (isAdmin && leagueStatus === 'draft') {
       return (
         <div className="bg-[#0d1117] border border-white/8 rounded-2xl p-6 space-y-5">
-          <div className="text-center space-y-2">
+          <div className="text-center space-y-1.5">
             <p className="text-3xl">📅</p>
-            <p className="text-white font-bold text-base">Activate the league</p>
-            <p className="text-gray-400 text-sm leading-relaxed">
-              Once you activate the league, the season calendar will be generated and all members will be able to see their fixtures and opponents for each week.
+            <p className="text-white font-bold text-base">Set up the season</p>
+            <p className="text-gray-500 text-xs">
+              {memberCount} players · {totalWeeks ?? '?'} weeks total ({Math.ceil(memberCount / 2)} matches/week)
             </p>
-            <p className="text-gray-600 text-xs">Make sure all players have joined before activating — you can't add more once the season starts.</p>
           </div>
+
+          <div>
+            <label className="text-gray-500 text-[11px] font-semibold uppercase tracking-widest block mb-2">
+              Starting week number
+            </label>
+            <input
+              type="number" min="1" value={startWeek}
+              onChange={e => setStartWeek(e.target.value)}
+              placeholder="e.g. 5"
+              className="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-3 text-white text-sm outline-none focus:border-indigo-500 transition-colors"
+            />
+            {startWeek && totalWeeks && (
+              <p className="text-indigo-400 text-xs mt-2 text-center font-semibold">
+                Week {startWeek} → Week {endWeek} &nbsp;·&nbsp; {totalWeeks} matchweeks
+              </p>
+            )}
+          </div>
+
+          <div className="bg-white/3 border border-white/8 rounded-xl px-4 py-3 text-xs text-gray-600 leading-relaxed">
+            Once activated, the full double round-robin calendar is generated — every player faces every other player twice (home & away). Make sure all players have joined first.
+          </div>
+
           <button
-            disabled={activating}
-            onClick={onActivate}
-            className="w-full py-3.5 rounded-2xl font-black text-sm text-white transition-all disabled:opacity-50"
+            disabled={activating || !canActivate}
+            onClick={() => onActivate(parseInt(startWeek))}
+            className="w-full py-3.5 rounded-2xl font-black text-sm text-white transition-all disabled:opacity-40"
             style={{ background: 'linear-gradient(135deg, #6366f1 0%, #8b5cf6 100%)' }}
           >
-            {activating ? 'Activating…' : 'Activate League'}
+            {activating
+              ? <span className="flex items-center justify-center gap-2">
+                  <svg className="animate-spin w-4 h-4" viewBox="0 0 24 24" fill="none">
+                    <circle cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="3" strokeOpacity=".25"/>
+                    <path d="M12 2a10 10 0 0 1 10 10" stroke="currentColor" strokeWidth="3" strokeLinecap="round"/>
+                  </svg>
+                  Generating calendar…
+                </span>
+              : 'Activate League'}
           </button>
           {activateErr && <p className="text-red-400 text-xs text-center">{activateErr}</p>}
         </div>
