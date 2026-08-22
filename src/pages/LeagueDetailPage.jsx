@@ -105,16 +105,6 @@ export default function LeagueDetailPage() {
           </div>
         </div>
 
-        {/* Invite code strip (admin) */}
-        {isAdmin && (
-          <div className="flex items-center gap-3 bg-white/4 border border-white/8 rounded-xl px-4 py-2.5 mb-3">
-            <span className="text-gray-500 text-xs">Invite</span>
-            <span className="text-indigo-300 font-mono font-bold tracking-widest text-sm flex-1">{league.invite_code}</span>
-            <button onClick={() => navigator.clipboard.writeText(league.invite_code)}
-              className="text-gray-500 hover:text-white text-xs transition-colors">Copy</button>
-          </div>
-        )}
-
         {/* Activate League (admin, draft only) */}
         {isAdmin && league.status === 'draft' && (
           <div className="mb-4">
@@ -190,6 +180,17 @@ export default function LeagueDetailPage() {
                 value={editFee !== '' ? editFee : league.entry_fee_euros}
                 onChange={e => setEditFee(e.target.value)}
                 className="w-full bg-white/5 border border-white/8 rounded-xl px-4 py-3 text-white text-sm outline-none focus:border-indigo-500 transition-colors" />
+            </div>
+            <div>
+              <label className="text-gray-500 text-[11px] font-semibold uppercase tracking-widest block mb-1.5">Invite code</label>
+              <div className="flex gap-2 items-center">
+                <input readOnly value={league.invite_code}
+                  className="flex-1 bg-white/3 border border-white/8 rounded-xl px-4 py-3 text-indigo-300 font-mono font-bold tracking-widest text-sm outline-none cursor-default" />
+                <button type="button" onClick={() => navigator.clipboard.writeText(league.invite_code)}
+                  className="px-4 py-3 bg-white/5 hover:bg-white/10 border border-white/8 rounded-xl text-gray-400 hover:text-white text-xs font-semibold transition-colors">
+                  Copy
+                </button>
+              </div>
             </div>
             <div>
               <label className="text-gray-500 text-[11px] font-semibold uppercase tracking-widest block mb-1.5">League image URL</label>
