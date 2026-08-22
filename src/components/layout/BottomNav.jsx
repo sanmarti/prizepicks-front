@@ -17,8 +17,9 @@ const TABS = [
     label: 'Scores',
     icon: (active) => (
       <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={active ? 2.2 : 1.8} strokeLinecap="round" strokeLinejoin="round">
-        <circle cx="12" cy="12" r="10"/>
-        <polyline points="12 6 12 12 16 14"/>
+        <circle cx="12" cy="20" r="1" fill="currentColor"/>
+        <path d="M8.5 16.5a5 5 0 0 1 7 0"/>
+        <path d="M5 13a9 9 0 0 1 14 0"/>
       </svg>
     ),
   },
