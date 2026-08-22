@@ -544,6 +544,72 @@ function InsightsDropdown({ fixtureId, liveEv }) {
   )
 }
 
+// ── League hero carousel ───────────────────────────────────────────────────────
+function LeagueHeroCarousel({ leagues }) {
+  const [idx, setIdx] = useState(0)
+  const touchX = useRef(null)
+
+  const go = i => setIdx(Math.max(0, Math.min(leagues.length - 1, i)))
+
+  const onTouchStart = e => { touchX.current = e.touches[0].clientX }
+  const onTouchEnd   = e => {
+    if (touchX.current === null) return
+    const dx = e.changedTouches[0].clientX - touchX.current
+    if (dx < -40) go(idx + 1)
+    else if (dx > 40) go(idx - 1)
+    touchX.current = null
+  }
+
+  const l = leagues[idx] || leagues[0]
+  if (!l) return null
+
+  return (
+    <div
+      className="relative rounded-2xl overflow-hidden select-none"
+      style={{ height: 160 }}
+      onTouchStart={onTouchStart}
+      onTouchEnd={onTouchEnd}
+    >
+      {/* Background */}
+      {l.image_url
+        ? <img src={l.image_url} alt={l.name} className="absolute inset-0 w-full h-full object-cover object-center" />
+        : <div className="absolute inset-0 bg-gradient-to-br from-indigo-950 via-violet-900/60 to-slate-950" />
+      }
+      <div className="absolute inset-0 bg-gradient-to-t from-black/85 via-black/35 to-black/10" />
+
+      {/* Content pinned to bottom */}
+      <div className="absolute inset-x-0 bottom-0 p-4 flex items-end justify-between">
+        <div className="min-w-0">
+          <p className="text-white/45 text-[10px] font-bold uppercase tracking-widest mb-1">Private League</p>
+          <p className="text-white font-black text-xl leading-tight truncate">{l.name}</p>
+          <p className="text-white/55 text-[11px] mt-0.5">
+            {l.my_position != null
+              ? <><span className="text-white font-bold">#{l.my_position}</span> of {l.member_count} members</>
+              : <>{l.member_count} members</>
+            }
+          </p>
+        </div>
+        <span className="text-4xl leading-none flex-shrink-0 ml-3 drop-shadow-lg">🏆</span>
+      </div>
+
+      {/* Slide dots */}
+      {leagues.length > 1 && (
+        <div className="absolute bottom-3 left-1/2 -translate-x-1/2 flex gap-1.5 pb-0">
+          {leagues.map((_, i) => (
+            <button
+              key={i}
+              onClick={() => go(i)}
+              className={`rounded-full transition-all duration-200 ${
+                i === idx ? 'w-4 h-1.5 bg-white' : 'w-1.5 h-1.5 bg-white/35'
+              }`}
+            />
+          ))}
+        </div>
+      )}
+    </div>
+  )
+}
+
 // ── Mock events (used when API returns no events) ──────────────────────────────
 const MOCK_GW_EVENTS = [
   // ── Premier League ──
@@ -1579,31 +1645,8 @@ export default function MatchweekPage() {
       {/* ── Top section (non-sticky) ── */}
       <div className="max-w-md mx-auto px-4 pt-safe-5 space-y-4">
 
-        {/* League headers — non-interactive, shows all leagues the user is in */}
-        {myLeagues.length > 0 && (
-          <div className={myLeagues.length === 1 ? '' : 'flex gap-2 overflow-x-auto'} style={{ scrollbarWidth: 'none' }}>
-            {myLeagues.map(l => (
-              <div key={l.id}
-                className={`relative rounded-2xl overflow-hidden flex-shrink-0 ${myLeagues.length === 1 ? 'w-full' : 'w-48'}`}
-                style={{ height: 72 }}>
-                {l.image_url
-                  ? <img src={l.image_url} alt={l.name} className="w-full h-full object-cover object-center" />
-                  : <div className="w-full h-full bg-gradient-to-br from-indigo-950 via-violet-900/50 to-slate-950" />
-                }
-                <div className="absolute inset-0 bg-gradient-to-r from-black/75 via-black/45 to-black/20" />
-                <div className="absolute inset-0 flex items-center px-3 gap-2.5">
-                  <span className="text-xl leading-none flex-shrink-0">🏆</span>
-                  <div className="min-w-0">
-                    <p className="text-white font-black text-xs leading-tight truncate">{l.name}</p>
-                    <p className="text-white/50 text-[10px] mt-0.5">
-                      {l.my_position != null ? `#${l.my_position} of ${l.member_count}` : `${l.member_count} members`}
-                    </p>
-                  </div>
-                </div>
-              </div>
-            ))}
-          </div>
-        )}
+        {/* League hero carousel */}
+        {myLeagues.length > 0 && <LeagueHeroCarousel leagues={myLeagues} />}
 
         {/* No active sprint */}
         {!sprint && (
