@@ -29,6 +29,7 @@ export default function LeagueDetailPage() {
   const [saveMsg,    setSaveMsg]    = useState(null)
   const [activating, setActivating] = useState(false)
   const [activateErr, setActivateErr] = useState(null)
+  const myUserId = useAuthStore(s => s.user?.userId)
 
   const load = useCallback(async () => {
     try {
@@ -51,7 +52,6 @@ export default function LeagueDetailPage() {
   )
   if (!league) return null
 
-  const myUserId = useAuthStore(s => s.user?.userId)
   const isAdmin = league.my_role === 'admin'
   const statusInfo = STATUS_LABEL[league.status] ?? STATUS_LABEL.draft
 
