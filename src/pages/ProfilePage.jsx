@@ -221,6 +221,15 @@ function getAccuracyTier(pct) {
   return TIERS.find(t => pct >= t.min) ?? null
 }
 
+const LEVEL_IMAGES = {
+  1: 'https://images.unsplash.com/photo-1431324155629-1a6deb1dec8d?w=900&q=80&auto=format&fit=crop',
+  2: 'https://images.unsplash.com/photo-1529900748604-07564a03e7a6?w=900&q=80&auto=format&fit=crop',
+  3: 'https://images.unsplash.com/photo-1574629810360-7efbbe195018?w=900&q=80&auto=format&fit=crop',
+  4: 'https://images.unsplash.com/photo-1508098682722-e99c43a406b2?w=900&q=80&auto=format&fit=crop',
+  5: 'https://images.unsplash.com/photo-1540747913346-19212a4b23b4?w=900&q=80&auto=format&fit=crop',
+  6: 'https://images.unsplash.com/photo-1522778526097-ce0a22ceb253?w=900&q=80&auto=format&fit=crop',
+}
+
 const MAX_ENERGY_PER_WEEK = 5
 
 const PACK_THEMES = [
@@ -683,6 +692,23 @@ export default function ProfilePage() {
             border: `1px solid ${tier ? tier.heroBorder : 'rgba(255,255,255,0.08)'}`,
           }}
         >
+          {/* Level background image */}
+          {div?.display_order && (
+            <>
+              <img
+                src={div.badge_url || LEVEL_IMAGES[div.display_order]}
+                alt=""
+                className="absolute inset-0 w-full h-full object-cover object-center pointer-events-none"
+                style={{ opacity: 0.12 }}
+              />
+              <div className="absolute inset-0 pointer-events-none"
+                style={{ background: tier
+                  ? `linear-gradient(135deg, ${tier.heroBg.replace('linear-gradient(135deg, ', '').split(',')[0]}cc, transparent 70%)`
+                  : 'linear-gradient(135deg, #0d1117cc 40%, transparent 100%)'
+                }} />
+            </>
+          )}
+
           {/* Glow blob */}
           <div className="absolute -top-8 -left-8 w-36 h-36 rounded-full blur-3xl pointer-events-none"
             style={{ background: tier ? tier.accentColor : '#6366f1', opacity: tier ? 0.18 : 0.1 }} />
@@ -872,10 +898,23 @@ export default function ProfilePage() {
             {/* ── Current level + sprint ── */}
             {div && (
               <div className="relative rounded-2xl overflow-hidden bg-gradient-to-br from-indigo-950 via-violet-900/50 to-indigo-950 border border-indigo-500/25 shadow-[0_0_18px_-6px_rgba(99,102,241,0.3)]">
+                {div.display_order && (
+                  <img
+                    src={div.badge_url || LEVEL_IMAGES[div.display_order]}
+                    alt=""
+                    className="absolute inset-0 w-full h-full object-cover object-center pointer-events-none"
+                    style={{ opacity: 0.18 }}
+                  />
+                )}
+                <div className="absolute inset-0 bg-gradient-to-r from-indigo-950/90 via-indigo-950/60 to-transparent pointer-events-none" />
                 <div className="relative flex items-center justify-between p-4 pb-3">
                   <div className="flex items-center gap-3">
-                    <div className="w-12 h-12 rounded-xl bg-indigo-500/15 border border-indigo-500/25 flex items-center justify-center flex-shrink-0">
-                      <span className="text-indigo-300 font-black text-lg leading-none">{(div.division_name || '?')[0]}</span>
+                    <div className="w-12 h-12 rounded-xl overflow-hidden border border-indigo-500/30 flex-shrink-0">
+                      <img
+                        src={div.badge_url || LEVEL_IMAGES[div.display_order]}
+                        alt={div.division_name}
+                        className="w-full h-full object-cover"
+                      />
                     </div>
                     <div>
                       <p className="text-[10px] font-black uppercase tracking-[0.15em] text-indigo-400 mb-0.5">Your level</p>
@@ -968,10 +1007,23 @@ export default function ProfilePage() {
             {/* ── Highest level reached ── */}
             {glory?.highest_division && (
               <div className="relative rounded-2xl overflow-hidden bg-gradient-to-br from-purple-950 via-fuchsia-900/50 to-purple-950 border border-purple-500/25 shadow-[0_0_16px_-4px_rgba(168,85,247,0.22)]">
+                {glory.highest_division.display_order && (
+                  <img
+                    src={LEVEL_IMAGES[glory.highest_division.display_order]}
+                    alt=""
+                    className="absolute inset-0 w-full h-full object-cover object-center pointer-events-none"
+                    style={{ opacity: 0.18 }}
+                  />
+                )}
+                <div className="absolute inset-0 bg-gradient-to-r from-purple-950/90 via-purple-950/60 to-transparent pointer-events-none" />
                 <div className="absolute -top-6 -right-6 w-28 h-28 rounded-full blur-3xl bg-purple-500/18 pointer-events-none" />
                 <div className="relative flex items-center gap-4 p-4">
-                  <div className="w-14 h-14 rounded-2xl bg-purple-500/15 border border-purple-500/25 flex items-center justify-center flex-shrink-0">
-                    <span className="text-purple-300 font-black text-2xl leading-none">{(glory.highest_division.name || '?')[0]}</span>
+                  <div className="w-14 h-14 rounded-2xl overflow-hidden border border-purple-500/30 flex-shrink-0">
+                    <img
+                      src={LEVEL_IMAGES[glory.highest_division.display_order]}
+                      alt={glory.highest_division.name}
+                      className="w-full h-full object-cover"
+                    />
                   </div>
                   <div>
                     <p className="text-[10px] font-black uppercase tracking-[0.2em] text-purple-400 mb-0.5">Personal best</p>
