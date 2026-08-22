@@ -8,6 +8,7 @@ export const joinLeague          = (code)            => client.post(`/leagues/jo
 export const getLeagueStandings  = (id)              => client.get(`/leagues/${id}/standings`)
 export const toggleMemberPayment = (id, userId, has_paid) => client.put(`/leagues/${id}/members/${userId}/payment`, { has_paid })
 export const leaveLeague         = (id)              => client.delete(`/leagues/${id}/leave`)
+export const activateLeague      = (id)              => client.post(`/leagues/${id}/activate`)
 export const getLeagueMatchup    = (id)              => client.get(`/leagues/${id}/matchup`)
 export const submitLeaguePicks   = (id, picks)       => client.post(`/leagues/${id}/picks`, { picks })
 export const getLeagueCalendar    = (id)              => client.get(`/leagues/${id}/calendar`)

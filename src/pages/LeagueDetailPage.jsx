@@ -1,6 +1,6 @@
 import { useState, useEffect, useCallback } from 'react'
 import { useParams, useNavigate } from 'react-router-dom'
-import { getLeague, getLeagueStandings, getLeagueCalendar, leaveLeague, updateLeague, toggleMemberPayment } from '../api/leagues'
+import { getLeague, getLeagueStandings, getLeagueCalendar, leaveLeague, updateLeague, toggleMemberPayment, activateLeague } from '../api/leagues'
 import Spinner from '../components/ui/Spinner'
 
 const TABS = ['Standings', 'Calendar', 'Members', 'Settings']
@@ -26,6 +26,8 @@ export default function LeagueDetailPage() {
   const [editImg,    setEditImg]    = useState('')
   const [saving,     setSaving]     = useState(false)
   const [saveMsg,    setSaveMsg]    = useState(null)
+  const [activating, setActivating] = useState(false)
+  const [activateErr, setActivateErr] = useState(null)
 
   const load = useCallback(async () => {
     try {
@@ -105,11 +107,35 @@ export default function LeagueDetailPage() {
 
         {/* Invite code strip (admin) */}
         {isAdmin && (
-          <div className="flex items-center gap-3 bg-white/4 border border-white/8 rounded-xl px-4 py-2.5 mb-4">
+          <div className="flex items-center gap-3 bg-white/4 border border-white/8 rounded-xl px-4 py-2.5 mb-3">
             <span className="text-gray-500 text-xs">Invite</span>
             <span className="text-indigo-300 font-mono font-bold tracking-widest text-sm flex-1">{league.invite_code}</span>
             <button onClick={() => navigator.clipboard.writeText(league.invite_code)}
               className="text-gray-500 hover:text-white text-xs transition-colors">Copy</button>
+          </div>
+        )}
+
+        {/* Activate League (admin, draft only) */}
+        {isAdmin && league.status === 'draft' && (
+          <div className="mb-4">
+            <button
+              disabled={activating}
+              onClick={async () => {
+                if (!window.confirm('Activate the league? Members will be able to see the calendar and the season will begin.')) return
+                setActivating(true); setActivateErr(null)
+                try {
+                  await activateLeague(id)
+                  await load()
+                } catch (e) {
+                  setActivateErr(e.response?.data?.error || 'Could not activate league')
+                } finally { setActivating(false) }
+              }}
+              className="w-full py-3.5 rounded-2xl font-black text-sm text-white transition-all disabled:opacity-50"
+              style={{ background: 'linear-gradient(135deg, #6366f1 0%, #8b5cf6 100%)' }}
+            >
+              {activating ? 'Activating…' : 'Activate League'}
+            </button>
+            {activateErr && <p className="text-red-400 text-xs text-center mt-2">{activateErr}</p>}
           </div>
         )}
 
@@ -230,7 +256,7 @@ function StandingsTab({ standings, leagueStatus }) {
         <span className="text-gray-600 text-[10px] font-semibold uppercase tracking-widest text-center">W</span>
         <span className="text-gray-600 text-[10px] font-semibold uppercase tracking-widest text-center">D</span>
         <span className="text-gray-600 text-[10px] font-semibold uppercase tracking-widest text-center">L</span>
-        <span className="text-gray-600 text-[10px] font-semibold uppercase tracking-widest text-center">GD</span>
+        <span className="text-gray-600 text-[10px] font-semibold uppercase tracking-widest text-center">TRP</span>
         <span className="text-gray-600 text-[10px] font-semibold uppercase tracking-widest text-right">Pts</span>
       </div>
       <div className="divide-y divide-white/4">
@@ -253,10 +279,8 @@ function StandingsTab({ standings, leagueStatus }) {
             <span className="text-green-400 text-xs font-bold text-center">{row.wins ?? 0}</span>
             <span className="text-gray-400 text-xs font-bold text-center">{row.draws ?? 0}</span>
             <span className="text-red-400/70 text-xs font-bold text-center">{row.losses ?? 0}</span>
-            <span className="text-gray-400 text-xs text-center tabular-nums">
-              {(row.goals_for ?? 0) - (row.goals_against ?? 0) >= 0
-                ? `+${(row.goals_for ?? 0) - (row.goals_against ?? 0)}`
-                : (row.goals_for ?? 0) - (row.goals_against ?? 0)}
+            <span className="text-indigo-400 text-xs text-center tabular-nums font-semibold">
+              {row.right_picks ?? row.goals_for ?? 0}
             </span>
             <span className="text-white font-black text-sm text-right tabular-nums">{row.league_points ?? 0}</span>
           </div>
