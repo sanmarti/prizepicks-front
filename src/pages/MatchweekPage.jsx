@@ -2156,13 +2156,6 @@ export default function MatchweekPage() {
                   </>
                 )}
 
-                {/* Division standings */}
-                <SprintLeaderboard
-                  myUserId={myUserId}
-                  data={leaderboard}
-                  isGwLocked={isLocked}
-                />
-
                 {/* Future week preview — only when viewing the current active week */}
                 {currentWeek != null && selectedWeek === currentWeek && currentWeek < gwCount && (
                   <FutureWeekSection

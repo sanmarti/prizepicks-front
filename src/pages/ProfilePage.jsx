@@ -848,7 +848,157 @@ export default function ProfilePage() {
           return (
           <div className="space-y-3">
 
-            {/* ── Hero: Accuracy ── */}
+            {/* ── Current level card ── */}
+            {div && (
+              <div className="relative rounded-2xl overflow-hidden bg-gradient-to-br from-indigo-950 via-violet-900/50 to-indigo-950 border border-indigo-500/25 shadow-[0_0_18px_-6px_rgba(99,102,241,0.3)]">
+                {div.display_order && (
+                  <img
+                    src={div.badge_url || LEVEL_IMAGES[div.display_order]}
+                    alt=""
+                    className="absolute inset-0 w-full h-full object-cover object-center pointer-events-none"
+                    style={{ opacity: 0.18 }}
+                  />
+                )}
+                <div className="absolute inset-0 bg-gradient-to-r from-indigo-950/90 via-indigo-950/60 to-transparent pointer-events-none" />
+                {/* Header row: image + name + next level */}
+                <div className="relative flex items-center justify-between p-4 pb-3">
+                  <div className="flex items-center gap-3">
+                    <div className="w-14 h-14 rounded-xl overflow-hidden border border-indigo-500/30 flex-shrink-0">
+                      <img
+                        src={div.badge_url || LEVEL_IMAGES[div.display_order]}
+                        alt={div.division_name}
+                        className="w-full h-full object-cover"
+                      />
+                    </div>
+                    <div>
+                      <p className="text-[10px] font-black uppercase tracking-[0.15em] text-indigo-400 mb-0.5">Your level</p>
+                      <p className="text-white font-black text-xl leading-tight">{div.division_name}</p>
+                      {sprintsInDiv > 0 && <p className="text-indigo-300/40 text-xs">{sprintsInDiv} sprint{sprintsInDiv > 1 ? 's' : ''} at this level</p>}
+                    </div>
+                  </div>
+                  {status?.next_division && (
+                    <div className="flex flex-col items-end gap-1">
+                      <span className="text-white/20 text-[9px] uppercase tracking-widest">next level</span>
+                      <span className="text-indigo-300/60 text-[10px] font-semibold">{status.next_division.name}</span>
+                    </div>
+                  )}
+                </div>
+                {/* Sprint stats */}
+                {sprint && prog && (
+                  <div className="relative border-t border-indigo-500/15 mx-4 pt-3">
+                    <p className="text-indigo-300/40 text-[10px] font-semibold uppercase tracking-widest mb-2">{sprint.name}</p>
+                    <div className="grid grid-cols-4 gap-2 text-center">
+                      <div className="bg-indigo-500/8 rounded-xl py-2.5">
+                        <p className="text-indigo-400 font-black text-xl leading-none">{prog.total_league_points}</p>
+                        <p className="text-white/25 text-[10px] uppercase tracking-wider mt-1">LP</p>
+                      </div>
+                      <div className="bg-indigo-500/8 rounded-xl py-2.5">
+                        <p className="text-emerald-400 font-black text-xl leading-none">{prog.total_correct_picks}</p>
+                        <p className="text-white/25 text-[10px] uppercase tracking-wider mt-1">Correct</p>
+                      </div>
+                      <div className="bg-indigo-500/8 rounded-xl py-2.5">
+                        <p className="text-yellow-400 font-black text-xl leading-none">{prog.perfect_weeks ?? 0}</p>
+                        <p className="text-white/25 text-[10px] uppercase tracking-wider mt-1">Perfect</p>
+                      </div>
+                      <div className="bg-indigo-500/8 rounded-xl py-2.5">
+                        <p className="text-white font-black text-xl leading-none">{divRank != null ? `#${divRank}` : '—'}</p>
+                        <p className="text-white/25 text-[10px] uppercase tracking-wider mt-1">{divTotal != null ? `of ${divTotal}` : 'Rank'}</p>
+                      </div>
+                    </div>
+                  </div>
+                )}
+                {/* Promotion / relegation thresholds */}
+                {(div.promotion_min_points != null || div.relegation_max_points != null) && (
+                  <div className="relative mx-4 mb-4 mt-3 space-y-2">
+                    <p className="text-[10px] font-black uppercase tracking-widest text-indigo-400/40 mb-1">How to move levels</p>
+                    {!div.is_highest && div.promotion_min_points != null && (() => {
+                      const currentLP = prog?.total_league_points ?? 0
+                      const needed    = div.promotion_min_points
+                      const promoted  = currentLP >= needed
+                      return (
+                        <div className={`flex items-center gap-2.5 rounded-xl px-3 py-2 ${promoted ? 'bg-green-500/15 border border-green-500/25' : 'bg-white/4 border border-white/8'}`}>
+                          <span className={`text-base font-black flex-shrink-0 ${promoted ? 'text-green-400' : 'text-gray-600'}`}>⬆</span>
+                          <div className="flex-1 min-w-0">
+                            <p className={`text-xs font-semibold ${promoted ? 'text-green-300' : 'text-gray-400'}`}>
+                              Promote to {status?.next_division?.name || 'next level'}
+                            </p>
+                            <p className={`text-[11px] ${promoted ? 'text-green-400/60' : 'text-gray-600'}`}>
+                              {promoted ? 'On track — keep it up!' : `Need ${needed - currentLP} more LP (${needed} total)`}
+                            </p>
+                          </div>
+                          <span className={`text-[11px] font-black tabular-nums flex-shrink-0 ${promoted ? 'text-green-400' : 'text-gray-600'}`}>
+                            {promoted ? '✓' : `${currentLP}/${needed}`}
+                          </span>
+                        </div>
+                      )
+                    })()}
+                    {div.relegation_max_points != null && (() => {
+                      const currentLP  = prog?.total_league_points ?? 0
+                      const threshold  = div.relegation_max_points
+                      const atRisk     = currentLP <= threshold
+                      return (
+                        <div className={`flex items-center gap-2.5 rounded-xl px-3 py-2 ${atRisk ? 'bg-red-500/15 border border-red-500/25' : 'bg-white/4 border border-white/8'}`}>
+                          <span className={`text-base font-black flex-shrink-0 ${atRisk ? 'text-red-400' : 'text-gray-600'}`}>⬇</span>
+                          <div className="flex-1 min-w-0">
+                            <p className={`text-xs font-semibold ${atRisk ? 'text-red-300' : 'text-gray-400'}`}>Avoid relegation</p>
+                            <p className={`text-[11px] ${atRisk ? 'text-red-400/60' : 'text-gray-600'}`}>
+                              {atRisk ? `At risk — score more than ${threshold} LP` : `Safe — you're above the ${threshold} LP threshold`}
+                            </p>
+                          </div>
+                          <span className={`text-[11px] font-black tabular-nums flex-shrink-0 ${atRisk ? 'text-red-400' : 'text-gray-500'}`}>
+                            {atRisk ? 'at risk' : 'safe'}
+                          </span>
+                        </div>
+                      )
+                    })()}
+                  </div>
+                )}
+              </div>
+            )}
+
+            {/* ── Level history ── */}
+            {glory?.sprint_history?.length > 0 && (
+              <div className="bg-[#0d1117] border border-white/8 rounded-2xl overflow-hidden">
+                <div className="px-4 py-3 border-b border-white/5 flex items-center justify-between">
+                  <p className="text-gray-500 text-[11px] font-semibold tracking-widest uppercase">Level History</p>
+                  <span className="text-[9px] text-white/20 font-semibold">{glory.sprint_history.length} sprint{glory.sprint_history.length !== 1 ? 's' : ''}</span>
+                </div>
+                <div className="divide-y divide-white/5">
+                  {glory.sprint_history.map((s, i) => {
+                    const imgSrc     = s.from_badge_url || LEVEL_IMAGES[s.from_display_order]
+                    const outcome    = s.sprint_outcome
+                    const promoted   = outcome === 'promoted'
+                    const relegated  = outcome === 'relegated'
+                    return (
+                      <div key={s.sprint_id || i} className="flex items-center gap-3 px-4 py-3">
+                        <div className="w-10 h-10 rounded-xl overflow-hidden border border-white/10 flex-shrink-0">
+                          {imgSrc
+                            ? <img src={imgSrc} alt={s.from_division_name} className="w-full h-full object-cover" />
+                            : <div className="w-full h-full bg-indigo-900/40 flex items-center justify-center text-indigo-400 text-xs font-black">
+                                {(s.from_division_name || '?')[0]}
+                              </div>
+                          }
+                        </div>
+                        <div className="flex-1 min-w-0">
+                          <p className="text-white text-xs font-bold truncate">{s.from_division_name}</p>
+                          <p className="text-gray-600 text-[10px] truncate">{s.sprint_name}</p>
+                        </div>
+                        <div className="text-right flex-shrink-0">
+                          <p className="text-indigo-300 font-black text-sm tabular-nums">{s.total_league_points} LP</p>
+                          {outcome && (
+                            <span className={`text-[10px] font-bold ${promoted ? 'text-green-400' : relegated ? 'text-red-400' : 'text-gray-600'}`}>
+                              {promoted ? '⬆ Promoted' : relegated ? '⬇ Relegated' : '= Stayed'}
+                            </span>
+                          )}
+                        </div>
+                      </div>
+                    )
+                  })}
+                </div>
+              </div>
+            )}
+
+            {/* ── Prediction accuracy ── */}
             <div
               className="relative rounded-2xl overflow-hidden"
               style={{
@@ -894,66 +1044,6 @@ export default function ProfilePage() {
                 </div>
               </div>
             </div>
-
-            {/* ── Current level + sprint ── */}
-            {div && (
-              <div className="relative rounded-2xl overflow-hidden bg-gradient-to-br from-indigo-950 via-violet-900/50 to-indigo-950 border border-indigo-500/25 shadow-[0_0_18px_-6px_rgba(99,102,241,0.3)]">
-                {div.display_order && (
-                  <img
-                    src={div.badge_url || LEVEL_IMAGES[div.display_order]}
-                    alt=""
-                    className="absolute inset-0 w-full h-full object-cover object-center pointer-events-none"
-                    style={{ opacity: 0.18 }}
-                  />
-                )}
-                <div className="absolute inset-0 bg-gradient-to-r from-indigo-950/90 via-indigo-950/60 to-transparent pointer-events-none" />
-                <div className="relative flex items-center justify-between p-4 pb-3">
-                  <div className="flex items-center gap-3">
-                    <div className="w-12 h-12 rounded-xl overflow-hidden border border-indigo-500/30 flex-shrink-0">
-                      <img
-                        src={div.badge_url || LEVEL_IMAGES[div.display_order]}
-                        alt={div.division_name}
-                        className="w-full h-full object-cover"
-                      />
-                    </div>
-                    <div>
-                      <p className="text-[10px] font-black uppercase tracking-[0.15em] text-indigo-400 mb-0.5">Your level</p>
-                      <p className="text-white font-black text-lg leading-tight">{div.division_name}</p>
-                      {sprintsInDiv > 0 && <p className="text-indigo-300/40 text-xs">{sprintsInDiv} sprint{sprintsInDiv > 1 ? 's' : ''} at this level</p>}
-                    </div>
-                  </div>
-                  {status?.next_division && (
-                    <div className="flex flex-col items-end gap-1">
-                      <span className="text-white/20 text-[9px] uppercase tracking-widest">next level</span>
-                      <span className="text-indigo-300/60 text-[10px] font-semibold">{status.next_division.name}</span>
-                    </div>
-                  )}
-                </div>
-                {sprint && prog && (
-                  <div className="relative border-t border-indigo-500/15 mx-4 mb-4 pt-3">
-                    <p className="text-indigo-300/40 text-[10px] font-semibold uppercase tracking-widest mb-2">{sprint.name}</p>
-                    <div className="grid grid-cols-4 gap-2 text-center">
-                      <div className="bg-indigo-500/8 rounded-xl py-2.5">
-                        <p className="text-indigo-400 font-black text-xl leading-none">{prog.total_league_points}</p>
-                        <p className="text-white/25 text-[10px] uppercase tracking-wider mt-1">LP</p>
-                      </div>
-                      <div className="bg-indigo-500/8 rounded-xl py-2.5">
-                        <p className="text-emerald-400 font-black text-xl leading-none">{prog.total_correct_picks}</p>
-                        <p className="text-white/25 text-[10px] uppercase tracking-wider mt-1">Correct</p>
-                      </div>
-                      <div className="bg-indigo-500/8 rounded-xl py-2.5">
-                        <p className="text-yellow-400 font-black text-xl leading-none">{prog.perfect_weeks ?? 0}</p>
-                        <p className="text-white/25 text-[10px] uppercase tracking-wider mt-1">Perfect</p>
-                      </div>
-                      <div className="bg-indigo-500/8 rounded-xl py-2.5">
-                        <p className="text-white font-black text-xl leading-none">{divRank != null ? `#${divRank}` : '—'}</p>
-                        <p className="text-white/25 text-[10px] uppercase tracking-wider mt-1">{divTotal != null ? `of ${divTotal}` : 'Rank'}</p>
-                      </div>
-                    </div>
-                  </div>
-                )}
-              </div>
-            )}
 
             {/* ── LIFETIME STATS ── */}
             <div className="bg-[#0d1117] border border-white/8 rounded-2xl overflow-hidden">
