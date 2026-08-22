@@ -377,12 +377,12 @@ export default function ScoresPage() {
     }
     seen.get(key).push(f)
   }
-  groups.sort((a, b) => {
-    const aWC = /world cup/i.test(a.name)
-    const bWC = /world cup/i.test(b.name)
-    if (aWC === bWC) return 0
-    return aWC ? -1 : 1
-  })
+  const compPriority = name => {
+    if (/premier league/i.test(name)) return 0
+    if (/la liga/i.test(name))        return 1
+    return 2
+  }
+  groups.sort((a, b) => compPriority(a.name) - compPriority(b.name))
 
   const totalLive = fixtures.filter(f => LIVE_STATUSES.has(f.status_short)).length
   const fmtDate   = d => new Date(d + 'T12:00:00Z').toLocaleDateString('en-GB', {
@@ -392,7 +392,6 @@ export default function ScoresPage() {
   return (
     <div className="flex flex-col min-h-dvh" style={{ background: 'var(--bg-primary)' }}>
       <TopBar
-        showBack
         title={
           <span className="flex items-center gap-2">
             Live Scores

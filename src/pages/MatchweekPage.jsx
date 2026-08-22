@@ -1579,33 +1579,6 @@ export default function MatchweekPage() {
       {/* ── Top section (non-sticky) ── */}
       <div className="max-w-md mx-auto px-4 pt-safe-5 space-y-4">
 
-        {/* Sprint header */}
-        <div className="flex items-start justify-between">
-          <div>
-            <p className="text-indigo-400 text-[13px] font-bold tracking-wide">{sprint?.name || 'OddsRivals'}</p>
-            <h1 className="text-white text-xl font-bold mt-0.5">{div?.icon} {div?.division_name || 'Academy'}</h1>
-          </div>
-          <div className="flex flex-col items-end gap-2">
-            <button
-              onClick={() => navigate('/scores')}
-              className="flex items-center gap-2 bg-green-500/15 hover:bg-green-500/25 border border-green-500/40 text-green-400 text-xs font-bold px-3 py-2 rounded-xl transition-colors active:scale-95"
-            >
-              <span className="w-2 h-2 rounded-full bg-green-400 animate-pulse" />
-              Live Scores
-            </button>
-            <div className="text-right">
-              <p className="text-indigo-400 font-black text-2xl leading-none tabular-nums">{lp}</p>
-              <p className="text-gray-500 text-[11px] leading-none mt-0.5">sprint pts</p>
-              {myRank && (
-                <p className="text-gray-500 text-[11px] leading-none mt-1">
-                  <span className="text-white font-bold">#{myRank}</span>
-                  {divSize > 0 && <span className="text-gray-600"> / {divSize}</span>}
-                </p>
-              )}
-            </div>
-          </div>
-        </div>
-
         {/* League headers — non-interactive, shows all leagues the user is in */}
         {myLeagues.length > 0 && (
           <div className={myLeagues.length === 1 ? '' : 'flex gap-2 overflow-x-auto'} style={{ scrollbarWidth: 'none' }}>
