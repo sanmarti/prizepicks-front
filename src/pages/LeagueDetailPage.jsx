@@ -1,6 +1,7 @@
 import { useState, useEffect, useCallback } from 'react'
 import { useParams, useNavigate } from 'react-router-dom'
 import { getLeague, getLeagueStandings, getLeagueCalendar, leaveLeague, updateLeague, toggleMemberPayment, activateLeague } from '../api/leagues'
+import { useAuthStore } from '../store/authStore'
 import Spinner from '../components/ui/Spinner'
 
 const TABS = ['Standings', 'Calendar', 'Members', 'Settings']
@@ -50,6 +51,7 @@ export default function LeagueDetailPage() {
   )
   if (!league) return null
 
+  const myUserId = useAuthStore(s => s.user?.userId)
   const isAdmin = league.my_role === 'admin'
   const statusInfo = STATUS_LABEL[league.status] ?? STATUS_LABEL.draft
 
@@ -141,7 +143,7 @@ export default function LeagueDetailPage() {
 
         {/* ── Standings ── */}
         {tab === 'Standings' && (
-          <StandingsTab standings={standings} leagueStatus={league.status} />
+          <StandingsTab standings={standings} leagueStatus={league.status} myUserId={myUserId} />
         )}
 
         {/* ── Calendar ── */}
@@ -236,7 +238,7 @@ export default function LeagueDetailPage() {
 }
 
 // ── Standings tab ─────────────────────────────────────────────────────────────
-function StandingsTab({ standings, leagueStatus }) {
+function StandingsTab({ standings, leagueStatus, myUserId }) {
   if (standings.length === 0) return (
     <div className="bg-[#0d1117] border border-white/8 rounded-2xl p-8 text-center">
       <p className="text-gray-500 text-sm">No standings yet</p>
@@ -261,8 +263,10 @@ function StandingsTab({ standings, leagueStatus }) {
         <span className="text-gray-600 text-[10px] font-semibold uppercase tracking-widest text-right">Pts</span>
       </div>
       <div className="divide-y divide-white/4">
-        {standings.map((row, i) => (
-          <div key={row.user_id} className={`grid grid-cols-[32px_1fr_28px_28px_28px_28px_40px] gap-1 items-center px-4 py-3 ${i === 0 ? 'bg-amber-500/4' : ''}`}>
+        {standings.map((row, i) => {
+          const isMe = row.user_id === myUserId
+          return (
+          <div key={row.user_id} className={`grid grid-cols-[32px_1fr_28px_28px_28px_28px_40px] gap-1 items-center px-4 py-3 ${isMe ? 'bg-indigo-500/10 border-l-2 border-indigo-500' : i === 0 ? 'bg-amber-500/4' : ''}`}>
             <span className={`text-sm font-black text-center ${
               i === 0 ? 'text-yellow-400' : i === 1 ? 'text-gray-300' : i === 2 ? 'text-amber-600' : 'text-gray-600'
             }`}>{row.position}</span>
@@ -273,7 +277,9 @@ function StandingsTab({ standings, leagueStatus }) {
                   : <span className="text-indigo-300">{row.display_name?.[0]?.toUpperCase()}</span>}
               </div>
               <div className="min-w-0">
-                <p className="text-white text-xs font-semibold truncate">{row.display_name}</p>
+                <p className={`text-xs font-semibold truncate ${isMe ? 'text-indigo-300' : 'text-white'}`}>
+                  {row.display_name}{isMe && <span className="ml-1 text-[9px] text-indigo-400/70 font-normal">you</span>}
+                </p>
                 {row.division_name && <p className="text-gray-700 text-[9px]">{row.division_name}</p>}
               </div>
             </div>
@@ -285,7 +291,8 @@ function StandingsTab({ standings, leagueStatus }) {
             </span>
             <span className="text-white font-black text-sm text-right tabular-nums">{row.league_points ?? 0}</span>
           </div>
-        ))}
+          )
+        })}
       </div>
     </div>
   )
