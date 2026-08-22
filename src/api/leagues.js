@@ -10,4 +10,5 @@ export const toggleMemberPayment = (id, userId, has_paid) => client.put(`/league
 export const leaveLeague         = (id)              => client.delete(`/leagues/${id}/leave`)
 export const getLeagueMatchup    = (id)              => client.get(`/leagues/${id}/matchup`)
 export const submitLeaguePicks   = (id, picks)       => client.post(`/leagues/${id}/picks`, { picks })
-export const getLeagueCalendar   = (id)              => client.get(`/leagues/${id}/calendar`)
+export const getLeagueCalendar    = (id)              => client.get(`/leagues/${id}/calendar`)
+export const getWeekMatchups      = (id, week)        => client.get(`/leagues/${id}/week/${week}/matchups`)
