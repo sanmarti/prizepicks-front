@@ -107,30 +107,6 @@ export default function LeagueDetailPage() {
           </div>
         </div>
 
-        {/* Activate League (admin, draft only) */}
-        {isAdmin && league.status === 'draft' && (
-          <div className="mb-4">
-            <button
-              disabled={activating}
-              onClick={async () => {
-                if (!window.confirm('Activate the league? Members will be able to see the calendar and the season will begin.')) return
-                setActivating(true); setActivateErr(null)
-                try {
-                  await activateLeague(id)
-                  await load()
-                } catch (e) {
-                  setActivateErr(e.response?.data?.error || 'Could not activate league')
-                } finally { setActivating(false) }
-              }}
-              className="w-full py-3.5 rounded-2xl font-black text-sm text-white transition-all disabled:opacity-50"
-              style={{ background: 'linear-gradient(135deg, #6366f1 0%, #8b5cf6 100%)' }}
-            >
-              {activating ? 'Activating…' : 'Activate League'}
-            </button>
-            {activateErr && <p className="text-red-400 text-xs text-center mt-2">{activateErr}</p>}
-          </div>
-        )}
-
         {/* Tabs */}
         <div className="flex gap-1 bg-white/3 border border-white/8 rounded-2xl p-1 mb-4">
           {(isAdmin ? TABS : TABS.filter(t => t !== 'Settings')).map(t => (
@@ -148,7 +124,20 @@ export default function LeagueDetailPage() {
 
         {/* ── Calendar ── */}
         {tab === 'Calendar' && (
-          <CalendarTab calendar={calendar} currentWeek={league.current_week} />
+          <CalendarTab
+            calendar={calendar}
+            currentWeek={league.current_week}
+            isAdmin={isAdmin}
+            leagueStatus={league.status}
+            activating={activating}
+            activateErr={activateErr}
+            onActivate={async () => {
+              setActivating(true); setActivateErr(null)
+              try { await activateLeague(id); await load() }
+              catch (e) { setActivateErr(e.response?.data?.error || 'Could not activate league') }
+              finally { setActivating(false) }
+            }}
+          />
         )}
 
         {/* ── Members ── */}
@@ -299,13 +288,39 @@ function StandingsTab({ standings, leagueStatus, myUserId }) {
 }
 
 // ── Calendar tab ──────────────────────────────────────────────────────────────
-function CalendarTab({ calendar, currentWeek }) {
-  if (!calendar?.calendar || Object.keys(calendar.calendar).length === 0) return (
-    <div className="bg-[#0d1117] border border-white/8 rounded-2xl p-8 text-center">
-      <p className="text-gray-500 text-sm">No calendar yet</p>
-      <p className="text-gray-700 text-xs mt-1">The admin will generate the season calendar once all players have joined.</p>
-    </div>
-  )
+function CalendarTab({ calendar, currentWeek, isAdmin, leagueStatus, activating, activateErr, onActivate }) {
+  if (!calendar?.calendar || Object.keys(calendar.calendar).length === 0) {
+    if (isAdmin && leagueStatus === 'draft') {
+      return (
+        <div className="bg-[#0d1117] border border-white/8 rounded-2xl p-6 space-y-5">
+          <div className="text-center space-y-2">
+            <p className="text-3xl">📅</p>
+            <p className="text-white font-bold text-base">Activate the league</p>
+            <p className="text-gray-400 text-sm leading-relaxed">
+              Once you activate the league, the season calendar will be generated and all members will be able to see their fixtures and opponents for each week.
+            </p>
+            <p className="text-gray-600 text-xs">Make sure all players have joined before activating — you can't add more once the season starts.</p>
+          </div>
+          <button
+            disabled={activating}
+            onClick={onActivate}
+            className="w-full py-3.5 rounded-2xl font-black text-sm text-white transition-all disabled:opacity-50"
+            style={{ background: 'linear-gradient(135deg, #6366f1 0%, #8b5cf6 100%)' }}
+          >
+            {activating ? 'Activating…' : 'Activate League'}
+          </button>
+          {activateErr && <p className="text-red-400 text-xs text-center">{activateErr}</p>}
+        </div>
+      )
+    }
+    return (
+      <div className="bg-[#0d1117] border border-white/8 rounded-2xl p-8 text-center space-y-2">
+        <p className="text-3xl">📅</p>
+        <p className="text-gray-500 text-sm font-semibold">No calendar yet</p>
+        <p className="text-gray-700 text-xs">The admin will generate the season calendar once all players have joined.</p>
+      </div>
+    )
+  }
 
   const weeks = Object.keys(calendar.calendar).map(Number).sort((a, b) => a - b)
 
