@@ -703,12 +703,9 @@ export default function ProfilePage() {
               <p className="text-white font-bold text-xl truncate">{shownName}</p>
               <p className="text-gray-500 text-xs truncate">{profile?.email}</p>
               {div && (
-                <div className="flex items-center gap-2 mt-1.5">
-                  <span className="text-base">{div.icon}</span>
-                  <span className="text-gray-300 text-sm">{div.division_name}</span>
-                  {sprintsInDiv > 0 && (
-                    <span className="text-gray-600 text-xs">· {sprintsInDiv} sprint{sprintsInDiv > 1 ? 's' : ''}</span>
-                  )}
+                <div className="flex items-center gap-1.5 mt-1.5">
+                  <span className="text-[10px] font-black px-2 py-0.5 rounded-full border text-indigo-300 bg-indigo-500/15 border-indigo-500/25">{div.division_name}</span>
+                  <span className="text-gray-600 text-[10px]">level</span>
                 </div>
               )}
             </div>
@@ -778,8 +775,8 @@ export default function ProfilePage() {
             return {
               _key: `div_champ_${dc.division_id ?? i}`,
               icon: '👑',
-              name: `${dc.division_icon} ${dc.division_name} Champion`,
-              description: `Ranked #1 in ${dc.division_name} at sprint end`,
+              name: `${dc.division_name} Champion`,
+              description: `Ranked #1 at ${dc.division_name} level at sprint end`,
               earned: true,
               count: dc.championships,
               date: null,
@@ -872,24 +869,23 @@ export default function ProfilePage() {
               </div>
             </div>
 
-            {/* ── Current division + sprint ── */}
+            {/* ── Current level + sprint ── */}
             {div && (
               <div className="relative rounded-2xl overflow-hidden bg-gradient-to-br from-indigo-950 via-violet-900/50 to-indigo-950 border border-indigo-500/25 shadow-[0_0_18px_-6px_rgba(99,102,241,0.3)]">
                 <div className="relative flex items-center justify-between p-4 pb-3">
                   <div className="flex items-center gap-3">
-                    <div className="w-12 h-12 rounded-xl bg-indigo-500/15 border border-indigo-500/25 flex items-center justify-center text-2xl flex-shrink-0">
-                      {div.icon}
+                    <div className="w-12 h-12 rounded-xl bg-indigo-500/15 border border-indigo-500/25 flex items-center justify-center flex-shrink-0">
+                      <span className="text-indigo-300 font-black text-lg leading-none">{(div.division_name || '?')[0]}</span>
                     </div>
                     <div>
-                      <p className="text-[10px] font-black uppercase tracking-[0.15em] text-indigo-400 mb-0.5">Current division</p>
+                      <p className="text-[10px] font-black uppercase tracking-[0.15em] text-indigo-400 mb-0.5">Your level</p>
                       <p className="text-white font-black text-lg leading-tight">{div.division_name}</p>
-                      {sprintsInDiv > 0 && <p className="text-indigo-300/40 text-xs">{sprintsInDiv} sprint{sprintsInDiv > 1 ? 's' : ''} here</p>}
+                      {sprintsInDiv > 0 && <p className="text-indigo-300/40 text-xs">{sprintsInDiv} sprint{sprintsInDiv > 1 ? 's' : ''} at this level</p>}
                     </div>
                   </div>
                   {status?.next_division && (
                     <div className="flex flex-col items-end gap-1">
-                      <span className="text-white/20 text-[9px] uppercase tracking-widest">next up</span>
-                      <span className="text-2xl">{status.next_division.icon}</span>
+                      <span className="text-white/20 text-[9px] uppercase tracking-widest">next level</span>
                       <span className="text-indigo-300/60 text-[10px] font-semibold">{status.next_division.name}</span>
                     </div>
                   )}
@@ -969,18 +965,18 @@ export default function ProfilePage() {
               </div>
             </div>
 
-            {/* ── Best division reached ── */}
+            {/* ── Highest level reached ── */}
             {glory?.highest_division && (
               <div className="relative rounded-2xl overflow-hidden bg-gradient-to-br from-purple-950 via-fuchsia-900/50 to-purple-950 border border-purple-500/25 shadow-[0_0_16px_-4px_rgba(168,85,247,0.22)]">
                 <div className="absolute -top-6 -right-6 w-28 h-28 rounded-full blur-3xl bg-purple-500/18 pointer-events-none" />
                 <div className="relative flex items-center gap-4 p-4">
-                  <div className="w-14 h-14 rounded-2xl bg-purple-500/15 border border-purple-500/25 flex items-center justify-center text-3xl flex-shrink-0">
-                    {glory.highest_division.icon}
+                  <div className="w-14 h-14 rounded-2xl bg-purple-500/15 border border-purple-500/25 flex items-center justify-center flex-shrink-0">
+                    <span className="text-purple-300 font-black text-2xl leading-none">{(glory.highest_division.name || '?')[0]}</span>
                   </div>
                   <div>
                     <p className="text-[10px] font-black uppercase tracking-[0.2em] text-purple-400 mb-0.5">Personal best</p>
                     <p className="text-white font-black text-lg leading-tight">{glory.highest_division.name}</p>
-                    <p className="text-purple-300/50 text-xs mt-0.5">Highest division reached</p>
+                    <p className="text-purple-300/50 text-xs mt-0.5">Highest level reached</p>
                   </div>
                 </div>
               </div>

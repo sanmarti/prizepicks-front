@@ -16,20 +16,40 @@ const getV = d => V[d.display_order] || V[1]
 
 
 
+function PeriodToggle({ allTime, onChange }) {
+  return (
+    <div className="flex gap-0.5 bg-white/5 border border-white/8 rounded-xl p-0.5">
+      {[['sprint', 'This Sprint'], ['alltime', 'All Time']].map(([key, label]) => (
+        <button
+          key={key}
+          onClick={() => onChange(key === 'alltime')}
+          className={`flex-1 py-1.5 px-3 rounded-lg text-[11px] font-bold transition-colors ${
+            (key === 'alltime') === allTime ? 'bg-white/12 text-white' : 'text-gray-500'
+          }`}
+        >
+          {label}
+        </button>
+      ))}
+    </div>
+  )
+}
+
 // ── Global rankings screen (all players, level shown per row) ─────────────────
 function RankingsScreen({ sprintId, sprintName, myUserId, myDiv, totalPlayers, isGwLocked }) {
   const [lb, setLb]           = useState(null)
   const [loading, setLoading] = useState(true)
+  const [allTime, setAllTime] = useState(false)
   const myRowRef = useRef(null)
 
   useEffect(() => {
     setLoading(true)
     setLb(null)
-    getGloryLeaderboard({ sprint_id: sprintId })
+    const params = allTime ? { all_time: true } : { sprint_id: sprintId }
+    getGloryLeaderboard(params)
       .then(r => setLb(r.data))
       .catch(() => setLb({ rows: [] }))
       .finally(() => setLoading(false))
-  }, [sprintId])
+  }, [sprintId, allTime])
 
   const rows  = lb?.rows || []
   const myIdx = rows.findIndex(r => r.user_id === myUserId)
@@ -54,23 +74,28 @@ function RankingsScreen({ sprintId, sprintName, myUserId, myDiv, totalPlayers, i
           <div className="absolute top-3 right-4 px-2.5 py-1 rounded-xl border border-white/10 backdrop-blur-sm" style={{ background: 'rgba(0,0,0,0.40)' }}>
             <p className="text-white/70 text-[11px] font-semibold">{rows.length || totalPlayers || 0} players</p>
           </div>
-          <div className="absolute bottom-3 left-4">
-            <p className="font-black text-base leading-tight text-white drop-shadow-sm">Global Ranking</p>
-            {sprintName && <p className="text-white/50 text-[11px] leading-tight">{sprintName}</p>}
+          <div className="absolute bottom-3 left-4 right-4 flex items-end justify-between">
+            <div>
+              <p className="font-black text-base leading-tight text-white drop-shadow-sm">Global Ranking</p>
+              <p className="text-white/50 text-[11px] leading-tight">{allTime ? 'All Time' : (sprintName || 'This Sprint')}</p>
+            </div>
           </div>
         </div>
       </div>
 
-      {/* Your level strip */}
-      {myDiv && (
-        <div className="flex-shrink-0 border-b border-white/5">
-          <div className="max-w-md mx-auto px-4 py-2 flex items-center gap-2">
-            <span className="text-[10px] text-gray-600">Your level:</span>
-            <span className="text-[10px] font-bold text-white/70">{myDiv.name}</span>
-            <span className="text-[9px] text-gray-600 ml-auto">⚡ Tiebreaker: equal LP → fewer energy used ranks higher</span>
+      {/* Toggle + your level */}
+      <div className="flex-shrink-0 border-b border-white/5">
+        <div className="max-w-md mx-auto px-4 py-2 flex items-center gap-3">
+          {myDiv && (
+            <span className="text-[10px] text-gray-500 flex-shrink-0">
+              Your level: <span className="text-white/60 font-semibold">{myDiv.name}</span>
+            </span>
+          )}
+          <div className="ml-auto flex-shrink-0">
+            <PeriodToggle allTime={allTime} onChange={setAllTime} />
           </div>
         </div>
-      )}
+      </div>
 
       {/* List */}
       <div className="flex-1 overflow-y-auto" style={{ overscrollBehaviorY: 'contain' }}>
@@ -128,14 +153,18 @@ function LeagueAvatar({ row, isMe }) {
 function LeagueStandingsView({ league, onBack, myUserId }) {
   const [data, setData]       = useState(null)
   const [loading, setLoading] = useState(true)
+  const [allTime, setAllTime] = useState(false)
   const myRowRef              = useRef(null)
 
   useEffect(() => {
-    getLeagueStandings(league.id)
+    setLoading(true)
+    setData(null)
+    const params = allTime ? { all_time: true } : {}
+    getLeagueStandings(league.id, params)
       .then(r => setData(r.data))
       .catch(() => setData({ standings: [] }))
       .finally(() => setLoading(false))
-  }, [league.id])
+  }, [league.id, allTime])
 
   useEffect(() => {
     if (!loading && myRowRef.current)
@@ -177,15 +206,16 @@ function LeagueStandingsView({ league, onBack, myUserId }) {
             <p className="text-white/70 text-[11px] font-semibold">{standings.length || league.member_count || 0} players</p>
           </div>
 
-          {/* League name + period */}
-          <div className="absolute bottom-3 left-4 right-4 flex items-end">
+          {/* League name + period + toggle */}
+          <div className="absolute bottom-3 left-4 right-4 flex items-end justify-between">
             <div className="flex items-center gap-2">
               <span className="text-2xl leading-none">🏆</span>
               <div>
                 <p className="font-black text-base leading-tight text-white drop-shadow-sm">{league.name}</p>
-                {period && <p className="text-white/50 text-[11px] leading-tight">{period.name}</p>}
+                <p className="text-white/50 text-[11px] leading-tight">{allTime ? 'All Time' : (period?.name || 'This Period')}</p>
               </div>
             </div>
+            <PeriodToggle allTime={allTime} onChange={setAllTime} />
           </div>
         </div>
       </div>
@@ -267,6 +297,11 @@ function LeagueStandingsView({ league, onBack, myUserId }) {
                       {isMe && (
                         <span className="text-[10px] font-black px-1.5 py-0.5 rounded-full border flex-shrink-0 bg-purple-900/50 border-purple-500/50 text-purple-300">
                           YOU
+                        </span>
+                      )}
+                      {row.division_name && (
+                        <span className="text-[9px] font-semibold px-1.5 py-0.5 rounded-full border flex-shrink-0 bg-white/4 border-white/8 text-gray-500">
+                          {row.division_name}
                         </span>
                       )}
                     </div>
