@@ -119,7 +119,7 @@ export default function LeagueDetailPage() {
 
         {/* ── Standings ── */}
         {tab === 'Standings' && (
-          <StandingsTab standings={standings} leagueStatus={league.status} myUserId={myUserId} />
+          <StandingsTab standings={standings} leagueStatus={league.status} myUserId={myUserId} inviteCode={league.invite_code} />
         )}
 
         {/* ── Calendar ── */}
@@ -227,7 +227,7 @@ export default function LeagueDetailPage() {
 }
 
 // ── Standings tab ─────────────────────────────────────────────────────────────
-function StandingsTab({ standings, leagueStatus, myUserId }) {
+function StandingsTab({ standings, leagueStatus, myUserId, inviteCode }) {
   if (standings.length === 0) return (
     <div className="bg-[#0d1117] border border-white/8 rounded-2xl p-8 text-center">
       <p className="text-gray-500 text-sm">No standings yet</p>
@@ -240,6 +240,7 @@ function StandingsTab({ standings, leagueStatus, myUserId }) {
   )
 
   return (
+  <>
     <div className="bg-[#0d1117] border border-white/8 rounded-2xl overflow-hidden">
       {/* Header row */}
       <div className="grid grid-cols-[32px_1fr_28px_28px_28px_28px_40px] gap-1 px-4 py-2 border-b border-white/5">
@@ -284,6 +285,16 @@ function StandingsTab({ standings, leagueStatus, myUserId }) {
         })}
       </div>
     </div>
+
+    {inviteCode && leagueStatus !== 'active' && leagueStatus !== 'completed' && (
+      <div className="flex items-center gap-3 bg-white/3 border border-white/8 rounded-2xl px-4 py-3 mt-3">
+        <span className="text-gray-600 text-xs">Invite code</span>
+        <span className="text-indigo-300 font-mono font-bold tracking-widest text-sm flex-1">{inviteCode}</span>
+        <button onClick={() => navigator.clipboard.writeText(inviteCode)}
+          className="text-gray-600 hover:text-white text-xs transition-colors">Copy</button>
+      </div>
+    )}
+  </>
   )
 }
 
